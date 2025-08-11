@@ -15,6 +15,7 @@ export default function Sidebar() {
     { name: "Progress Notes", href: "/progress-notes", icon: "fas fa-clipboard-list", badge: null, description: "Clinical documentation" },
     { name: "Financials", href: "/financials", icon: "fas fa-dollar-sign", badge: "New", description: "Revenue & invoicing" },
     { name: "Staff Management", href: "/staff", icon: "fas fa-user-tie", badge: "42", description: "Staff & resources" },
+    { name: "Automation", href: "/automation", icon: "fas fa-robot", badge: "AI", description: "Efficiency optimization" },
     { name: "Reports", href: "/reports", icon: "fas fa-chart-bar", badge: "12", description: "Business reports" },
   ];
 

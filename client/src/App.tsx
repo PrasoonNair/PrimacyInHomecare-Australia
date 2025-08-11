@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 import Dashboard from "@/pages/dashboard";
 import Participants from "@/pages/participants";
 import Plans from "@/pages/plans";
@@ -24,6 +26,20 @@ import FinanceAwards from "@/pages/finance-awards";
 import ServiceDelivery from "@/pages/service-delivery";
 import ComplianceQuality from "@/pages/compliance-quality";
 
+function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header title="NDIS Manager" subtitle="Comprehensive case management system" />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -32,27 +48,29 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/participants" component={Participants} />
-          <Route path="/plans" component={Plans} />
-          <Route path="/services" component={Services} />
-          <Route path="/progress-notes" component={ProgressNotes} />
-          <Route path="/financials" component={Financials} />
-          <Route path="/staff" component={Staff} />
-          <Route path="/reports" component={Reports} />
-          <Route path="/role-management" component={RoleManagement} />
-          <Route path="/price-guide" component={PriceGuide} />
-          <Route path="/automation" component={Automation} />
-          {/* Department Routes */}
-          <Route path="/intake" component={Intake} />
-          <Route path="/hr-recruitment" component={HRRecruitment} />
-          <Route path="/finance-awards" component={FinanceAwards} />
-          <Route path="/service-delivery" component={ServiceDelivery} />
-          <Route path="/compliance-quality" component={ComplianceQuality} />
-        </>
+        <AppLayout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/participants" component={Participants} />
+            <Route path="/plans" component={Plans} />
+            <Route path="/services" component={Services} />
+            <Route path="/progress-notes" component={ProgressNotes} />
+            <Route path="/financials" component={Financials} />
+            <Route path="/staff" component={Staff} />
+            <Route path="/reports" component={Reports} />
+            <Route path="/role-management" component={RoleManagement} />
+            <Route path="/price-guide" component={PriceGuide} />
+            <Route path="/automation" component={Automation} />
+            {/* Department Routes */}
+            <Route path="/intake" component={Intake} />
+            <Route path="/hr-recruitment" component={HRRecruitment} />
+            <Route path="/finance-awards" component={FinanceAwards} />
+            <Route path="/service-delivery" component={ServiceDelivery} />
+            <Route path="/compliance-quality" component={ComplianceQuality} />
+            <Route component={NotFound} />
+          </Switch>
+        </AppLayout>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }

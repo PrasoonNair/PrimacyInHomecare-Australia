@@ -73,16 +73,50 @@ export async function setupAuth(app: Express) {
   if (process.env.NODE_ENV === 'development') {
     console.log('Setting up simplified auth for development mode');
     
-    // Mock login/logout routes for development
+    // Create a simple session middleware for development
+    const sessionMiddleware = session({
+      secret: 'dev-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: false, // Allow non-HTTPS in development
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+      },
+    });
+    
+    app.use(sessionMiddleware);
+    app.use(passport.initialize());
+    app.use(passport.session());
+
+    passport.serializeUser((user: any, done) => done(null, user));
+    passport.deserializeUser((obj: any, done) => done(null, obj));
+
+    // Simple development login
     app.get("/api/login", (req, res) => {
-      res.redirect("/");
+      const devUser = {
+        claims: {
+          sub: "45988630",
+          email: "reynold@primacygroup.com.au",
+          first_name: "Reynold",
+          last_name: "Chen",
+          profile_image_url: "https://via.placeholder.com/150"
+        }
+      };
+      
+      req.login(devUser, (err) => {
+        if (err) return res.status(500).json({ error: 'Login failed' });
+        res.redirect('/');
+      });
     });
-    
+
     app.get("/api/logout", (req, res) => {
-      res.redirect("/");
+      req.logout(() => {
+        res.redirect('/');
+      });
     });
     
-    return;
+    return; // Exit early for development mode
   }
 
   app.use(getSession());
