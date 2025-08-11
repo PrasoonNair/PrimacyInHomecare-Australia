@@ -1318,25 +1318,17 @@ export class DatabaseStorage implements IStorage {
       }
 
       try {
-        // Search services with filtering - handle nullable fields properly
+        // Search services with filtering - only serviceName field exists
         serviceResults = await db
           .select()
           .from(services)
           .where(
-            or(
-              ilike(services.serviceName, searchTerm),
-              ilike(services.description, searchTerm)
-            )
+            ilike(services.serviceName, searchTerm)
           )
           .limit(10);
       } catch (error) {
         console.error('Services search failed, using fallback:', error.message);
-        try {
-          serviceResults = await db.select().from(services).limit(10);
-        } catch (fallbackError) {
-          console.error('Services fallback also failed:', fallbackError);
-          serviceResults = [];
-        }
+        serviceResults = await db.select().from(services).limit(10);
       }
 
       return {
@@ -1363,7 +1355,6 @@ export class DatabaseStorage implements IStorage {
         services: serviceResults.map(s => ({
           id: s.id,
           serviceName: s.serviceName,
-          description: s.description,
           participantName: undefined,
           status: s.status,
         })),
