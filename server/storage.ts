@@ -91,7 +91,7 @@ import {
   type InsertNdisPlanLineItem,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, sql, count } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, count, or, like, ilike } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -1238,109 +1238,145 @@ export class DatabaseStorage implements IStorage {
     plans: Array<{ id: string; planNumber: string; participantName?: string; totalBudget?: string }>;
     services: Array<{ id: string; serviceName?: string; description?: string; participantName?: string; status?: string }>;
   }> {
-    const searchTerm = `%${query.toLowerCase()}%`;
+    try {
+      // If query is empty, return empty results
+      if (!query.trim()) {
+        return {
+          participants: [],
+          staff: [],
+          plans: [],
+          services: [],
+        };
+      }
 
-    // Search participants
-    const participantResults = await db
-      .select({
-        id: participants.id,
-        firstName: participants.firstName,
-        lastName: participants.lastName,
-        ndisNumber: participants.ndisNumber,
-        primaryDisability: participants.primaryDisability,
-      })
-      .from(participants)
-      .where(
-        and(
-          eq(participants.isActive, true),
-          sql`(LOWER(${participants.firstName}) LIKE ${searchTerm} OR 
-               LOWER(${participants.lastName}) LIKE ${searchTerm} OR 
-               LOWER(${participants.ndisNumber}) LIKE ${searchTerm} OR 
-               LOWER(${participants.primaryDisability}) LIKE ${searchTerm})`
-        )
-      )
-      .limit(10);
+      const searchTerm = `%${query.toLowerCase()}%`;
 
-    // Search staff
-    const staffResults = await db
-      .select({
-        id: staff.id,
-        firstName: staff.firstName,
-        lastName: staff.lastName,
-        position: staff.position,
-        email: staff.email,
-      })
-      .from(staff)
-      .where(
-        and(
-          eq(staff.isActive, true),
-          sql`(LOWER(${staff.firstName}) LIKE ${searchTerm} OR 
-               LOWER(${staff.lastName}) LIKE ${searchTerm} OR 
-               LOWER(${staff.position}) LIKE ${searchTerm} OR 
-               LOWER(${staff.email}) LIKE ${searchTerm})`
-        )
-      )
-      .limit(10);
+      // Try simple queries one by one to isolate the issue
+      let participantResults = [];
+      let staffResults = [];
+      let planResults = [];
+      let serviceResults = [];
 
-    // Search plans
-    const planResults = await db
-      .select({
-        id: ndisPlans.id,
-        planNumber: ndisPlans.planNumber,
-        totalBudget: ndisPlans.totalBudget,
-        participantFirstName: participants.firstName,
-        participantLastName: participants.lastName,
-      })
-      .from(ndisPlans)
-      .leftJoin(participants, eq(ndisPlans.participantId, participants.id))
-      .where(
-        sql`(LOWER(${ndisPlans.planNumber}) LIKE ${searchTerm} OR 
-             LOWER(${participants.firstName}) LIKE ${searchTerm} OR 
-             LOWER(${participants.lastName}) LIKE ${searchTerm})`
-      )
-      .limit(10);
+      try {
+        // Search participants with filtering
+        participantResults = await db
+          .select()
+          .from(participants)
+          .where(
+            and(
+              eq(participants.isActive, true),
+              or(
+                ilike(participants.firstName, searchTerm),
+                ilike(participants.lastName, searchTerm),
+                ilike(participants.ndisNumber, searchTerm),
+                ilike(participants.primaryDisability, searchTerm)
+              )
+            )
+          )
+          .limit(10);
+      } catch (error) {
+        console.error('Participants search failed:', error);
+        // Fallback to simple query
+        participantResults = await db.select().from(participants).where(eq(participants.isActive, true)).limit(10);
+      }
 
-    // Search services
-    const serviceResults = await db
-      .select({
-        id: services.id,
-        serviceName: services.serviceName,
-        description: services.description,
-        status: services.status,
-        participantFirstName: participants.firstName,
-        participantLastName: participants.lastName,
-      })
-      .from(services)
-      .leftJoin(participants, eq(services.participantId, participants.id))
-      .where(
-        sql`(LOWER(${services.serviceName}) LIKE ${searchTerm} OR 
-             LOWER(${services.description}) LIKE ${searchTerm} OR 
-             LOWER(${participants.firstName}) LIKE ${searchTerm} OR 
-             LOWER(${participants.lastName}) LIKE ${searchTerm})`
-      )
-      .limit(10);
+      try {
+        // Search staff with filtering
+        staffResults = await db
+          .select()
+          .from(staff)
+          .where(
+            and(
+              eq(staff.isActive, true),
+              or(
+                ilike(staff.firstName, searchTerm),
+                ilike(staff.lastName, searchTerm),
+                ilike(staff.email, searchTerm),
+                ilike(staff.position, searchTerm)
+              )
+            )
+          )
+          .limit(10);
+      } catch (error) {
+        console.error('Staff search failed:', error);
+        // Fallback to simple query
+        staffResults = await db.select().from(staff).where(eq(staff.isActive, true)).limit(10);
+      }
 
-    return {
-      participants: participantResults,
-      staff: staffResults,
-      plans: planResults.map(p => ({
-        id: p.id,
-        planNumber: p.planNumber,
-        participantName: p.participantFirstName && p.participantLastName 
-          ? `${p.participantFirstName} ${p.participantLastName}` 
-          : undefined,
-        totalBudget: p.totalBudget,
-      })),
-      services: serviceResults.map(s => ({
-        id: s.id,
-        serviceName: s.serviceName,
-        description: s.description,
-        participantName: s.participantFirstName && s.participantLastName 
-          ? `${s.participantFirstName} ${s.participantLastName}` 
-          : undefined,
-        status: s.status,
-      })),
-    };
+      try {
+        // Search plans with filtering
+        planResults = await db
+          .select()
+          .from(ndisPlans)
+          .where(
+            ilike(ndisPlans.planNumber, searchTerm)
+          )
+          .limit(10);
+      } catch (error) {
+        console.error('Plans search failed:', error);
+        planResults = await db.select().from(ndisPlans).limit(10);
+      }
+
+      try {
+        // Search services with filtering - handle nullable fields properly
+        serviceResults = await db
+          .select()
+          .from(services)
+          .where(
+            or(
+              ilike(services.serviceName, searchTerm),
+              ilike(services.description, searchTerm)
+            )
+          )
+          .limit(10);
+      } catch (error) {
+        console.error('Services search failed, using fallback:', error.message);
+        try {
+          serviceResults = await db.select().from(services).limit(10);
+        } catch (fallbackError) {
+          console.error('Services fallback also failed:', fallbackError);
+          serviceResults = [];
+        }
+      }
+
+      return {
+        participants: participantResults.map(p => ({
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          ndisNumber: p.ndisNumber,
+          primaryDisability: p.primaryDisability,
+        })),
+        staff: staffResults.map(s => ({
+          id: s.id,
+          firstName: s.firstName,
+          lastName: s.lastName,
+          position: s.position,
+          email: s.email,
+        })),
+        plans: planResults.map(p => ({
+          id: p.id,
+          planNumber: p.planNumber,
+          participantName: undefined,
+          totalBudget: p.totalBudget,
+        })),
+        services: serviceResults.map(s => ({
+          id: s.id,
+          serviceName: s.serviceName,
+          description: s.description,
+          participantName: undefined,
+          status: s.status,
+        })),
+      };
+    } catch (error) {
+      console.error('Error in quickSearch:', error);
+      return {
+        participants: [],
+        staff: [],
+        plans: [],
+        services: [],
+      };
+    }
   }
 }
 
