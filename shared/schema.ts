@@ -73,6 +73,13 @@ export const permissionTypeEnum = pgEnum("permission_type", [
   "export_data", "system_settings", "financial_access", "clinical_access", "admin_tools"
 ]);
 
+// NDIS Price Guide enums
+export const ndisBudgetTypeEnum = pgEnum("ndis_budget_type", ["core_supports", "capacity_building", "capital_supports"]);
+export const ndisGeographicAreaEnum = pgEnum("ndis_geographic_area", ["metropolitan", "regional", "remote", "very_remote"]);
+export const ndisUnitTypeEnum = pgEnum("ndis_unit_type", ["hour", "day", "week", "month", "each", "km", "session", "assessment"]);
+export const ndisSupportTypeEnum = pgEnum("ndis_support_type", ["individual", "group", "transport", "equipment", "consumable"]);
+export const ndisRegistrationGroupEnum = pgEnum("ndis_registration_group", ["standard", "specialist", "early_childhood"]);
+
 // Participants table
 export const participants = pgTable("participants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -821,6 +828,124 @@ export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
   assignedAt: true,
 });
 
+// NDIS Price Guide tables
+export const ndisSupportCategories = pgTable("ndis_support_categories", {
+  id: varchar("id").primaryKey(),
+  categoryNumber: varchar("category_number").notNull().unique(), // e.g., "01", "02", etc.
+  name: varchar("name").notNull(),
+  description: text("description"),
+  budgetType: ndisBudgetTypeEnum("budget_type").notNull(),
+  isFlexible: boolean("is_flexible").default(false), // Whether funds can move between categories
+  isActive: boolean("is_active").default(true),
+  effectiveDate: date("effective_date").notNull(),
+  endDate: date("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ndisSupportItems = pgTable("ndis_support_items", {
+  id: varchar("id").primaryKey(),
+  supportCode: varchar("support_code").notNull().unique(), // Official NDIS support item code
+  name: varchar("name").notNull(),
+  description: text("description"),
+  categoryId: varchar("category_id").references(() => ndisSupportCategories.id).notNull(),
+  unitType: ndisUnitTypeEnum("unit_type").notNull(),
+  supportType: ndisSupportTypeEnum("support_type").notNull(),
+  registrationGroup: ndisRegistrationGroupEnum("registration_group").notNull(),
+  minimumCancellationNotice: integer("minimum_cancellation_notice"), // in hours
+  isQuoteBased: boolean("is_quote_based").default(false),
+  requiresAssessment: boolean("requires_assessment").default(false),
+  isActive: boolean("is_active").default(true),
+  effectiveDate: date("effective_date").notNull(),
+  endDate: date("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ndisPricing = pgTable("ndis_pricing", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  supportItemId: varchar("support_item_id").references(() => ndisSupportItems.id).notNull(),
+  geographicArea: ndisGeographicAreaEnum("geographic_area").notNull(),
+  priceLimit: decimal("price_limit", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").default("AUD"),
+  effectiveDate: date("effective_date").notNull(),
+  endDate: date("end_date"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Plan line items - links NDIS plans to specific support items with pricing
+export const ndisPlanLineItems = pgTable("ndis_plan_line_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  planId: varchar("plan_id").references(() => ndisPlans.id).notNull(),
+  supportItemId: varchar("support_item_id").references(() => ndisSupportItems.id).notNull(),
+  allocatedUnits: integer("allocated_units").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalAllocation: decimal("total_allocation", { precision: 10, scale: 2 }).notNull(),
+  usedUnits: integer("used_units").default(0),
+  remainingUnits: integer("remaining_units").notNull(),
+  geographicArea: ndisGeographicAreaEnum("geographic_area").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Relations for NDIS Price Guide
+export const ndisSupportCategoriesRelations = relations(ndisSupportCategories, ({ many }) => ({
+  supportItems: many(ndisSupportItems),
+}));
+
+export const ndisSupportItemsRelations = relations(ndisSupportItems, ({ one, many }) => ({
+  category: one(ndisSupportCategories, {
+    fields: [ndisSupportItems.categoryId],
+    references: [ndisSupportCategories.id]
+  }),
+  pricing: many(ndisPricing),
+  planLineItems: many(ndisPlanLineItems),
+}));
+
+export const ndisPricingRelations = relations(ndisPricing, ({ one }) => ({
+  supportItem: one(ndisSupportItems, {
+    fields: [ndisPricing.supportItemId],
+    references: [ndisSupportItems.id]
+  }),
+}));
+
+export const ndisPlanLineItemsRelations = relations(ndisPlanLineItems, ({ one }) => ({
+  plan: one(ndisPlans, {
+    fields: [ndisPlanLineItems.planId],
+    references: [ndisPlans.id]
+  }),
+  supportItem: one(ndisSupportItems, {
+    fields: [ndisPlanLineItems.supportItemId],
+    references: [ndisSupportItems.id]
+  }),
+}));
+
+// Insert schemas for NDIS Price Guide
+export const insertNdisSupportCategorySchema = createInsertSchema(ndisSupportCategories).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNdisSupportItemSchema = createInsertSchema(ndisSupportItems).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNdisPricingSchema = createInsertSchema(ndisPricing).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertNdisPlanLineItemSchema = createInsertSchema(ndisPlanLineItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types for roles and permissions
 export type InsertRole = z.infer<typeof insertRoleSchema>;
 export type Role = typeof roles.$inferSelect;
@@ -830,3 +955,13 @@ export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type UserRole = typeof userRoles.$inferSelect;
+
+// Types for NDIS Price Guide
+export type InsertNdisSupportCategory = z.infer<typeof insertNdisSupportCategorySchema>;
+export type NdisSupportCategory = typeof ndisSupportCategories.$inferSelect;
+export type InsertNdisSupportItem = z.infer<typeof insertNdisSupportItemSchema>;
+export type NdisSupportItem = typeof ndisSupportItems.$inferSelect;
+export type InsertNdisPricing = z.infer<typeof insertNdisPricingSchema>;
+export type NdisPricing = typeof ndisPricing.$inferSelect;
+export type InsertNdisPlanLineItem = z.infer<typeof insertNdisPlanLineItemSchema>;
+export type NdisPlanLineItem = typeof ndisPlanLineItems.$inferSelect;

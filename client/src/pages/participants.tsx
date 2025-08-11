@@ -142,7 +142,9 @@ export default function Participants() {
       `${participant.firstName} ${participant.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       participant.ndisNumber.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filterStatus === "all" || participant.status === filterStatus;
+    const matchesStatus = filterStatus === "all" || 
+      (filterStatus === "active" && participant.isActive) ||
+      (filterStatus === "inactive" && !participant.isActive);
     
     return matchesSearch && matchesStatus;
   }) || [];
@@ -537,10 +539,9 @@ export default function Participants() {
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <Badge 
-                                    variant={participant.status === 'active' ? 'default' : 
-                                           participant.status === 'pending' ? 'secondary' : 'outline'}
+                                    variant={participant.isActive ? 'default' : 'outline'}
                                   >
-                                    {participant.status}
+                                    {participant.isActive ? 'Active' : 'Inactive'}
                                   </Badge>
                                   <div className="flex items-center gap-1">
                                     <Button 

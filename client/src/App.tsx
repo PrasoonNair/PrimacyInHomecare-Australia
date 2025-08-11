@@ -13,6 +13,7 @@ import Financials from "@/pages/financials";
 import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
 import RoleManagement from "@/pages/role-management";
+import PriceGuide from "@/pages/price-guide";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 // Department pages
@@ -40,6 +41,7 @@ function Router() {
           <Route path="/staff" component={Staff} />
           <Route path="/reports" component={Reports} />
           <Route path="/role-management" component={RoleManagement} />
+          <Route path="/price-guide" component={PriceGuide} />
           {/* Department Routes */}
           <Route path="/intake" component={Intake} />
           <Route path="/hr-recruitment" component={HRRecruitment} />

@@ -69,6 +69,19 @@ import {
   type InsertRolePermission,
   type UserRole,
   type InsertUserRole,
+  // NDIS Price Guide imports
+  ndisSupportCategories,
+  ndisSupportItems,
+  ndisPricing,
+  ndisPlanLineItems,
+  type NdisSupportCategory,
+  type InsertNdisSupportCategory,
+  type NdisSupportItem,
+  type InsertNdisSupportItem,
+  type NdisPricing,
+  type InsertNdisPricing,
+  type NdisPlanLineItem,
+  type InsertNdisPlanLineItem,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count } from "drizzle-orm";
@@ -227,6 +240,40 @@ export interface IStorage {
 
   getRolesWithPermissions(): Promise<(Role & { permissions: Permission[] })[]>;
   getUsersWithRoles(): Promise<(User & { roles: Role[] })[]>;
+
+  // NDIS Price Guide operations
+  getNdisSupportCategories(): Promise<NdisSupportCategory[]>;
+  getNdisSupportCategory(id: string): Promise<NdisSupportCategory | undefined>;
+  createNdisSupportCategory(category: InsertNdisSupportCategory): Promise<NdisSupportCategory>;
+  updateNdisSupportCategory(id: string, category: Partial<InsertNdisSupportCategory>): Promise<NdisSupportCategory>;
+  deleteNdisSupportCategory(id: string): Promise<void>;
+
+  getNdisSupportItems(): Promise<NdisSupportItem[]>;
+  getNdisSupportItem(id: string): Promise<NdisSupportItem | undefined>;
+  getNdisSupportItemsByCategory(categoryId: string): Promise<NdisSupportItem[]>;
+  searchNdisSupportItems(query: string): Promise<NdisSupportItem[]>;
+  createNdisSupportItem(item: InsertNdisSupportItem): Promise<NdisSupportItem>;
+  updateNdisSupportItem(id: string, item: Partial<InsertNdisSupportItem>): Promise<NdisSupportItem>;
+  deleteNdisSupportItem(id: string): Promise<void>;
+
+  getNdisPricing(): Promise<NdisPricing[]>;
+  getNdisPricingBySupportItem(supportItemId: string): Promise<NdisPricing[]>;
+  getNdisPricingByGeographicArea(geographicArea: string): Promise<NdisPricing[]>;
+  getPriceForSupportItem(supportItemId: string, geographicArea: string): Promise<NdisPricing | undefined>;
+  createNdisPricing(pricing: InsertNdisPricing): Promise<NdisPricing>;
+  updateNdisPricing(id: string, pricing: Partial<InsertNdisPricing>): Promise<NdisPricing>;
+  deleteNdisPricing(id: string): Promise<void>;
+
+  getNdisPlanLineItems(planId: string): Promise<NdisPlanLineItem[]>;
+  createNdisPlanLineItem(lineItem: InsertNdisPlanLineItem): Promise<NdisPlanLineItem>;
+  updateNdisPlanLineItem(id: string, lineItem: Partial<InsertNdisPlanLineItem>): Promise<NdisPlanLineItem>;
+  deleteNdisPlanLineItem(id: string): Promise<void>;
+
+  // Price lookup functionality
+  getPriceGuideData(geographicArea?: string): Promise<{
+    categories: NdisSupportCategory[];
+    items: (NdisSupportItem & { pricing: NdisPricing[] })[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -902,6 +949,185 @@ export class DatabaseStorage implements IStorage {
     );
 
     return usersWithRoles;
+  }
+
+  // NDIS Price Guide operations
+  async getNdisSupportCategories(): Promise<NdisSupportCategory[]> {
+    return await db.select().from(ndisSupportCategories)
+      .where(eq(ndisSupportCategories.isActive, true))
+      .orderBy(ndisSupportCategories.categoryNumber);
+  }
+
+  async getNdisSupportCategory(id: string): Promise<NdisSupportCategory | undefined> {
+    const [category] = await db.select().from(ndisSupportCategories).where(eq(ndisSupportCategories.id, id));
+    return category;
+  }
+
+  async createNdisSupportCategory(category: InsertNdisSupportCategory): Promise<NdisSupportCategory> {
+    const [newCategory] = await db.insert(ndisSupportCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateNdisSupportCategory(id: string, category: Partial<InsertNdisSupportCategory>): Promise<NdisSupportCategory> {
+    const [updated] = await db
+      .update(ndisSupportCategories)
+      .set({ ...category, updatedAt: new Date() })
+      .where(eq(ndisSupportCategories.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteNdisSupportCategory(id: string): Promise<void> {
+    await db.update(ndisSupportCategories).set({ isActive: false }).where(eq(ndisSupportCategories.id, id));
+  }
+
+  async getNdisSupportItems(): Promise<NdisSupportItem[]> {
+    return await db.select().from(ndisSupportItems)
+      .where(eq(ndisSupportItems.isActive, true))
+      .orderBy(ndisSupportItems.supportCode);
+  }
+
+  async getNdisSupportItem(id: string): Promise<NdisSupportItem | undefined> {
+    const [item] = await db.select().from(ndisSupportItems).where(eq(ndisSupportItems.id, id));
+    return item;
+  }
+
+  async getNdisSupportItemsByCategory(categoryId: string): Promise<NdisSupportItem[]> {
+    return await db.select().from(ndisSupportItems)
+      .where(and(eq(ndisSupportItems.categoryId, categoryId), eq(ndisSupportItems.isActive, true)))
+      .orderBy(ndisSupportItems.supportCode);
+  }
+
+  async searchNdisSupportItems(query: string): Promise<NdisSupportItem[]> {
+    return await db.select().from(ndisSupportItems)
+      .where(and(
+        eq(ndisSupportItems.isActive, true),
+        sql`(${ndisSupportItems.name} ILIKE ${`%${query}%`} OR ${ndisSupportItems.supportCode} ILIKE ${`%${query}%`} OR ${ndisSupportItems.description} ILIKE ${`%${query}%`})`
+      ))
+      .orderBy(ndisSupportItems.supportCode);
+  }
+
+  async createNdisSupportItem(item: InsertNdisSupportItem): Promise<NdisSupportItem> {
+    const [newItem] = await db.insert(ndisSupportItems).values(item).returning();
+    return newItem;
+  }
+
+  async updateNdisSupportItem(id: string, item: Partial<InsertNdisSupportItem>): Promise<NdisSupportItem> {
+    const [updated] = await db
+      .update(ndisSupportItems)
+      .set({ ...item, updatedAt: new Date() })
+      .where(eq(ndisSupportItems.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteNdisSupportItem(id: string): Promise<void> {
+    await db.update(ndisSupportItems).set({ isActive: false }).where(eq(ndisSupportItems.id, id));
+  }
+
+  async getNdisPricing(): Promise<NdisPricing[]> {
+    return await db.select().from(ndisPricing)
+      .where(eq(ndisPricing.isActive, true))
+      .orderBy(ndisPricing.effectiveDate);
+  }
+
+  async getNdisPricingBySupportItem(supportItemId: string): Promise<NdisPricing[]> {
+    return await db.select().from(ndisPricing)
+      .where(and(eq(ndisPricing.supportItemId, supportItemId), eq(ndisPricing.isActive, true)))
+      .orderBy(ndisPricing.geographicArea);
+  }
+
+  async getNdisPricingByGeographicArea(geographicArea: string): Promise<NdisPricing[]> {
+    return await db.select().from(ndisPricing)
+      .where(and(eq(ndisPricing.geographicArea, geographicArea), eq(ndisPricing.isActive, true)))
+      .orderBy(ndisPricing.effectiveDate);
+  }
+
+  async getPriceForSupportItem(supportItemId: string, geographicArea: string): Promise<NdisPricing | undefined> {
+    const [pricing] = await db.select().from(ndisPricing)
+      .where(and(
+        eq(ndisPricing.supportItemId, supportItemId),
+        eq(ndisPricing.geographicArea, geographicArea),
+        eq(ndisPricing.isActive, true),
+        lte(ndisPricing.effectiveDate, new Date()),
+        sql`(${ndisPricing.endDate} IS NULL OR ${ndisPricing.endDate} >= ${new Date()})`
+      ))
+      .orderBy(desc(ndisPricing.effectiveDate))
+      .limit(1);
+    return pricing;
+  }
+
+  async createNdisPricing(pricing: InsertNdisPricing): Promise<NdisPricing> {
+    const [newPricing] = await db.insert(ndisPricing).values(pricing).returning();
+    return newPricing;
+  }
+
+  async updateNdisPricing(id: string, pricing: Partial<InsertNdisPricing>): Promise<NdisPricing> {
+    const [updated] = await db
+      .update(ndisPricing)
+      .set({ ...pricing, updatedAt: new Date() })
+      .where(eq(ndisPricing.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteNdisPricing(id: string): Promise<void> {
+    await db.update(ndisPricing).set({ isActive: false }).where(eq(ndisPricing.id, id));
+  }
+
+  async getNdisPlanLineItems(planId: string): Promise<NdisPlanLineItem[]> {
+    return await db.select().from(ndisPlanLineItems)
+      .where(and(eq(ndisPlanLineItems.planId, planId), eq(ndisPlanLineItems.isActive, true)))
+      .orderBy(ndisPlanLineItems.createdAt);
+  }
+
+  async createNdisPlanLineItem(lineItem: InsertNdisPlanLineItem): Promise<NdisPlanLineItem> {
+    const [newLineItem] = await db.insert(ndisPlanLineItems).values(lineItem).returning();
+    return newLineItem;
+  }
+
+  async updateNdisPlanLineItem(id: string, lineItem: Partial<InsertNdisPlanLineItem>): Promise<NdisPlanLineItem> {
+    const [updated] = await db
+      .update(ndisPlanLineItems)
+      .set({ ...lineItem, updatedAt: new Date() })
+      .where(eq(ndisPlanLineItems.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteNdisPlanLineItem(id: string): Promise<void> {
+    await db.update(ndisPlanLineItems).set({ isActive: false }).where(eq(ndisPlanLineItems.id, id));
+  }
+
+  // Price lookup functionality
+  async getPriceGuideData(geographicArea?: string): Promise<{
+    categories: NdisSupportCategory[];
+    items: (NdisSupportItem & { pricing: NdisPricing[] })[];
+  }> {
+    const categories = await this.getNdisSupportCategories();
+    const items = await this.getNdisSupportItems();
+    
+    const itemsWithPricing = await Promise.all(
+      items.map(async (item) => {
+        let pricing: NdisPricing[];
+        if (geographicArea) {
+          pricing = await this.getNdisPricingBySupportItem(item.id);
+          pricing = pricing.filter(p => p.geographicArea === geographicArea);
+        } else {
+          pricing = await this.getNdisPricingBySupportItem(item.id);
+        }
+        
+        return {
+          ...item,
+          pricing
+        };
+      })
+    );
+
+    return {
+      categories,
+      items: itemsWithPricing
+    };
   }
 }
 

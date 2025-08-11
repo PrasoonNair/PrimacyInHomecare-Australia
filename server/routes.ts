@@ -25,7 +25,12 @@ import {
   insertRoleSchema,
   insertPermissionSchema,
   insertRolePermissionSchema,
-  insertUserRoleSchema
+  insertUserRoleSchema,
+  // NDIS Price Guide schemas
+  insertNdisSupportCategorySchema,
+  insertNdisSupportItemSchema,
+  insertNdisPricingSchema,
+  insertNdisPlanLineItemSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -643,6 +648,258 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error removing role from user:", error);
       res.status(500).json({ message: "Failed to remove role from user" });
+    }
+  });
+
+  // NDIS Price Guide routes
+  
+  // Support Categories routes
+  app.get("/api/ndis/support-categories", isAuthenticated, async (req, res) => {
+    try {
+      const categories = await storage.getNdisSupportCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching NDIS support categories:", error);
+      res.status(500).json({ message: "Failed to fetch support categories" });
+    }
+  });
+
+  app.get("/api/ndis/support-categories/:id", isAuthenticated, async (req, res) => {
+    try {
+      const category = await storage.getNdisSupportCategory(req.params.id);
+      if (!category) {
+        return res.status(404).json({ message: "Support category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      console.error("Error fetching NDIS support category:", error);
+      res.status(500).json({ message: "Failed to fetch support category" });
+    }
+  });
+
+  app.post("/api/ndis/support-categories", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisSupportCategorySchema.parse(req.body);
+      const category = await storage.createNdisSupportCategory(validatedData);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating NDIS support category:", error);
+      res.status(400).json({ message: "Failed to create support category" });
+    }
+  });
+
+  app.put("/api/ndis/support-categories/:id", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisSupportCategorySchema.partial().parse(req.body);
+      const category = await storage.updateNdisSupportCategory(req.params.id, validatedData);
+      res.json(category);
+    } catch (error) {
+      console.error("Error updating NDIS support category:", error);
+      res.status(400).json({ message: "Failed to update support category" });
+    }
+  });
+
+  app.delete("/api/ndis/support-categories/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteNdisSupportCategory(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting NDIS support category:", error);
+      res.status(500).json({ message: "Failed to delete support category" });
+    }
+  });
+
+  // Support Items routes
+  app.get("/api/ndis/support-items", isAuthenticated, async (req, res) => {
+    try {
+      const { categoryId, search } = req.query;
+      let items;
+      
+      if (search) {
+        items = await storage.searchNdisSupportItems(search as string);
+      } else if (categoryId) {
+        items = await storage.getNdisSupportItemsByCategory(categoryId as string);
+      } else {
+        items = await storage.getNdisSupportItems();
+      }
+      
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching NDIS support items:", error);
+      res.status(500).json({ message: "Failed to fetch support items" });
+    }
+  });
+
+  app.get("/api/ndis/support-items/:id", isAuthenticated, async (req, res) => {
+    try {
+      const item = await storage.getNdisSupportItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ message: "Support item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      console.error("Error fetching NDIS support item:", error);
+      res.status(500).json({ message: "Failed to fetch support item" });
+    }
+  });
+
+  app.post("/api/ndis/support-items", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisSupportItemSchema.parse(req.body);
+      const item = await storage.createNdisSupportItem(validatedData);
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error creating NDIS support item:", error);
+      res.status(400).json({ message: "Failed to create support item" });
+    }
+  });
+
+  app.put("/api/ndis/support-items/:id", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisSupportItemSchema.partial().parse(req.body);
+      const item = await storage.updateNdisSupportItem(req.params.id, validatedData);
+      res.json(item);
+    } catch (error) {
+      console.error("Error updating NDIS support item:", error);
+      res.status(400).json({ message: "Failed to update support item" });
+    }
+  });
+
+  app.delete("/api/ndis/support-items/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteNdisSupportItem(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting NDIS support item:", error);
+      res.status(500).json({ message: "Failed to delete support item" });
+    }
+  });
+
+  // Pricing routes
+  app.get("/api/ndis/pricing", isAuthenticated, async (req, res) => {
+    try {
+      const { supportItemId, geographicArea } = req.query;
+      let pricing;
+      
+      if (supportItemId) {
+        pricing = await storage.getNdisPricingBySupportItem(supportItemId as string);
+      } else if (geographicArea) {
+        pricing = await storage.getNdisPricingByGeographicArea(geographicArea as string);
+      } else {
+        pricing = await storage.getNdisPricing();
+      }
+      
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error fetching NDIS pricing:", error);
+      res.status(500).json({ message: "Failed to fetch pricing" });
+    }
+  });
+
+  app.post("/api/ndis/pricing", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisPricingSchema.parse(req.body);
+      const pricing = await storage.createNdisPricing(validatedData);
+      res.status(201).json(pricing);
+    } catch (error) {
+      console.error("Error creating NDIS pricing:", error);
+      res.status(400).json({ message: "Failed to create pricing" });
+    }
+  });
+
+  app.put("/api/ndis/pricing/:id", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisPricingSchema.partial().parse(req.body);
+      const pricing = await storage.updateNdisPricing(req.params.id, validatedData);
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error updating NDIS pricing:", error);
+      res.status(400).json({ message: "Failed to update pricing" });
+    }
+  });
+
+  app.delete("/api/ndis/pricing/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteNdisPricing(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting NDIS pricing:", error);
+      res.status(500).json({ message: "Failed to delete pricing" });
+    }
+  });
+
+  // Price lookup route
+  app.get("/api/ndis/price-lookup/:supportItemId/:geographicArea", isAuthenticated, async (req, res) => {
+    try {
+      const { supportItemId, geographicArea } = req.params;
+      const pricing = await storage.getPriceForSupportItem(supportItemId, geographicArea);
+      
+      if (!pricing) {
+        return res.status(404).json({ message: "Pricing not found for this support item and geographic area" });
+      }
+      
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error looking up NDIS pricing:", error);
+      res.status(500).json({ message: "Failed to lookup pricing" });
+    }
+  });
+
+  // Price Guide Data route (for frontend dropdown population)
+  app.get("/api/ndis/price-guide", isAuthenticated, async (req, res) => {
+    try {
+      const { geographicArea } = req.query;
+      const priceGuideData = await storage.getPriceGuideData(geographicArea as string);
+      res.json(priceGuideData);
+    } catch (error) {
+      console.error("Error fetching NDIS price guide data:", error);
+      res.status(500).json({ message: "Failed to fetch price guide data" });
+    }
+  });
+
+  // Plan Line Items routes
+  app.get("/api/ndis/plans/:planId/line-items", isAuthenticated, async (req, res) => {
+    try {
+      const lineItems = await storage.getNdisPlanLineItems(req.params.planId);
+      res.json(lineItems);
+    } catch (error) {
+      console.error("Error fetching NDIS plan line items:", error);
+      res.status(500).json({ message: "Failed to fetch plan line items" });
+    }
+  });
+
+  app.post("/api/ndis/plans/:planId/line-items", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisPlanLineItemSchema.parse({
+        ...req.body,
+        planId: req.params.planId
+      });
+      const lineItem = await storage.createNdisPlanLineItem(validatedData);
+      res.status(201).json(lineItem);
+    } catch (error) {
+      console.error("Error creating NDIS plan line item:", error);
+      res.status(400).json({ message: "Failed to create plan line item" });
+    }
+  });
+
+  app.put("/api/ndis/plan-line-items/:id", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertNdisPlanLineItemSchema.partial().parse(req.body);
+      const lineItem = await storage.updateNdisPlanLineItem(req.params.id, validatedData);
+      res.json(lineItem);
+    } catch (error) {
+      console.error("Error updating NDIS plan line item:", error);
+      res.status(400).json({ message: "Failed to update plan line item" });
+    }
+  });
+
+  app.delete("/api/ndis/plan-line-items/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteNdisPlanLineItem(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting NDIS plan line item:", error);
+      res.status(500).json({ message: "Failed to delete plan line item" });
     }
   });
 
