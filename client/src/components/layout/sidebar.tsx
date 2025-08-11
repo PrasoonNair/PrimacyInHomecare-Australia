@@ -1,26 +1,45 @@
 import { Link, useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function Sidebar() {
   const [location] = useLocation();
+  const [collapsedSections, setCollapsedSections] = useState<{ [key: string]: boolean }>({});
 
-  const navigation = [
-    { name: "Dashboard", href: "/", icon: "fas fa-tachometer-alt" },
-    { name: "Participants", href: "/participants", icon: "fas fa-users" },
-    { name: "NDIS Plans", href: "/plans", icon: "fas fa-file-alt" },
-    { name: "Service Bookings", href: "/services", icon: "fas fa-calendar-check" },
-    { name: "Progress Notes", href: "/progress-notes", icon: "fas fa-clipboard-list" },
-    { name: "Financials", href: "/financials", icon: "fas fa-dollar-sign" },
-    { name: "Staff Management", href: "/staff", icon: "fas fa-user-tie" },
-    { name: "Reports", href: "/reports", icon: "fas fa-chart-bar" },
+  const coreNavigation = [
+    { name: "Admin Dashboard", href: "/", icon: "fas fa-chart-pie", badge: null, description: "Business Intelligence" },
+    { name: "Participants", href: "/participants", icon: "fas fa-users", badge: "247", description: "Active participants" },
+    { name: "NDIS Plans", href: "/plans", icon: "fas fa-file-contract", badge: "42", description: "Active plans" },
+    { name: "Service Bookings", href: "/services", icon: "fas fa-calendar-check", badge: "28", description: "Today's services" },
+    { name: "Progress Notes", href: "/progress-notes", icon: "fas fa-clipboard-list", badge: null, description: "Clinical documentation" },
+    { name: "Financials", href: "/financials", icon: "fas fa-dollar-sign", badge: "New", description: "Revenue & invoicing" },
+    { name: "Staff Management", href: "/staff", icon: "fas fa-user-tie", badge: "42", description: "Staff & resources" },
+    { name: "Reports", href: "/reports", icon: "fas fa-chart-bar", badge: "12", description: "Business reports" },
   ];
 
   const departmentNavigation = [
-    { name: "Intake", href: "/intake", icon: "fas fa-user-plus" },
-    { name: "HR & Recruitment", href: "/hr-recruitment", icon: "fas fa-user-friends" },
-    { name: "Finance & Awards", href: "/finance-awards", icon: "fas fa-coins" },
-    { name: "Service Delivery", href: "/service-delivery", icon: "fas fa-truck" },
-    { name: "Compliance & Quality", href: "/compliance-quality", icon: "fas fa-shield-alt" },
+    { name: "Intake", href: "/intake", icon: "fas fa-user-plus", badge: "3", description: "Referrals & onboarding", status: "active" },
+    { name: "HR & Recruitment", href: "/hr-recruitment", icon: "fas fa-user-friends", badge: "5", description: "Staff management", status: "active" },
+    { name: "Finance & Awards", href: "/finance-awards", icon: "fas fa-coins", badge: "Alert", description: "SCHADS compliance", status: "warning" },
+    { name: "Service Delivery", href: "/service-delivery", icon: "fas fa-truck", badge: "89%", description: "Operations & allocation", status: "active" },
+    { name: "Compliance & Quality", href: "/compliance-quality", icon: "fas fa-shield-alt", badge: "96%", description: "Quality assurance", status: "excellent" },
   ];
+
+  const adminTools = [
+    { name: "System Settings", href: "/admin/settings", icon: "fas fa-cog", description: "Global configuration" },
+    { name: "User Management", href: "/admin/users", icon: "fas fa-user-shield", description: "Access control" },
+    { name: "Audit Logs", href: "/admin/audit", icon: "fas fa-history", description: "System activity" },
+    { name: "Data Export", href: "/admin/export", icon: "fas fa-download", description: "Bulk data operations" },
+    { name: "Backup & Restore", href: "/admin/backup", icon: "fas fa-database", description: "Data protection" },
+  ];
+
+  const toggleSection = (section: string) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   const isActive = (href: string) => {
     if (href === "/" && location === "/") return true;
@@ -28,52 +47,200 @@ export default function Sidebar() {
     return false;
   };
 
+  const getBadgeVariant = (status?: string) => {
+    switch (status) {
+      case 'warning': return 'destructive';
+      case 'excellent': return 'success';
+      case 'active': return 'default';
+      default: return 'secondary';
+    }
+  };
+
+  const getBadgeColor = (status?: string) => {
+    switch (status) {
+      case 'warning': return 'bg-yellow-100 text-yellow-800';
+      case 'excellent': return 'bg-green-100 text-green-800';
+      case 'active': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="w-64 bg-white shadow-lg border-r border-gray-200">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-800" data-testid="text-app-title">NDIS Manager</h1>
-        <p className="text-sm text-gray-600">Case Management System</p>
+    <div className="w-72 bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-xl border-r border-slate-700">
+      {/* Header */}
+      <div className="p-6 border-b border-slate-700 bg-gradient-to-r from-blue-600 to-indigo-600">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+            <i className="fas fa-shield-alt text-xl"></i>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white" data-testid="text-app-title">Super Admin Portal</h1>
+            <p className="text-blue-100 text-sm">Business Management System</p>
+          </div>
+        </div>
       </div>
       
-      <nav className="mt-6">
-        <div className="px-4 space-y-2">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`flex items-center px-4 py-3 rounded-l-lg transition-colors ${
-                isActive(item.href)
-                  ? "text-ndis-primary bg-blue-50 border-r-2 border-ndis-primary"
-                  : "text-gray-700 hover:bg-gray-50"
-              }`}
-              data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+      <nav className="flex-1 overflow-y-auto">
+        {/* Core Navigation */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              Core Operations
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleSection('core')}
+              className="text-slate-400 hover:text-white h-6 w-6 p-0"
             >
-              <i className={`${item.icon} mr-3 ${isActive(item.href) ? "text-ndis-primary" : ""}`}></i>
-              {item.name}
-            </Link>
-          ))}
+              <i className={`fas fa-chevron-${collapsedSections.core ? 'down' : 'up'} text-xs`}></i>
+            </Button>
+          </div>
+          {!collapsedSections.core && (
+            <div className="space-y-1">
+              {coreNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                    isActive(item.href)
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                  data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <div className="flex items-center space-x-3 flex-1">
+                    <i className={`${item.icon} text-sm`}></i>
+                    <div>
+                      <div className="font-medium text-sm">{item.name}</div>
+                      <div className="text-xs opacity-80">{item.description}</div>
+                    </div>
+                  </div>
+                  {item.badge && (
+                    <Badge variant="secondary" className="ml-2 bg-slate-600 text-slate-200 text-xs">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="mt-8 px-4">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-            Departments
-          </h3>
-          <div className="space-y-2">
-            {departmentNavigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center px-4 py-3 rounded-l-lg transition-colors ${
-                  isActive(item.href)
-                    ? "text-ndis-primary bg-blue-50 border-r-2 border-ndis-primary"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-                data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                <i className={`${item.icon} mr-3 ${isActive(item.href) ? "text-ndis-primary" : ""}`}></i>
-                {item.name}
-              </Link>
-            ))}
+        {/* Department Navigation */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              Departments
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleSection('departments')}
+              className="text-slate-400 hover:text-white h-6 w-6 p-0"
+            >
+              <i className={`fas fa-chevron-${collapsedSections.departments ? 'down' : 'up'} text-xs`}></i>
+            </Button>
+          </div>
+          {!collapsedSections.departments && (
+            <div className="space-y-1">
+              {departmentNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                    isActive(item.href)
+                      ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                  data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <div className="flex items-center space-x-3 flex-1">
+                    <div className="relative">
+                      <i className={`${item.icon} text-sm`}></i>
+                      {item.status === 'warning' && (
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      )}
+                      {item.status === 'excellent' && (
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{item.name}</div>
+                      <div className="text-xs opacity-80">{item.description}</div>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className={`ml-2 text-xs ${getBadgeColor(item.status)}`}>
+                    {item.badge}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Admin Tools */}
+        <div className="p-4 border-t border-slate-700">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              Admin Tools
+            </h3>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleSection('admin')}
+              className="text-slate-400 hover:text-white h-6 w-6 p-0"
+            >
+              <i className={`fas fa-chevron-${collapsedSections.admin ? 'down' : 'up'} text-xs`}></i>
+            </Button>
+          </div>
+          {!collapsedSections.admin && (
+            <div className="space-y-1">
+              {adminTools.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                    isActive(item.href)
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                  data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                >
+                  <div className="flex items-center space-x-3 flex-1">
+                    <i className={`${item.icon} text-sm`}></i>
+                    <div>
+                      <div className="font-medium text-sm">{item.name}</div>
+                      <div className="text-xs opacity-80">{item.description}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* System Status */}
+        <div className="p-4 border-t border-slate-700">
+          <div className="bg-slate-800 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-slate-200">System Status</h4>
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            </div>
+            <div className="space-y-1 text-xs text-slate-400">
+              <div className="flex justify-between">
+                <span>Uptime:</span>
+                <span className="text-green-400">99.9%</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Performance:</span>
+                <span className="text-green-400">Optimal</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Security:</span>
+                <span className="text-green-400">Secure</span>
+              </div>
+            </div>
           </div>
         </div>
       </nav>

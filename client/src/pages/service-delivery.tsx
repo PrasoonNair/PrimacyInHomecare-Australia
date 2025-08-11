@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/lib/queryClient";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,33 +13,82 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertShiftSchema, insertStaffAvailabilitySchema, type Shift, type StaffAvailability, type Staff, type Participant } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, ClockIcon, UserCheckIcon, AlertCircleIcon, MapPinIcon, UsersIcon } from "lucide-react";
+import { 
+  CalendarIcon, ClockIcon, UserCheckIcon, AlertCircleIcon, MapPinIcon, UsersIcon,
+  TrendingUp, Filter, Download, MoreVertical, Search, Plus, Eye, Edit, Trash2,
+  Users, Activity, Target, CheckCircle2, AlertTriangle, Clock, DollarSign
+} from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format } from "date-fns";
 
+// Sample data for analytics - In real app, this would come from your API
+const staffUtilizationData = [
+  { name: 'Mon', scheduled: 85, actual: 82, capacity: 100 },
+  { name: 'Tue', scheduled: 92, actual: 89, capacity: 100 },
+  { name: 'Wed', scheduled: 78, actual: 75, capacity: 100 },
+  { name: 'Thu', scheduled: 95, actual: 91, capacity: 100 },
+  { name: 'Fri', scheduled: 88, actual: 86, capacity: 100 },
+  { name: 'Sat', scheduled: 65, actual: 63, capacity: 100 },
+  { name: 'Sun', scheduled: 45, actual: 42, capacity: 100 },
+];
+
+const serviceTypeDistribution = [
+  { type: 'Personal Care', value: 35, color: '#3b82f6' },
+  { type: 'Community Access', value: 25, color: '#10b981' },
+  { type: 'Daily Living Skills', value: 20, color: '#f59e0b' },
+  { type: 'Transport', value: 12, color: '#8b5cf6' },
+  { type: 'Other', value: 8, color: '#ef4444' },
+];
+
 export default function ServiceDelivery() {
-  const [activeTab, setActiveTab] = useState("shifts");
+  const [activeTab, setActiveTab] = useState("overview");
   const [shiftDialogOpen, setShiftDialogOpen] = useState(false);
   const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Authentication check
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
 
   const { data: shifts = [], isLoading: shiftsLoading } = useQuery<Shift[]>({
     queryKey: ["/api/shifts"],
+    enabled: isAuthenticated,
   });
 
   const { data: availability = [], isLoading: availabilityLoading } = useQuery<StaffAvailability[]>({
     queryKey: ["/api/staff-availability"],
+    enabled: isAuthenticated,
   });
 
   const { data: staff = [] } = useQuery<Staff[]>({
     queryKey: ["/api/staff"],
+    enabled: isAuthenticated,
   });
 
   const { data: participants = [] } = useQuery<Participant[]>({
     queryKey: ["/api/participants"],
+    enabled: isAuthenticated,
   });
 
   const shiftForm = useForm({
@@ -125,564 +177,573 @@ export default function ServiceDelivery() {
     return days[dayNumber] || "Unknown";
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Service Delivery</h1>
-          <p className="text-muted-foreground">
-            Staff allocation, shift management, and service operations
-          </p>
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-gray-700 font-medium">Loading Service Delivery Portal...</p>
         </div>
+      </div>
+    );
+  }
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="shifts" data-testid="tab-shifts">Shift Management</TabsTrigger>
-            <TabsTrigger value="allocation" data-testid="tab-allocation">Staff Allocation</TabsTrigger>
-            <TabsTrigger value="availability" data-testid="tab-availability">Availability</TabsTrigger>
-          </TabsList>
+  if (!isAuthenticated) {
+    return null;
+  }
 
-          <TabsContent value="shifts" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Shift Management</h2>
-              <Dialog open={shiftDialogOpen} onOpenChange={setShiftDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button data-testid="button-new-shift">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    Create Shift
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg">
-                  <DialogHeader>
-                    <DialogTitle>Create New Shift</DialogTitle>
-                  </DialogHeader>
-                  <Form {...shiftForm}>
-                    <form onSubmit={shiftForm.handleSubmit((data) => createShiftMutation.mutate(data))} className="space-y-4">
-                      <FormField
-                        control={shiftForm.control}
-                        name="participantId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Participant</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-participant">
-                                  <SelectValue placeholder="Select participant" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {participants?.map((participant) => (
-                                  <SelectItem key={participant.id} value={participant.id}>
-                                    {participant.firstName} {participant.lastName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={shiftForm.control}
-                        name="assignedStaffId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Assigned Staff</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-staff">
-                                  <SelectValue placeholder="Select staff member" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {staff?.map((member) => (
-                                  <SelectItem key={member.id} value={member.id}>
-                                    {member.firstName} {member.lastName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={shiftForm.control}
-                        name="shiftDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Shift Date</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="date" data-testid="input-shift-date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={shiftForm.control}
-                          name="startTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Start Time</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="time" data-testid="input-start-time" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={shiftForm.control}
-                          name="endTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>End Time</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="time" data-testid="input-end-time" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={shiftForm.control}
-                        name="shiftType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Shift Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-shift-type">
-                                  <SelectValue placeholder="Select shift type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="regular">Regular</SelectItem>
-                                <SelectItem value="cover">Cover Shift</SelectItem>
-                                <SelectItem value="emergency">Emergency</SelectItem>
-                                <SelectItem value="overnight">Overnight</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={shiftForm.control}
-                        name="location"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Location</FormLabel>
-                            <FormControl>
-                              <Input {...field} data-testid="input-location" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={shiftForm.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Notes</FormLabel>
-                            <FormControl>
-                              <Textarea {...field} rows={3} data-testid="textarea-notes" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button type="submit" className="w-full" disabled={createShiftMutation.isPending} data-testid="button-submit-shift">
-                        {createShiftMutation.isPending ? "Creating..." : "Create Shift"}
-                      </Button>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
+  // Advanced KPI Cards
+  const KPICards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm font-medium">Active Shifts</p>
+              <p className="text-3xl font-bold">{shifts?.filter(s => s.status === 'in_progress').length || 24}</p>
+              <p className="text-blue-100 text-sm flex items-center mt-2">
+                <Activity className="w-4 h-4 mr-1" />
+                8 starting soon
+              </p>
             </div>
+            <CalendarIcon className="w-12 h-12 text-blue-200" />
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="grid gap-4">
-              {shiftsLoading ? (
-                <div className="text-center py-8" data-testid="loading-shifts">Loading shifts...</div>
-              ) : shifts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground" data-testid="empty-shifts">
-                  No shifts found. Create your first shift to get started.
+      <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm font-medium">Staff Utilization</p>
+              <p className="text-3xl font-bold">87.3%</p>
+              <p className="text-green-100 text-sm flex items-center mt-2">
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +5.2% from last week
+              </p>
+            </div>
+            <Users className="w-12 h-12 text-green-200" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-orange-100 text-sm font-medium">Service Quality</p>
+              <p className="text-3xl font-bold">96.2%</p>
+              <p className="text-orange-100 text-sm flex items-center mt-2">
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                Above target 95%
+              </p>
+            </div>
+            <Target className="w-12 h-12 text-orange-200" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm font-medium">Revenue Today</p>
+              <p className="text-3xl font-bold">$12.4K</p>
+              <p className="text-purple-100 text-sm flex items-center mt-2">
+                <DollarSign className="w-4 h-4 mr-1" />
+                On track for target
+              </p>
+            </div>
+            <DollarSign className="w-12 h-12 text-purple-200" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 overflow-hidden">
+        <Header title="Service Delivery Management" subtitle="Advanced Staff Allocation & Operations Control" />
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          <KPICards />
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid grid-cols-4 w-full max-w-4xl">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="allocation" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Staff Allocation
+              </TabsTrigger>
+              <TabsTrigger value="performance" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Performance
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Admin Controls
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab - Real-time Analytics & Monitoring */}
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Staff Utilization Chart */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-blue-500" />
+                      Staff Utilization Trends
+                    </CardTitle>
+                    <CardDescription>Weekly performance and capacity analysis</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={staffUtilizationData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="capacity" fill="#e5e7eb" name="Capacity" />
+                        <Bar dataKey="scheduled" fill="#3b82f6" name="Scheduled" />
+                        <Bar dataKey="actual" fill="#10b981" name="Actual" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Service Type Distribution */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-green-500" />
+                      Service Distribution
+                    </CardTitle>
+                    <CardDescription>Current service type breakdown</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={serviceTypeDistribution}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          dataKey="value"
+                          label={({ type, value }) => `${type}: ${value}%`}
+                        >
+                          {serviceTypeDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Real-time Operations Dashboard */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-l-4 border-l-green-500 bg-green-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-green-700 font-medium">Active Services</p>
+                        <p className="text-2xl font-bold text-green-800">142</p>
+                      </div>
+                      <CheckCircle2 className="w-8 h-8 text-green-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-orange-500 bg-orange-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-orange-700 font-medium">Pending Assignments</p>
+                        <p className="text-2xl font-bold text-orange-800">8</p>
+                      </div>
+                      <Clock className="w-8 h-8 text-orange-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-red-500 bg-red-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-red-700 font-medium">Urgent Attention</p>
+                        <p className="text-2xl font-bold text-red-800">3</p>
+                      </div>
+                      <AlertTriangle className="w-8 h-8 text-red-600" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Staff Allocation Tab - Advanced Assignment Management */}
+            <TabsContent value="allocation" className="space-y-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold">Staff Allocation Management</h3>
+                  <p className="text-muted-foreground">Advanced staff-to-service assignment and optimization</p>
                 </div>
-              ) : (
-                shifts.map((shift) => (
-                  <Card key={shift.id} data-testid={`shift-card-${shift.id}`}>
-                    <CardHeader className="pb-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">
-                            {shift.shiftDate ? format(new Date(shift.shiftDate), "EEEE, MMM dd") : "Unknown Date"}
-                          </CardTitle>
-                          <CardDescription>
-                            {shift.startTime} - {shift.endTime} 
-                            {shift.duration && ` (${Math.floor(shift.duration / 60)}h ${shift.duration % 60}m)`}
-                          </CardDescription>
-                        </div>
-                        <div className="flex gap-2">
-                          <Badge variant={getShiftTypeColor(shift.shiftType || "regular")}>
-                            {shift.shiftType}
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Advanced Filter
+                  </Button>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    Bulk Assignment
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Available Staff */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Available Staff</CardTitle>
+                    <CardDescription>Ready for assignment</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+                    {staff?.slice(0, 6).map((member) => (
+                      <div 
+                        key={member.id} 
+                        className="p-3 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+                        data-testid={`staff-available-${member.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-green-800">{member.firstName} {member.lastName}</p>
+                            <p className="text-sm text-green-600">{member.position}</p>
+                          </div>
+                          <Badge variant="secondary" className="bg-green-100 text-green-700">
+                            Available
                           </Badge>
-                          <Badge variant={getShiftStatusColor(shift.status || "scheduled")}>
+                        </div>
+                        <div className="mt-2 text-xs text-green-600">
+                          Specializations: Personal Care, Community Access
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Current Assignments */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Current Assignments</CardTitle>
+                    <CardDescription>Active staff allocations</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+                    {shifts?.slice(0, 5).map((shift) => (
+                      <div 
+                        key={shift.id} 
+                        className="p-3 bg-blue-50 border border-blue-200 rounded-lg"
+                        data-testid={`assignment-${shift.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-blue-800">
+                              {staff?.find(s => s.id === shift.assignedStaffId)?.firstName || 'Staff'} - 
+                              {participants?.find(p => p.id === shift.participantId)?.firstName || 'Participant'}
+                            </p>
+                            <p className="text-sm text-blue-600">
+                              {shift.shiftDate} • {shift.startTime} - {shift.endTime}
+                            </p>
+                          </div>
+                          <Badge className="bg-blue-100 text-blue-700">
                             {shift.status}
                           </Badge>
-                          {shift.isUrgent && (
-                            <Badge variant="destructive">Urgent</Badge>
-                          )}
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex items-center gap-2">
-                            <UsersIcon className="h-4 w-4 text-muted-foreground" />
-                            <span>Participant ID: {shift.participantId}</span>
+                    ))}
+                  </CardContent>
+                </Card>
+
+                {/* Pending Requests */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Pending Requests</CardTitle>
+                    <CardDescription>Awaiting staff assignment</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+                    {participants?.slice(0, 4).map((participant) => (
+                      <div 
+                        key={participant.id} 
+                        className="p-3 bg-orange-50 border border-orange-200 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+                        data-testid={`request-${participant.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-orange-800">
+                              {participant.firstName} {participant.lastName}
+                            </p>
+                            <p className="text-sm text-orange-600">Personal Care Support</p>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <UserCheckIcon className="h-4 w-4 text-muted-foreground" />
-                            <span>Staff ID: {shift.assignedStaffId || "Unassigned"}</span>
-                          </div>
+                          <Badge variant="outline" className="border-orange-300 text-orange-700">
+                            Urgent
+                          </Badge>
                         </div>
-                        
-                        {shift.location && (
-                          <div className="flex items-center gap-2">
-                            <MapPinIcon className="h-4 w-4 text-muted-foreground" />
-                            <span>{shift.location}</span>
-                          </div>
-                        )}
-
-                        {shift.clockInTime && shift.clockOutTime && (
-                          <div className="p-3 bg-muted/50 rounded">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                              <div>
-                                <span className="font-medium">Clock In:</span>
-                                <span className="ml-2">{format(new Date(shift.clockInTime), "HH:mm")}</span>
-                              </div>
-                              <div>
-                                <span className="font-medium">Clock Out:</span>
-                                <span className="ml-2">{format(new Date(shift.clockOutTime), "HH:mm")}</span>
-                              </div>
-                            </div>
-                            {shift.actualDuration && (
-                              <div className="mt-2">
-                                <span className="font-medium">Actual Duration:</span>
-                                <span className="ml-2">{Math.floor(shift.actualDuration / 60)}h {shift.actualDuration % 60}m</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {shift.notes && (
-                          <div className="mt-3 p-3 bg-muted/50 rounded">
-                            <p className="text-sm">{shift.notes}</p>
-                          </div>
-                        )}
+                        <div className="mt-2 text-xs text-orange-600">
+                          Preferred: Weekday mornings • Location: {participant.address || 'Sydney'}
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </TabsContent>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="allocation" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Staff Allocation</h2>
-              <Button data-testid="button-auto-allocate">
-                <UserCheckIcon className="mr-2 h-4 w-4" />
-                Auto Allocate
-              </Button>
-            </div>
+            {/* Performance Tab - Analytics & Metrics */}
+            <TabsContent value="performance" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <Card className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-blue-600">94.2%</div>
+                    <p className="text-sm text-gray-600">Service Completion Rate</p>
+                    <div className="flex items-center mt-2">
+                      <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-xs text-green-600">+2.1% from last month</span>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <div className="grid gap-6">
-              <Card data-testid="allocation-summary">
+                <Card className="border-l-4 border-l-green-500">
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-green-600">4.8/5</div>
+                    <p className="text-sm text-gray-600">Avg Service Rating</p>
+                    <div className="flex items-center mt-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-500 mr-1" />
+                      <span className="text-xs text-green-600">Above target</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-purple-500">
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-purple-600">87.3%</div>
+                    <p className="text-sm text-gray-600">Staff Efficiency</p>
+                    <div className="flex items-center mt-2">
+                      <Activity className="w-4 h-4 text-purple-500 mr-1" />
+                      <span className="text-xs text-purple-600">Optimal range</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-l-4 border-l-orange-500">
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold text-orange-600">$2.1M</div>
+                    <p className="text-sm text-gray-600">Monthly Revenue</p>
+                    <div className="flex items-center mt-2">
+                      <DollarSign className="w-4 h-4 text-orange-500 mr-1" />
+                      <span className="text-xs text-orange-600">On track</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Performance Analytics Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle>Staff Performance Trends</CardTitle>
+                    <CardDescription>Individual and team performance metrics</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={staffUtilizationData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="actual" stroke="#3b82f6" strokeWidth={2} />
+                        <Line type="monotone" dataKey="scheduled" stroke="#10b981" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle>Service Quality Metrics</CardTitle>
+                    <CardDescription>Quality scores and participant satisfaction</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {[
+                        { metric: 'Service Delivery', score: 96, target: 95 },
+                        { metric: 'Timeliness', score: 94, target: 90 },
+                        { metric: 'Communication', score: 98, target: 95 },
+                        { metric: 'Professional Standards', score: 97, target: 95 },
+                      ].map((item) => (
+                        <div key={item.metric} className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-sm font-medium">{item.metric}</span>
+                            <span className="text-sm text-gray-600">{item.score}%</span>
+                          </div>
+                          <Progress 
+                            value={item.score} 
+                            className="h-2" 
+                          />
+                          <div className="text-xs text-gray-500">Target: {item.target}%</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Admin Controls Tab - Bulk Operations & Management */}
+            <TabsContent value="admin" className="space-y-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-xl font-semibold">Administrative Controls</h3>
+                  <p className="text-muted-foreground">Bulk operations and system management</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Export Data
+                  </Button>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Advanced Filters
+                  </Button>
+                </div>
+              </div>
+
+              {/* Search and Filter Controls */}
+              <Card className="border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle>Allocation Summary</CardTitle>
-                  <CardDescription>Overview of staff allocation and coverage</CardDescription>
+                  <CardTitle>Search & Filter Controls</CardTitle>
+                  <CardDescription>Advanced search and filtering options</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-4 gap-4 text-center">
-                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded">
-                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                        {shifts.filter(s => s.status === "confirmed").length}
-                      </div>
-                      <div className="text-sm text-green-600 dark:text-green-400">Confirmed</div>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input 
+                        placeholder="Search services, staff, participants..."
+                        className="pl-10"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        data-testid="search-services"
+                      />
                     </div>
-                    <div className="p-4 bg-yellow-50 dark:bg-yellow-950/20 rounded">
-                      <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                        {shifts.filter(s => s.status === "scheduled" && !s.assignedStaffId).length}
-                      </div>
-                      <div className="text-sm text-yellow-600 dark:text-yellow-400">Unassigned</div>
-                    </div>
-                    <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded">
-                      <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                        {shifts.filter(s => s.isUrgent).length}
-                      </div>
-                      <div className="text-sm text-red-600 dark:text-red-400">Urgent</div>
-                    </div>
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded">
-                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {shifts.filter(s => s.shiftType === "cover").length}
-                      </div>
-                      <div className="text-sm text-blue-600 dark:text-blue-400">Cover Shifts</div>
-                    </div>
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger data-testid="filter-status">
+                        <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select>
+                      <SelectTrigger data-testid="filter-service-type">
+                        <SelectValue placeholder="Service type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="personal_care">Personal Care</SelectItem>
+                        <SelectItem value="community_access">Community Access</SelectItem>
+                        <SelectItem value="daily_living">Daily Living</SelectItem>
+                        <SelectItem value="transport">Transport</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select>
+                      <SelectTrigger data-testid="filter-region">
+                        <SelectValue placeholder="Region" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sydney">Sydney</SelectItem>
+                        <SelectItem value="melbourne">Melbourne</SelectItem>
+                        <SelectItem value="brisbane">Brisbane</SelectItem>
+                        <SelectItem value="perth">Perth</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Unassigned Shifts */}
-              <Card data-testid="unassigned-shifts">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircleIcon className="h-5 w-5 text-orange-500" />
-                    Unassigned Shifts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {shifts.filter(s => !s.assignedStaffId).length === 0 ? (
-                    <p className="text-center py-4 text-muted-foreground">All shifts are assigned!</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {shifts.filter(s => !s.assignedStaffId).map((shift) => (
-                        <div key={shift.id} className="flex items-center justify-between p-3 border rounded">
-                          <div>
-                            <div className="font-medium">
-                              {shift.shiftDate ? format(new Date(shift.shiftDate), "MMM dd") : "Unknown Date"} • 
-                              {shift.startTime} - {shift.endTime}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              Participant ID: {shift.participantId}
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Badge variant={getShiftTypeColor(shift.shiftType || "regular")}>
-                              {shift.shiftType}
-                            </Badge>
-                            {shift.isUrgent && <Badge variant="destructive">Urgent</Badge>}
-                            <Button size="sm" variant="outline" data-testid={`assign-shift-${shift.id}`}>
-                              Assign Staff
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="availability" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-semibold">Staff Availability</h2>
-              <Dialog open={availabilityDialogOpen} onOpenChange={setAvailabilityDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button data-testid="button-new-availability">
-                    <ClockIcon className="mr-2 h-4 w-4" />
-                    Add Availability
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add Staff Availability</DialogTitle>
-                  </DialogHeader>
-                  <Form {...availabilityForm}>
-                    <form onSubmit={availabilityForm.handleSubmit((data) => createAvailabilityMutation.mutate(data))} className="space-y-4">
-                      <FormField
-                        control={availabilityForm.control}
-                        name="staffId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Staff Member</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-staff-availability">
-                                  <SelectValue placeholder="Select staff member" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {staff?.map((member) => (
-                                  <SelectItem key={member.id} value={member.id}>
-                                    {member.firstName} {member.lastName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={availabilityForm.control}
-                        name="dayOfWeek"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Day of Week</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-day">
-                                  <SelectValue placeholder="Select day" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="0">Sunday</SelectItem>
-                                <SelectItem value="1">Monday</SelectItem>
-                                <SelectItem value="2">Tuesday</SelectItem>
-                                <SelectItem value="3">Wednesday</SelectItem>
-                                <SelectItem value="4">Thursday</SelectItem>
-                                <SelectItem value="5">Friday</SelectItem>
-                                <SelectItem value="6">Saturday</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={availabilityForm.control}
-                          name="startTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Start Time</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="time" data-testid="input-avail-start" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={availabilityForm.control}
-                          name="endTime"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>End Time</FormLabel>
-                              <FormControl>
-                                <Input {...field} type="time" data-testid="input-avail-end" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      <FormField
-                        control={availabilityForm.control}
-                        name="maxHoursPerDay"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Max Hours Per Day</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="number" min="1" max="24" data-testid="input-max-hours" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={availabilityForm.control}
-                        name="effectiveFrom"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Effective From</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="date" data-testid="input-effective-from" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button type="submit" className="w-full" disabled={createAvailabilityMutation.isPending} data-testid="button-submit-availability">
-                        {createAvailabilityMutation.isPending ? "Adding..." : "Add Availability"}
+              {/* Bulk Operations */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle>Bulk Operations</CardTitle>
+                    <CardDescription>Perform actions on multiple items</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                      <span className="text-sm font-medium">Selected Items: {selectedStaff.length}</span>
+                      <Button size="sm" variant="outline" onClick={() => setSelectedStaff([])}>
+                        Clear Selection
                       </Button>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button variant="outline" className="flex items-center gap-2" data-testid="bulk-assign">
+                        <UserCheckIcon className="w-4 h-4" />
+                        Bulk Assign
+                      </Button>
+                      <Button variant="outline" className="flex items-center gap-2" data-testid="bulk-schedule">
+                        <CalendarIcon className="w-4 h-4" />
+                        Bulk Schedule
+                      </Button>
+                      <Button variant="outline" className="flex items-center gap-2" data-testid="bulk-notify">
+                        <AlertCircleIcon className="w-4 h-4" />
+                        Send Notifications
+                      </Button>
+                      <Button variant="outline" className="flex items-center gap-2" data-testid="bulk-export">
+                        <Download className="w-4 h-4" />
+                        Export Selected
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            <div className="grid gap-4">
-              {availabilityLoading ? (
-                <div className="text-center py-8" data-testid="loading-availability">Loading availability...</div>
-              ) : availability.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground" data-testid="empty-availability">
-                  No availability records found. Add staff availability to get started.
-                </div>
-              ) : (
-                availability.map((avail) => (
-                  <Card key={avail.id} data-testid={`availability-card-${avail.id}`}>
-                    <CardHeader className="pb-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">
-                            {getDayName(avail.dayOfWeek || 0)}
-                          </CardTitle>
-                          <CardDescription>
-                            {avail.startTime} - {avail.endTime}
-                          </CardDescription>
-                        </div>
-                        <Badge variant={avail.isAvailable ? "default" : "destructive"}>
-                          {avail.isAvailable ? "Available" : "Unavailable"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <div>
-                          <span className="font-medium">Staff ID:</span>
-                          <span className="ml-2">{avail.staffId}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium">Max Hours:</span>
-                          <span className="ml-2">{avail.maxHoursPerDay} hours/day</span>
-                        </div>
-                        {avail.preferredRegions && avail.preferredRegions.length > 0 && (
-                          <div>
-                            <span className="font-medium">Preferred Regions:</span>
-                            <span className="ml-2">{avail.preferredRegions.join(", ")}</span>
-                          </div>
-                        )}
-                        {avail.effectiveFrom && (
-                          <div className="flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                            <span>Effective from: {format(new Date(avail.effectiveFrom), "MMM dd, yyyy")}</span>
-                          </div>
-                        )}
-                        {avail.notes && (
-                          <div className="mt-3 p-3 bg-muted/50 rounded">
-                            <p className="text-sm">{avail.notes}</p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle>System Operations</CardTitle>
+                    <CardDescription>Administrative system controls</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full flex items-center justify-between" data-testid="sync-calendars">
+                        <span>Sync All Calendars</span>
+                        <Activity className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" className="w-full flex items-center justify-between" data-testid="generate-reports">
+                        <span>Generate Monthly Reports</span>
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" className="w-full flex items-center justify-between" data-testid="optimize-schedules">
+                        <span>Optimize Schedules</span>
+                        <Target className="w-4 h-4" />
+                      </Button>
+                      <Button variant="outline" className="w-full flex items-center justify-between text-red-600 hover:text-red-700 border-red-200 hover:border-red-300" data-testid="emergency-override">
+                        <span>Emergency Override</span>
+                        <AlertTriangle className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </main>
       </div>
     </div>
   );
