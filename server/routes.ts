@@ -30,7 +30,10 @@ import {
   insertNdisSupportCategorySchema,
   insertNdisSupportItemSchema,
   insertNdisPricingSchema,
-  insertNdisPlanLineItemSchema
+  insertNdisPlanLineItemSchema,
+  // NDIS Plan Reader schemas
+  insertParticipantGoalsSchema,
+  insertGoalActionsSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -900,6 +903,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting NDIS plan line item:", error);
       res.status(500).json({ message: "Failed to delete plan line item" });
+    }
+  });
+
+  // NDIS Plan Reader operations - Goal Management
+  app.post("/api/plans/:planId/goals", isAuthenticated, async (req, res) => {
+    try {
+      const goalData = insertParticipantGoalsSchema.parse({
+        ...req.body,
+        planId: req.params.planId
+      });
+      const goal = await storage.createParticipantGoal(goalData);
+      res.status(201).json(goal);
+    } catch (error) {
+      console.error("Error creating participant goal:", error);
+      res.status(500).json({ message: "Failed to create participant goal" });
+    }
+  });
+
+  app.get("/api/participants/:participantId/goals", isAuthenticated, async (req, res) => {
+    try {
+      const goals = await storage.getParticipantGoals(req.params.participantId);
+      res.json(goals);
+    } catch (error) {
+      console.error("Error fetching participant goals:", error);
+      res.status(500).json({ message: "Failed to fetch participant goals" });
+    }
+  });
+
+  app.get("/api/goals/:id", isAuthenticated, async (req, res) => {
+    try {
+      const goal = await storage.getParticipantGoal(req.params.id);
+      if (!goal) {
+        return res.status(404).json({ message: "Goal not found" });
+      }
+      res.json(goal);
+    } catch (error) {
+      console.error("Error fetching goal:", error);
+      res.status(500).json({ message: "Failed to fetch goal" });
+    }
+  });
+
+  app.put("/api/goals/:id", isAuthenticated, async (req, res) => {
+    try {
+      const goalData = insertParticipantGoalsSchema.partial().parse(req.body);
+      const goal = await storage.updateParticipantGoal(req.params.id, goalData);
+      res.json(goal);
+    } catch (error) {
+      console.error("Error updating goal:", error);
+      res.status(500).json({ message: "Failed to update goal" });
+    }
+  });
+
+  app.delete("/api/goals/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteParticipantGoal(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting goal:", error);
+      res.status(500).json({ message: "Failed to delete goal" });
+    }
+  });
+
+  // Goal Actions Management
+  app.post("/api/goals/:goalId/actions", isAuthenticated, async (req, res) => {
+    try {
+      const actionData = insertGoalActionsSchema.parse({
+        ...req.body,
+        goalId: req.params.goalId
+      });
+      const action = await storage.createGoalAction(actionData);
+      res.status(201).json(action);
+    } catch (error) {
+      console.error("Error creating goal action:", error);
+      res.status(500).json({ message: "Failed to create goal action" });
+    }
+  });
+
+  app.get("/api/goals/:goalId/actions", isAuthenticated, async (req, res) => {
+    try {
+      const actions = await storage.getGoalActions(req.params.goalId);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching goal actions:", error);
+      res.status(500).json({ message: "Failed to fetch goal actions" });
+    }
+  });
+
+  app.put("/api/actions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const actionData = insertGoalActionsSchema.partial().parse(req.body);
+      const action = await storage.updateGoalAction(req.params.id, actionData);
+      res.json(action);
+    } catch (error) {
+      console.error("Error updating goal action:", error);
+      res.status(500).json({ message: "Failed to update goal action" });
+    }
+  });
+
+  app.put("/api/actions/:id/complete", isAuthenticated, async (req, res) => {
+    try {
+      const action = await storage.completeGoalAction(req.params.id);
+      res.json(action);
+    } catch (error) {
+      console.error("Error completing goal action:", error);
+      res.status(500).json({ message: "Failed to complete goal action" });
+    }
+  });
+
+  app.delete("/api/actions/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteGoalAction(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting goal action:", error);
+      res.status(500).json({ message: "Failed to delete goal action" });
     }
   });
 

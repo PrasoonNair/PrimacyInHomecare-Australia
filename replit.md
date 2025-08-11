@@ -4,6 +4,8 @@
 
 NDIS Manager is a comprehensive case management system specifically designed for NDIS (National Disability Insurance Scheme) service providers. The application facilitates complete lifecycle management of NDIS participants, including participant profiles, plan management, service scheduling, progress tracking, financial management, and compliance reporting. Built as a full-stack web application, it provides an intuitive interface for case managers and support staff to efficiently deliver NDIS services while maintaining compliance with regulatory requirements.
 
+The system now includes an advanced NDIS Plan Reader that can automatically extract participant goals from uploaded plans and provide detailed breakdowns for staff and support workers to manage their workflow efficiently.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -44,13 +46,28 @@ PostgreSQL database with Drizzle ORM providing type-safe schema definitions:
 
 The schema supports the full NDIS service delivery lifecycle with fields specific to disability services, including communication needs, cultural background, and NDIS plan categories.
 
+Key additions include the NDIS Plan Reader tables:
+- **participantGoals**: Stores participant goals extracted from NDIS plans with progress tracking, priority levels, and staff assignments
+- **goalActions**: Detailed action items for each goal with frequency, cost estimation, due dates, and completion tracking
+- **Relations**: Proper foreign key relationships linking goals to participants, plans, and staff members for comprehensive workflow management
+
 ### File Upload and Storage
 Google Cloud Storage integration for secure file handling:
 
 - **Provider**: Google Cloud Storage for scalable file storage
 - **Upload Interface**: Uppy.js for modern, user-friendly file upload experience
-- **File Types**: Support for documents, images, and progress note attachments
+- **File Types**: Support for documents, images, progress note attachments, and NDIS plan documents
 - **Security**: Authenticated access to uploaded files with proper access controls
+- **NDIS Plan Processing**: Automated parsing and goal extraction from uploaded NDIS plan documents
+
+### NDIS Plan Reader System
+Advanced plan processing and goal management capabilities:
+
+- **Automated Goal Extraction**: Parse uploaded NDIS plans to automatically extract participant goals and objectives
+- **Goal Management**: Comprehensive goal tracking with priority levels, target dates, and progress monitoring
+- **Action Planning**: Detailed action items for each goal with frequency, cost tracking, and completion status
+- **Staff Workflow**: Assignment of goals and actions to specific staff members with progress tracking
+- **Integration**: Seamless integration with existing NDIS price guide for cost estimation and budget management
 
 ## External Dependencies
 

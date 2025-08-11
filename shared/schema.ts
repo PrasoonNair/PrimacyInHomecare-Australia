@@ -101,22 +101,26 @@ export const participants = pgTable("participants", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// NDIS Plans table
+// NDIS Plans table - Enhanced for plan document management
 export const ndisPlans = pgTable("ndis_plans", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   participantId: varchar("participant_id").references(() => participants.id).notNull(),
   planNumber: varchar("plan_number").unique().notNull(),
+  planVersion: varchar("plan_version").default("1.0"),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
+  reviewDate: date("review_date"),
   status: planStatusEnum("status").default("active"),
-  totalBudget: decimal("total_budget", { precision: 10, scale: 2 }),
-  coreSupportsbudget: decimal("core_supports_budget", { precision: 10, scale: 2 }),
-  capacityBuildingBudget: decimal("capacity_building_budget", { precision: 10, scale: 2 }),
-  capitalSupportsBudget: decimal("capital_supports_budget", { precision: 10, scale: 2 }),
+  totalBudget: decimal("total_budget", { precision: 12, scale: 2 }),
+  coreSupportsbudget: decimal("core_supports_budget", { precision: 12, scale: 2 }),
+  capacityBuildingBudget: decimal("capacity_building_budget", { precision: 12, scale: 2 }),
+  capitalSupportsBudget: decimal("capital_supports_budget", { precision: 12, scale: 2 }),
   planManagerName: varchar("plan_manager_name"),
   planManagerContact: varchar("plan_manager_contact"),
+  supportCoordinator: varchar("support_coordinator"),
   goals: text("goals"),
-  reviewDate: date("review_date"),
+  documentsPath: text("documents_path"), // Path to uploaded plan documents
+  extractedData: jsonb("extracted_data"), // Raw extracted plan data
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -418,9 +422,53 @@ export const incidents = pgTable("incidents", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+
+
+// Participant Goals from NDIS Plans
+export const participantGoals = pgTable("participant_goals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").notNull().references(() => participants.id),
+  planId: varchar("plan_id").references(() => ndisPlans.id),
+  goalType: varchar("goal_type").notNull(), // short_term, long_term, outcome
+  category: varchar("category").notNull(), // daily_living, community, employment, relationships, etc.
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  targetDate: date("target_date"),
+  priority: varchar("priority").default("medium"), // low, medium, high, critical
+  status: varchar("status").default("active"), // active, in_progress, completed, on_hold, cancelled
+  progressNotes: text("progress_notes"),
+  assignedStaffId: varchar("assigned_staff_id").references(() => staff.id),
+  supportBudgetCategory: varchar("support_budget_category"), // core, capacity_building, capital
+  estimatedHours: decimal("estimated_hours", { precision: 8, scale: 2 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Goal Actions/Tasks for Staff
+export const goalActions = pgTable("goal_actions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  goalId: varchar("goal_id").notNull().references(() => participantGoals.id),
+  actionTitle: varchar("action_title").notNull(),
+  actionDescription: text("action_description"),
+  assignedStaffId: varchar("assigned_staff_id").references(() => staff.id),
+  dueDate: date("due_date"),
+  priority: varchar("priority").default("medium"),
+  status: varchar("status").default("pending"), // pending, in_progress, completed, cancelled
+  hoursEstimated: decimal("hours_estimated", { precision: 6, scale: 2 }),
+  hoursActual: decimal("hours_actual", { precision: 6, scale: 2 }),
+  supportItemId: varchar("support_item_id").references(() => ndisSupportItems.id),
+  notes: text("notes"),
+  completedAt: timestamp("completed_at"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Define relations
 export const participantsRelations = relations(participants, ({ many }) => ({
   plans: many(ndisPlans),
+  goals: many(participantGoals),
   services: many(services),
   progressNotes: many(progressNotes),
   invoices: many(invoices),
@@ -579,6 +627,39 @@ export const auditsRelations = relations(audits, ({ one }) => ({
   }),
 }));
 
+
+
+export const participantGoalsRelations = relations(participantGoals, ({ one, many }) => ({
+  participant: one(participants, {
+    fields: [participantGoals.participantId],
+    references: [participants.id],
+  }),
+  plan: one(ndisPlans, {
+    fields: [participantGoals.planId],
+    references: [ndisPlans.id],
+  }),
+  assignedStaff: one(staff, {
+    fields: [participantGoals.assignedStaffId],
+    references: [staff.id],
+  }),
+  actions: many(goalActions),
+}));
+
+export const goalActionsRelations = relations(goalActions, ({ one }) => ({
+  goal: one(participantGoals, {
+    fields: [goalActions.goalId],
+    references: [participantGoals.id],
+  }),
+  assignedStaff: one(staff, {
+    fields: [goalActions.assignedStaffId],
+    references: [staff.id],
+  }),
+  supportItem: one(ndisSupportItems, {
+    fields: [goalActions.supportItemId],
+    references: [ndisSupportItems.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -593,6 +674,18 @@ export const insertParticipantSchema = createInsertSchema(participants).omit({
 });
 
 export const insertNdisplanSchema = createInsertSchema(ndisPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertParticipantGoalsSchema = createInsertSchema(participantGoals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGoalActionsSchema = createInsertSchema(goalActions).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -695,6 +788,10 @@ export type InsertParticipant = z.infer<typeof insertParticipantSchema>;
 export type Participant = typeof participants.$inferSelect;
 export type InsertNdisPlan = z.infer<typeof insertNdisplanSchema>;
 export type NdisPlan = typeof ndisPlans.$inferSelect;
+export type InsertParticipantGoals = z.infer<typeof insertParticipantGoalsSchema>;
+export type ParticipantGoals = typeof participantGoals.$inferSelect;
+export type InsertGoalActions = z.infer<typeof insertGoalActionsSchema>;
+export type GoalActions = typeof goalActions.$inferSelect;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type Staff = typeof staff.$inferSelect;
 export type InsertService = z.infer<typeof insertServiceSchema>;

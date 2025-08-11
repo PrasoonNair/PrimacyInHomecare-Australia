@@ -69,6 +69,13 @@ import {
   type InsertRolePermission,
   type UserRole,
   type InsertUserRole,
+  // NDIS Plan Reader imports
+  participantGoals,
+  goalActions,
+  type ParticipantGoals,
+  type InsertParticipantGoals,
+  type GoalActions,
+  type InsertGoalActions,
   // NDIS Price Guide imports
   ndisSupportCategories,
   ndisSupportItems,
@@ -240,6 +247,20 @@ export interface IStorage {
 
   getRolesWithPermissions(): Promise<(Role & { permissions: Permission[] })[]>;
   getUsersWithRoles(): Promise<(User & { roles: Role[] })[]>;
+
+  // NDIS Plan Reader operations
+  createParticipantGoal(goal: InsertParticipantGoals): Promise<ParticipantGoals>;
+  getParticipantGoals(participantId: string): Promise<ParticipantGoals[]>;
+  getParticipantGoal(id: string): Promise<ParticipantGoals | undefined>;
+  updateParticipantGoal(id: string, updates: Partial<InsertParticipantGoals>): Promise<ParticipantGoals>;
+  deleteParticipantGoal(id: string): Promise<void>;
+  
+  createGoalAction(action: InsertGoalActions): Promise<GoalActions>;
+  getGoalActions(goalId: string): Promise<GoalActions[]>;
+  getGoalAction(id: string): Promise<GoalActions | undefined>;
+  updateGoalAction(id: string, updates: Partial<InsertGoalActions>): Promise<GoalActions>;
+  completeGoalAction(id: string): Promise<GoalActions>;
+  deleteGoalAction(id: string): Promise<void>;
 
   // NDIS Price Guide operations
   getNdisSupportCategories(): Promise<NdisSupportCategory[]>;
@@ -949,6 +970,78 @@ export class DatabaseStorage implements IStorage {
     );
 
     return usersWithRoles;
+  }
+
+  // NDIS Plan Reader operations
+  async createParticipantGoal(goal: InsertParticipantGoals): Promise<ParticipantGoals> {
+    const [newGoal] = await db.insert(participantGoals).values(goal).returning();
+    return newGoal;
+  }
+
+  async getParticipantGoals(participantId: string): Promise<ParticipantGoals[]> {
+    return await db.select().from(participantGoals)
+      .where(eq(participantGoals.participantId, participantId))
+      .orderBy(desc(participantGoals.createdAt));
+  }
+
+  async getParticipantGoal(id: string): Promise<ParticipantGoals | undefined> {
+    const [goal] = await db.select().from(participantGoals).where(eq(participantGoals.id, id));
+    return goal;
+  }
+
+  async updateParticipantGoal(id: string, updates: Partial<InsertParticipantGoals>): Promise<ParticipantGoals> {
+    const [updated] = await db
+      .update(participantGoals)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(participantGoals.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteParticipantGoal(id: string): Promise<void> {
+    await db.delete(participantGoals).where(eq(participantGoals.id, id));
+  }
+
+  async createGoalAction(action: InsertGoalActions): Promise<GoalActions> {
+    const [newAction] = await db.insert(goalActions).values(action).returning();
+    return newAction;
+  }
+
+  async getGoalActions(goalId: string): Promise<GoalActions[]> {
+    return await db.select().from(goalActions)
+      .where(eq(goalActions.goalId, goalId))
+      .orderBy(desc(goalActions.createdAt));
+  }
+
+  async getGoalAction(id: string): Promise<GoalActions | undefined> {
+    const [action] = await db.select().from(goalActions).where(eq(goalActions.id, id));
+    return action;
+  }
+
+  async updateGoalAction(id: string, updates: Partial<InsertGoalActions>): Promise<GoalActions> {
+    const [updated] = await db
+      .update(goalActions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(goalActions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async completeGoalAction(id: string): Promise<GoalActions> {
+    const [completed] = await db
+      .update(goalActions)
+      .set({ 
+        status: 'completed',
+        completedDate: new Date(),
+        updatedAt: new Date() 
+      })
+      .where(eq(goalActions.id, id))
+      .returning();
+    return completed;
+  }
+
+  async deleteGoalAction(id: string): Promise<void> {
+    await db.delete(goalActions).where(eq(goalActions.id, id));
   }
 
   // NDIS Price Guide operations
