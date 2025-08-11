@@ -18,6 +18,11 @@ import {
   staffAvailability,
   audits,
   incidents,
+  // Role and permission tables
+  roles,
+  permissions,
+  rolePermissions,
+  userRoles,
   type User,
   type UpsertUser,
   type Participant,
@@ -55,6 +60,15 @@ import {
   type InsertAudit,
   type Incident,
   type InsertIncident,
+  // Role and permission types
+  type Role,
+  type InsertRole,
+  type Permission,
+  type InsertPermission,
+  type RolePermission,
+  type InsertRolePermission,
+  type UserRole,
+  type InsertUserRole,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count } from "drizzle-orm";
@@ -191,6 +205,28 @@ export interface IStorage {
   createIncident(incident: InsertIncident): Promise<Incident>;
   updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident>;
   deleteIncident(id: string): Promise<void>;
+
+  // Role management operations
+  getRoles(): Promise<Role[]>;
+  getRole(id: string): Promise<Role | undefined>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: string, role: Partial<InsertRole>): Promise<Role>;
+  deleteRole(id: string): Promise<void>;
+
+  getPermissions(): Promise<Permission[]>;
+  getPermission(id: string): Promise<Permission | undefined>;
+  createPermission(permission: InsertPermission): Promise<Permission>;
+
+  getRolePermissions(roleId: string): Promise<RolePermission[]>;
+  assignPermissionToRole(rolePermission: InsertRolePermission): Promise<RolePermission>;
+  removePermissionFromRole(roleId: string, permissionId: string): Promise<void>;
+
+  getUserRoles(userId: string): Promise<UserRole[]>;
+  assignRoleToUser(userRole: InsertUserRole): Promise<UserRole>;
+  removeRoleFromUser(userId: string, roleId: string): Promise<void>;
+
+  getRolesWithPermissions(): Promise<(Role & { permissions: Permission[] })[]>;
+  getUsersWithRoles(): Promise<(User & { roles: Role[] })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -459,7 +495,7 @@ export class DatabaseStorage implements IStorage {
     const [plansExpiringSoonResult] = await db
       .select({ count: count() })
       .from(ndisPlans)
-      .where(and(eq(ndisPlans.status, "active"), lte(ndisPlans.endDate, thirtyDaysFromNow)));
+      .where(and(eq(ndisPlans.status, "active"), lte(sql`${ndisPlans.endDate}::date`, thirtyDaysFromNow.toISOString().split('T')[0])));
 
     // For budget calculation, we'll use a simple average for demonstration
     const budgetUsedPercentage = 73; // This would need more complex calculation based on actual service costs vs plan budgets
@@ -749,6 +785,123 @@ export class DatabaseStorage implements IStorage {
 
   async deleteIncident(id: string): Promise<void> {
     await db.delete(incidents).where(eq(incidents.id, id));
+  }
+
+  // Role management operations
+  async getRoles(): Promise<Role[]> {
+    return await db.select().from(roles).where(eq(roles.isActive, true)).orderBy(roles.name);
+  }
+
+  async getRole(id: string): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles).where(eq(roles.id, id));
+    return role;
+  }
+
+  async createRole(role: InsertRole): Promise<Role> {
+    const [newRole] = await db.insert(roles).values(role).returning();
+    return newRole;
+  }
+
+  async updateRole(id: string, role: Partial<InsertRole>): Promise<Role> {
+    const [updated] = await db
+      .update(roles)
+      .set({ ...role, updatedAt: new Date() })
+      .where(eq(roles.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteRole(id: string): Promise<void> {
+    await db.update(roles).set({ isActive: false }).where(eq(roles.id, id));
+  }
+
+  // Permission operations
+  async getPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions).where(eq(permissions.isActive, true)).orderBy(permissions.name);
+  }
+
+  async getPermission(id: string): Promise<Permission | undefined> {
+    const [permission] = await db.select().from(permissions).where(eq(permissions.id, id));
+    return permission;
+  }
+
+  async createPermission(permission: InsertPermission): Promise<Permission> {
+    const [newPermission] = await db.insert(permissions).values(permission).returning();
+    return newPermission;
+  }
+
+  // Role permission operations
+  async getRolePermissions(roleId: string): Promise<RolePermission[]> {
+    return await db.select().from(rolePermissions).where(eq(rolePermissions.roleId, roleId));
+  }
+
+  async assignPermissionToRole(rolePermission: InsertRolePermission): Promise<RolePermission> {
+    const [newAssignment] = await db.insert(rolePermissions).values(rolePermission).returning();
+    return newAssignment;
+  }
+
+  async removePermissionFromRole(roleId: string, permissionId: string): Promise<void> {
+    await db.delete(rolePermissions)
+      .where(and(eq(rolePermissions.roleId, roleId), eq(rolePermissions.permissionId, permissionId)));
+  }
+
+  // User role operations
+  async getUserRoles(userId: string): Promise<UserRole[]> {
+    return await db.select().from(userRoles).where(eq(userRoles.userId, userId));
+  }
+
+  async assignRoleToUser(userRole: InsertUserRole): Promise<UserRole> {
+    const [newAssignment] = await db.insert(userRoles).values(userRole).returning();
+    return newAssignment;
+  }
+
+  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+    await db.delete(userRoles)
+      .where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
+  }
+
+  // Get roles with permissions (for super admin interface)
+  async getRolesWithPermissions(): Promise<(Role & { permissions: Permission[] })[]> {
+    const rolesData = await db.select().from(roles).where(eq(roles.isActive, true));
+    
+    const rolesWithPermissions = await Promise.all(
+      rolesData.map(async (role) => {
+        const rolePermissionData = await db
+          .select({ permission: permissions })
+          .from(rolePermissions)
+          .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+          .where(eq(rolePermissions.roleId, role.id));
+        
+        return {
+          ...role,
+          permissions: rolePermissionData.map(rp => rp.permission)
+        };
+      })
+    );
+
+    return rolesWithPermissions;
+  }
+
+  // Get users with their roles (for super admin interface)
+  async getUsersWithRoles(): Promise<(User & { roles: Role[] })[]> {
+    const usersData = await db.select().from(users).where(eq(users.isActive, true));
+    
+    const usersWithRoles = await Promise.all(
+      usersData.map(async (user) => {
+        const userRoleData = await db
+          .select({ role: roles })
+          .from(userRoles)
+          .innerJoin(roles, eq(userRoles.roleId, roles.id))
+          .where(eq(userRoles.userId, user.id));
+        
+        return {
+          ...user,
+          roles: userRoleData.map(ur => ur.role)
+        };
+      })
+    );
+
+    return usersWithRoles;
   }
 }
 

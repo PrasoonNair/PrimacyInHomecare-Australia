@@ -27,8 +27,9 @@ export default function Sidebar() {
   ];
 
   const adminTools = [
+    { name: "Role Management", href: "/role-management", icon: "fas fa-user-shield", description: "Create and manage user roles" },
     { name: "System Settings", href: "/admin/settings", icon: "fas fa-cog", description: "Global configuration" },
-    { name: "User Management", href: "/admin/users", icon: "fas fa-user-shield", description: "Access control" },
+    { name: "User Management", href: "/admin/users", icon: "fas fa-users-cog", description: "Access control" },
     { name: "Audit Logs", href: "/admin/audit", icon: "fas fa-history", description: "System activity" },
     { name: "Data Export", href: "/admin/export", icon: "fas fa-download", description: "Bulk data operations" },
     { name: "Backup & Restore", href: "/admin/backup", icon: "fas fa-database", description: "Data protection" },

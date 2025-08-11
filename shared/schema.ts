@@ -66,6 +66,13 @@ export const awardTypeEnum = pgEnum("award_type", ["schads", "healthcare", "gene
 export const referralSourceEnum = pgEnum("referral_source", ["ndis_planner", "family", "healthcare_provider", "self_referral", "other"]);
 export const qualificationStatusEnum = pgEnum("qualification_status", ["current", "expired", "pending_renewal"]);
 
+// Role and permission enums
+export const roleTypeEnum = pgEnum("role_type", ["super_admin", "admin", "manager", "supervisor", "staff", "support", "readonly"]);
+export const permissionTypeEnum = pgEnum("permission_type", [
+  "create", "read", "update", "delete", "approve", "manage_users", "view_reports", 
+  "export_data", "system_settings", "financial_access", "clinical_access", "admin_tools"
+]);
+
 // Participants table
 export const participants = pgTable("participants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -713,3 +720,113 @@ export type InsertAudit = z.infer<typeof insertAuditSchema>;
 export type Audit = typeof audits.$inferSelect;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type Incident = typeof incidents.$inferSelect;
+
+// Roles and permissions tables
+export const roles = pgTable("roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  roleType: roleTypeEnum("role_type").notNull().default("staff"),
+  departments: text("departments").array(),
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const permissions = pgTable("permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  description: text("description"),
+  permissionType: permissionTypeEnum("permission_type").notNull(),
+  resource: varchar("resource").notNull(), // participants, staff, reports, etc.
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const rolePermissions = pgTable("role_permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  roleId: varchar("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  permissionId: varchar("permission_id").notNull().references(() => permissions.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const userRoles = pgTable("user_roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  roleId: varchar("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  assignedBy: varchar("assigned_by").notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+});
+
+// Relations for roles and permissions
+export const rolesRelations = relations(roles, ({ many, one }) => ({
+  rolePermissions: many(rolePermissions),
+  userRoles: many(userRoles),
+  creator: one(users, {
+    fields: [roles.createdBy],
+    references: [users.id]
+  }),
+}));
+
+export const permissionsRelations = relations(permissions, ({ many }) => ({
+  rolePermissions: many(rolePermissions),
+}));
+
+export const rolePermissionsRelations = relations(rolePermissions, ({ one }) => ({
+  role: one(roles, {
+    fields: [rolePermissions.roleId],
+    references: [roles.id]
+  }),
+  permission: one(permissions, {
+    fields: [rolePermissions.permissionId],
+    references: [permissions.id]
+  }),
+}));
+
+export const userRolesRelations = relations(userRoles, ({ one }) => ({
+  user: one(users, {
+    fields: [userRoles.userId],
+    references: [users.id]
+  }),
+  role: one(roles, {
+    fields: [userRoles.roleId],
+    references: [roles.id]
+  }),
+  assignedByUser: one(users, {
+    fields: [userRoles.assignedBy],
+    references: [users.id]
+  }),
+}));
+
+// Insert schemas for roles and permissions
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  id: true,
+  assignedAt: true,
+});
+
+// Types for roles and permissions
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type Role = typeof roles.$inferSelect;
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type Permission = typeof permissions.$inferSelect;
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
