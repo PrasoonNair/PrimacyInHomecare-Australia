@@ -63,6 +63,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quick search endpoint
+  app.get("/api/search", isAuthenticated, async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== 'string') {
+        return res.json({ participants: [], staff: [], plans: [], services: [] });
+      }
+
+      const searchResults = await storage.quickSearch(q);
+      res.json(searchResults);
+    } catch (error) {
+      console.error("Error performing search:", error);
+      res.status(500).json({ message: "Failed to perform search" });
+    }
+  });
+
   // Participant routes
   app.get("/api/participants", isAuthenticated, async (req, res) => {
     try {

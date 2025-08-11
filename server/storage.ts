@@ -159,6 +159,14 @@ export interface IStorage {
     plansExpiringSoon: number;
   }>;
 
+  // Quick search functionality
+  quickSearch(query: string): Promise<{
+    participants: Array<{ id: string; firstName: string; lastName: string; ndisNumber: string; primaryDisability?: string }>;
+    staff: Array<{ id: string; firstName: string; lastName: string; position?: string; email?: string }>;
+    plans: Array<{ id: string; planNumber: string; participantName?: string; totalBudget?: string }>;
+    services: Array<{ id: string; serviceName?: string; description?: string; participantName?: string; status?: string }>;
+  }>;
+
   // Department operations - Intake
   getReferrals(): Promise<Referral[]>;
   getReferral(id: string): Promise<Referral | undefined>;
@@ -1220,6 +1228,118 @@ export class DatabaseStorage implements IStorage {
     return {
       categories,
       items: itemsWithPricing
+    };
+  }
+
+  // Quick search functionality
+  async quickSearch(query: string): Promise<{
+    participants: Array<{ id: string; firstName: string; lastName: string; ndisNumber: string; primaryDisability?: string }>;
+    staff: Array<{ id: string; firstName: string; lastName: string; position?: string; email?: string }>;
+    plans: Array<{ id: string; planNumber: string; participantName?: string; totalBudget?: string }>;
+    services: Array<{ id: string; serviceName?: string; description?: string; participantName?: string; status?: string }>;
+  }> {
+    const searchTerm = `%${query.toLowerCase()}%`;
+
+    // Search participants
+    const participantResults = await db
+      .select({
+        id: participants.id,
+        firstName: participants.firstName,
+        lastName: participants.lastName,
+        ndisNumber: participants.ndisNumber,
+        primaryDisability: participants.primaryDisability,
+      })
+      .from(participants)
+      .where(
+        and(
+          eq(participants.isActive, true),
+          sql`(LOWER(${participants.firstName}) LIKE ${searchTerm} OR 
+               LOWER(${participants.lastName}) LIKE ${searchTerm} OR 
+               LOWER(${participants.ndisNumber}) LIKE ${searchTerm} OR 
+               LOWER(${participants.primaryDisability}) LIKE ${searchTerm})`
+        )
+      )
+      .limit(10);
+
+    // Search staff
+    const staffResults = await db
+      .select({
+        id: staff.id,
+        firstName: staff.firstName,
+        lastName: staff.lastName,
+        position: staff.position,
+        email: staff.email,
+      })
+      .from(staff)
+      .where(
+        and(
+          eq(staff.isActive, true),
+          sql`(LOWER(${staff.firstName}) LIKE ${searchTerm} OR 
+               LOWER(${staff.lastName}) LIKE ${searchTerm} OR 
+               LOWER(${staff.position}) LIKE ${searchTerm} OR 
+               LOWER(${staff.email}) LIKE ${searchTerm})`
+        )
+      )
+      .limit(10);
+
+    // Search plans
+    const planResults = await db
+      .select({
+        id: ndisPlans.id,
+        planNumber: ndisPlans.planNumber,
+        totalBudget: ndisPlans.totalBudget,
+        participantFirstName: participants.firstName,
+        participantLastName: participants.lastName,
+      })
+      .from(ndisPlans)
+      .leftJoin(participants, eq(ndisPlans.participantId, participants.id))
+      .where(
+        sql`(LOWER(${ndisPlans.planNumber}) LIKE ${searchTerm} OR 
+             LOWER(${participants.firstName}) LIKE ${searchTerm} OR 
+             LOWER(${participants.lastName}) LIKE ${searchTerm})`
+      )
+      .limit(10);
+
+    // Search services
+    const serviceResults = await db
+      .select({
+        id: services.id,
+        serviceName: services.serviceName,
+        description: services.description,
+        status: services.status,
+        participantFirstName: participants.firstName,
+        participantLastName: participants.lastName,
+      })
+      .from(services)
+      .leftJoin(participants, eq(services.participantId, participants.id))
+      .where(
+        sql`(LOWER(${services.serviceName}) LIKE ${searchTerm} OR 
+             LOWER(${services.description}) LIKE ${searchTerm} OR 
+             LOWER(${participants.firstName}) LIKE ${searchTerm} OR 
+             LOWER(${participants.lastName}) LIKE ${searchTerm})`
+      )
+      .limit(10);
+
+    return {
+      participants: participantResults,
+      staff: staffResults,
+      plans: planResults.map(p => ({
+        id: p.id,
+        planNumber: p.planNumber,
+        participantName: p.participantFirstName && p.participantLastName 
+          ? `${p.participantFirstName} ${p.participantLastName}` 
+          : undefined,
+        totalBudget: p.totalBudget,
+      })),
+      services: serviceResults.map(s => ({
+        id: s.id,
+        serviceName: s.serviceName,
+        description: s.description,
+        participantName: s.participantFirstName && s.participantLastName 
+          ? `${s.participantFirstName} ${s.participantLastName}` 
+          : undefined,
+        status: s.status,
+      })),
     };
   }
 }
