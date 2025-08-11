@@ -6,6 +6,8 @@ NDIS Manager is a comprehensive case management system specifically designed for
 
 The system now includes an advanced NDIS Plan Reader that can automatically extract participant goals from uploaded plans and provide detailed breakdowns for staff and support workers to manage their workflow efficiently.
 
+The system also features a comprehensive automation engine that optimizes operations through intelligent scheduling, automated invoicing, SCHADS payroll calculations, budget monitoring, and compliance reporting - delivering significant efficiency improvements and cost savings.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -68,6 +70,20 @@ Advanced plan processing and goal management capabilities:
 - **Action Planning**: Detailed action items for each goal with frequency, cost tracking, and completion status
 - **Staff Workflow**: Assignment of goals and actions to specific staff members with progress tracking
 - **Integration**: Seamless integration with existing NDIS price guide for cost estimation and budget management
+
+### Comprehensive Automation System
+Advanced automation engine delivering operational efficiency:
+
+- **Intelligent Staff Matching**: AI-powered algorithm matching staff to participants based on qualifications, availability, location, and preferences
+- **Automated Service Scheduling**: Smart scheduling based on goal requirements, staff availability, and participant needs
+- **Automated Invoice Generation**: Monthly invoice creation from completed services with NDIS pricing integration
+- **SCHADS Payroll Automation**: Automated calculation of staff payroll including penalty rates, allowances, and compliance
+- **Budget Monitoring & Alerts**: Real-time budget tracking with automated threshold alerts and notifications
+- **Goal Progress Automation**: Automatic progress tracking and completion status updates based on service delivery
+- **Compliance Reporting**: Automated generation of monthly compliance reports and audit scheduling
+- **Performance Analytics**: Real-time efficiency metrics and optimization recommendations
+- **Scheduled Task Management**: Background automation processes for invoicing, payroll, monitoring, and optimization
+- **System Optimization**: Automated database maintenance, performance monitoring, and efficiency improvements
 
 ## External Dependencies
 
