@@ -179,9 +179,9 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  // Development mode bypass for localhost
+  // Development mode bypass - works for all hostnames in development
   console.log('Auth check - NODE_ENV:', process.env.NODE_ENV, 'hostname:', req.hostname);
-  if (process.env.NODE_ENV === 'development' && (req.hostname === 'localhost' || req.hostname.includes('127.0.0.1'))) {
+  if (process.env.NODE_ENV === 'development') {
     console.log('Using development bypass for authentication');
     // Mock user for development
     (req as any).user = {

@@ -8,6 +8,8 @@ The system now includes an advanced NDIS Plan Reader that can automatically extr
 
 The system also features a comprehensive automation engine that optimizes operations through intelligent scheduling, automated invoicing, SCHADS payroll calculations, budget monitoring, and compliance reporting - delivering significant efficiency improvements and cost savings.
 
+The application now includes advanced quick search functionality with global search across all participants, staff, plans, services, and system features, accessible via keyboard shortcut (Ctrl/Cmd + K) or the search button in the header.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
