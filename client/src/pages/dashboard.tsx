@@ -96,66 +96,78 @@ export default function Dashboard() {
   // KPI Cards Component
   const KPICards = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
-        <CardContent className="p-6">
+      <Card className="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 text-white border-0 shadow-xl card-hover overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+        <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total Revenue</p>
-              <p className="text-3xl font-bold">$1.2M</p>
-              <p className="text-blue-100 text-sm flex items-center mt-2">
+              <p className="text-blue-100 text-sm font-semibold">Total Revenue</p>
+              <p className="text-3xl font-bold mb-1">$1.2M</p>
+              <p className="text-blue-100 text-sm flex items-center">
                 <TrendingUp className="w-4 h-4 mr-1" />
                 +12% from last month
               </p>
             </div>
-            <DollarSign className="w-12 h-12 text-blue-200" />
+            <div className="p-3 bg-white/20 rounded-2xl">
+              <DollarSign className="w-8 h-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
-        <CardContent className="p-6">
+      <Card className="bg-gradient-to-br from-emerald-500 via-green-600 to-teal-600 text-white border-0 shadow-xl card-hover overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+        <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Active Participants</p>
-              <p className="text-3xl font-bold">{dashboardStats?.activeParticipants || 247}</p>
-              <p className="text-green-100 text-sm flex items-center mt-2">
+              <p className="text-green-100 text-sm font-semibold">Active Participants</p>
+              <p className="text-3xl font-bold mb-1">{dashboardStats?.activeParticipants || 247}</p>
+              <p className="text-green-100 text-sm flex items-center">
                 <Users className="w-4 h-4 mr-1" />
                 +18 new this month
               </p>
             </div>
-            <Users className="w-12 h-12 text-green-200" />
+            <div className="p-3 bg-white/20 rounded-2xl">
+              <Users className="w-8 h-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
-        <CardContent className="p-6">
+      <Card className="bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600 text-white border-0 shadow-xl card-hover overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+        <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Staff Efficiency</p>
-              <p className="text-3xl font-bold">94.2%</p>
-              <p className="text-purple-100 text-sm flex items-center mt-2">
+              <p className="text-purple-100 text-sm font-semibold">Staff Efficiency</p>
+              <p className="text-3xl font-bold mb-1">94.2%</p>
+              <p className="text-purple-100 text-sm flex items-center">
                 <Activity className="w-4 h-4 mr-1" />
                 Above target 90%
               </p>
             </div>
-            <Target className="w-12 h-12 text-purple-200" />
+            <div className="p-3 bg-white/20 rounded-2xl">
+              <Target className="w-8 h-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
-        <CardContent className="p-6">
+      <Card className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 text-white border-0 shadow-xl card-hover overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-12 translate-x-12"></div>
+        <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm font-medium">Compliance Score</p>
-              <p className="text-3xl font-bold">96.8%</p>
-              <p className="text-orange-100 text-sm flex items-center mt-2">
+              <p className="text-orange-100 text-sm font-semibold">Compliance Score</p>
+              <p className="text-3xl font-bold mb-1">96.8%</p>
+              <p className="text-orange-100 text-sm flex items-center">
                 <CheckCircle className="w-4 h-4 mr-1" />
                 Fully compliant
               </p>
             </div>
-            <CheckCircle className="w-12 h-12 text-orange-200" />
+            <div className="p-3 bg-white/20 rounded-2xl">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -163,11 +175,11 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
       <Sidebar />
       <div className="flex-1 overflow-hidden">
         <Header title="Super Admin Portal" subtitle="Comprehensive Business Intelligence Dashboard" />
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+        <main className="flex-1 overflow-y-auto p-6">
           <KPICards />
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
