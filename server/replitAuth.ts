@@ -68,6 +68,23 @@ async function upsertUser(
 
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
+  
+  // Skip full auth setup in development mode for localhost
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Setting up simplified auth for development mode');
+    
+    // Mock login/logout routes for development
+    app.get("/api/login", (req, res) => {
+      res.redirect("/");
+    });
+    
+    app.get("/api/logout", (req, res) => {
+      res.redirect("/");
+    });
+    
+    return;
+  }
+
   app.use(getSession());
   app.use(passport.initialize());
   app.use(passport.session());
@@ -128,9 +145,29 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // Development mode bypass for localhost
+  console.log('Auth check - NODE_ENV:', process.env.NODE_ENV, 'hostname:', req.hostname);
+  if (process.env.NODE_ENV === 'development' && (req.hostname === 'localhost' || req.hostname.includes('127.0.0.1'))) {
+    console.log('Using development bypass for authentication');
+    // Mock user for development
+    (req as any).user = {
+      claims: {
+        sub: '45988630', // Using the existing user ID from database
+        email: 'reynold@primacygroup.com.au',
+        first_name: 'Reynold',
+        last_name: 'Ephraim'
+      },
+      expires_at: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+    };
+    return next();
+  }
+
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  // In development mode, passport isn't initialized, so req.isAuthenticated won't exist
+  const isAuthenticated = typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : !!user;
+  
+  if (!isAuthenticated || (user && !user.expires_at)) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
