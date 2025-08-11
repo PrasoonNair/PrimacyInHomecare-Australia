@@ -14,6 +14,12 @@ import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
+// Department pages
+import Intake from "@/pages/intake";
+import HRRecruitment from "@/pages/hr-recruitment";
+import FinanceAwards from "@/pages/finance-awards";
+import ServiceDelivery from "@/pages/service-delivery";
+import ComplianceQuality from "@/pages/compliance-quality";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -32,6 +38,12 @@ function Router() {
           <Route path="/financials" component={Financials} />
           <Route path="/staff" component={Staff} />
           <Route path="/reports" component={Reports} />
+          {/* Department Routes */}
+          <Route path="/intake" component={Intake} />
+          <Route path="/hr-recruitment" component={HRRecruitment} />
+          <Route path="/finance-awards" component={FinanceAwards} />
+          <Route path="/service-delivery" component={ServiceDelivery} />
+          <Route path="/compliance-quality" component={ComplianceQuality} />
         </>
       )}
       <Route component={NotFound} />

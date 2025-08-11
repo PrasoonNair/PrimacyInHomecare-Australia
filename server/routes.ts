@@ -9,7 +9,18 @@ import {
   insertServiceSchema,
   insertProgressNoteSchema,
   insertInvoiceSchema,
-  insertInvoiceLineItemSchema
+  insertInvoiceLineItemSchema,
+  // Department schemas
+  insertReferralSchema,
+  insertServiceAgreementSchema,
+  insertStaffQualificationSchema,
+  insertPerformanceReviewSchema,
+  insertAwardRateSchema,
+  insertPayrollSchema,
+  insertShiftSchema,
+  insertStaffAvailabilitySchema,
+  insertAuditSchema,
+  insertIncidentSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -255,6 +266,221 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating invoice:", error);
       res.status(400).json({ message: "Failed to create invoice" });
+    }
+  });
+
+  // Department routes - Intake
+  app.get("/api/referrals", isAuthenticated, async (req, res) => {
+    try {
+      const referrals = await storage.getReferrals();
+      res.json(referrals);
+    } catch (error) {
+      console.error("Error fetching referrals:", error);
+      res.status(500).json({ message: "Failed to fetch referrals" });
+    }
+  });
+
+  app.post("/api/referrals", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertReferralSchema.parse(req.body);
+      const referral = await storage.createReferral(validatedData);
+      res.status(201).json(referral);
+    } catch (error) {
+      console.error("Error creating referral:", error);
+      res.status(400).json({ message: "Failed to create referral" });
+    }
+  });
+
+  app.get("/api/service-agreements", isAuthenticated, async (req, res) => {
+    try {
+      const agreements = await storage.getServiceAgreements();
+      res.json(agreements);
+    } catch (error) {
+      console.error("Error fetching service agreements:", error);
+      res.status(500).json({ message: "Failed to fetch service agreements" });
+    }
+  });
+
+  app.post("/api/service-agreements", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertServiceAgreementSchema.parse(req.body);
+      const agreement = await storage.createServiceAgreement(validatedData);
+      res.status(201).json(agreement);
+    } catch (error) {
+      console.error("Error creating service agreement:", error);
+      res.status(400).json({ message: "Failed to create service agreement" });
+    }
+  });
+
+  // Department routes - HR & Recruitment
+  app.get("/api/staff-qualifications", isAuthenticated, async (req, res) => {
+    try {
+      const qualifications = await storage.getStaffQualifications();
+      res.json(qualifications);
+    } catch (error) {
+      console.error("Error fetching staff qualifications:", error);
+      res.status(500).json({ message: "Failed to fetch staff qualifications" });
+    }
+  });
+
+  app.post("/api/staff-qualifications", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertStaffQualificationSchema.parse(req.body);
+      const qualification = await storage.createStaffQualification(validatedData);
+      res.status(201).json(qualification);
+    } catch (error) {
+      console.error("Error creating staff qualification:", error);
+      res.status(400).json({ message: "Failed to create staff qualification" });
+    }
+  });
+
+  app.get("/api/performance-reviews", isAuthenticated, async (req, res) => {
+    try {
+      const reviews = await storage.getPerformanceReviews();
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching performance reviews:", error);
+      res.status(500).json({ message: "Failed to fetch performance reviews" });
+    }
+  });
+
+  app.post("/api/performance-reviews", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertPerformanceReviewSchema.parse(req.body);
+      const review = await storage.createPerformanceReview(validatedData);
+      res.status(201).json(review);
+    } catch (error) {
+      console.error("Error creating performance review:", error);
+      res.status(400).json({ message: "Failed to create performance review" });
+    }
+  });
+
+  // Department routes - Finance & Awards
+  app.get("/api/award-rates", isAuthenticated, async (req, res) => {
+    try {
+      const rates = await storage.getAwardRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching award rates:", error);
+      res.status(500).json({ message: "Failed to fetch award rates" });
+    }
+  });
+
+  app.post("/api/award-rates", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertAwardRateSchema.parse(req.body);
+      const rate = await storage.createAwardRate(validatedData);
+      res.status(201).json(rate);
+    } catch (error) {
+      console.error("Error creating award rate:", error);
+      res.status(400).json({ message: "Failed to create award rate" });
+    }
+  });
+
+  app.get("/api/payroll", isAuthenticated, async (req, res) => {
+    try {
+      const payroll = await storage.getPayroll();
+      res.json(payroll);
+    } catch (error) {
+      console.error("Error fetching payroll:", error);
+      res.status(500).json({ message: "Failed to fetch payroll" });
+    }
+  });
+
+  app.post("/api/payroll", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertPayrollSchema.parse(req.body);
+      const payrollRecord = await storage.createPayroll(validatedData);
+      res.status(201).json(payrollRecord);
+    } catch (error) {
+      console.error("Error creating payroll:", error);
+      res.status(400).json({ message: "Failed to create payroll" });
+    }
+  });
+
+  // Department routes - Service Delivery
+  app.get("/api/shifts", isAuthenticated, async (req, res) => {
+    try {
+      const shifts = await storage.getShifts();
+      res.json(shifts);
+    } catch (error) {
+      console.error("Error fetching shifts:", error);
+      res.status(500).json({ message: "Failed to fetch shifts" });
+    }
+  });
+
+  app.post("/api/shifts", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertShiftSchema.parse(req.body);
+      const shift = await storage.createShift(validatedData);
+      res.status(201).json(shift);
+    } catch (error) {
+      console.error("Error creating shift:", error);
+      res.status(400).json({ message: "Failed to create shift" });
+    }
+  });
+
+  app.get("/api/staff-availability", isAuthenticated, async (req, res) => {
+    try {
+      const availability = await storage.getStaffAvailability();
+      res.json(availability);
+    } catch (error) {
+      console.error("Error fetching staff availability:", error);
+      res.status(500).json({ message: "Failed to fetch staff availability" });
+    }
+  });
+
+  app.post("/api/staff-availability", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertStaffAvailabilitySchema.parse(req.body);
+      const availability = await storage.createStaffAvailability(validatedData);
+      res.status(201).json(availability);
+    } catch (error) {
+      console.error("Error creating staff availability:", error);
+      res.status(400).json({ message: "Failed to create staff availability" });
+    }
+  });
+
+  // Department routes - Compliance & Quality
+  app.get("/api/audits", isAuthenticated, async (req, res) => {
+    try {
+      const audits = await storage.getAudits();
+      res.json(audits);
+    } catch (error) {
+      console.error("Error fetching audits:", error);
+      res.status(500).json({ message: "Failed to fetch audits" });
+    }
+  });
+
+  app.post("/api/audits", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertAuditSchema.parse(req.body);
+      const audit = await storage.createAudit(validatedData);
+      res.status(201).json(audit);
+    } catch (error) {
+      console.error("Error creating audit:", error);
+      res.status(400).json({ message: "Failed to create audit" });
+    }
+  });
+
+  app.get("/api/incidents", isAuthenticated, async (req, res) => {
+    try {
+      const incidents = await storage.getIncidents();
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error fetching incidents:", error);
+      res.status(500).json({ message: "Failed to fetch incidents" });
+    }
+  });
+
+  app.post("/api/incidents", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertIncidentSchema.parse(req.body);
+      const incident = await storage.createIncident(validatedData);
+      res.status(201).json(incident);
+    } catch (error) {
+      console.error("Error creating incident:", error);
+      res.status(400).json({ message: "Failed to create incident" });
     }
   });
 

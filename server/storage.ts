@@ -7,6 +7,17 @@ import {
   progressNotes,
   invoices,
   invoiceLineItems,
+  // Department tables
+  referrals,
+  serviceAgreements,
+  staffQualifications,
+  performanceReviews,
+  awardRates,
+  payroll,
+  shifts,
+  staffAvailability,
+  audits,
+  incidents,
   type User,
   type UpsertUser,
   type Participant,
@@ -23,6 +34,27 @@ import {
   type InsertInvoice,
   type InvoiceLineItem,
   type InsertInvoiceLineItem,
+  // Department types
+  type Referral,
+  type InsertReferral,
+  type ServiceAgreement,
+  type InsertServiceAgreement,
+  type StaffQualification,
+  type InsertStaffQualification,
+  type PerformanceReview,
+  type InsertPerformanceReview,
+  type AwardRate,
+  type InsertAwardRate,
+  type Payroll,
+  type InsertPayroll,
+  type Shift,
+  type InsertShift,
+  type StaffAvailability,
+  type InsertStaffAvailability,
+  type Audit,
+  type InsertAudit,
+  type Incident,
+  type InsertIncident,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count } from "drizzle-orm";
@@ -92,6 +124,73 @@ export interface IStorage {
     budgetUsedPercentage: number;
     plansExpiringSoon: number;
   }>;
+
+  // Department operations - Intake
+  getReferrals(): Promise<Referral[]>;
+  getReferral(id: string): Promise<Referral | undefined>;
+  createReferral(referral: InsertReferral): Promise<Referral>;
+  updateReferral(id: string, referral: Partial<InsertReferral>): Promise<Referral>;
+  deleteReferral(id: string): Promise<void>;
+
+  getServiceAgreements(): Promise<ServiceAgreement[]>;
+  getServiceAgreement(id: string): Promise<ServiceAgreement | undefined>;
+  createServiceAgreement(agreement: InsertServiceAgreement): Promise<ServiceAgreement>;
+  updateServiceAgreement(id: string, agreement: Partial<InsertServiceAgreement>): Promise<ServiceAgreement>;
+  deleteServiceAgreement(id: string): Promise<void>;
+
+  // Department operations - HR & Recruitment
+  getStaffQualifications(): Promise<StaffQualification[]>;
+  getStaffQualificationsByStaff(staffId: string): Promise<StaffQualification[]>;
+  createStaffQualification(qualification: InsertStaffQualification): Promise<StaffQualification>;
+  updateStaffQualification(id: string, qualification: Partial<InsertStaffQualification>): Promise<StaffQualification>;
+  deleteStaffQualification(id: string): Promise<void>;
+
+  getPerformanceReviews(): Promise<PerformanceReview[]>;
+  getPerformanceReviewsByStaff(staffId: string): Promise<PerformanceReview[]>;
+  createPerformanceReview(review: InsertPerformanceReview): Promise<PerformanceReview>;
+  updatePerformanceReview(id: string, review: Partial<InsertPerformanceReview>): Promise<PerformanceReview>;
+  deletePerformanceReview(id: string): Promise<void>;
+
+  // Department operations - Finance & Awards
+  getAwardRates(): Promise<AwardRate[]>;
+  getAwardRate(id: string): Promise<AwardRate | undefined>;
+  createAwardRate(rate: InsertAwardRate): Promise<AwardRate>;
+  updateAwardRate(id: string, rate: Partial<InsertAwardRate>): Promise<AwardRate>;
+  deleteAwardRate(id: string): Promise<void>;
+
+  getPayroll(): Promise<Payroll[]>;
+  getPayrollByStaff(staffId: string): Promise<Payroll[]>;
+  createPayroll(payroll: InsertPayroll): Promise<Payroll>;
+  updatePayroll(id: string, payroll: Partial<InsertPayroll>): Promise<Payroll>;
+  deletePayroll(id: string): Promise<void>;
+
+  // Department operations - Service Delivery
+  getShifts(): Promise<Shift[]>;
+  getShift(id: string): Promise<Shift | undefined>;
+  getShiftsByStaff(staffId: string): Promise<Shift[]>;
+  getShiftsByParticipant(participantId: string): Promise<Shift[]>;
+  createShift(shift: InsertShift): Promise<Shift>;
+  updateShift(id: string, shift: Partial<InsertShift>): Promise<Shift>;
+  deleteShift(id: string): Promise<void>;
+
+  getStaffAvailability(): Promise<StaffAvailability[]>;
+  getStaffAvailabilityByStaff(staffId: string): Promise<StaffAvailability[]>;
+  createStaffAvailability(availability: InsertStaffAvailability): Promise<StaffAvailability>;
+  updateStaffAvailability(id: string, availability: Partial<InsertStaffAvailability>): Promise<StaffAvailability>;
+  deleteStaffAvailability(id: string): Promise<void>;
+
+  // Department operations - Compliance & Quality
+  getAudits(): Promise<Audit[]>;
+  getAudit(id: string): Promise<Audit | undefined>;
+  createAudit(audit: InsertAudit): Promise<Audit>;
+  updateAudit(id: string, audit: Partial<InsertAudit>): Promise<Audit>;
+  deleteAudit(id: string): Promise<void>;
+
+  getIncidents(): Promise<Incident[]>;
+  getIncident(id: string): Promise<Incident | undefined>;
+  createIncident(incident: InsertIncident): Promise<Incident>;
+  updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident>;
+  deleteIncident(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -371,6 +470,285 @@ export class DatabaseStorage implements IStorage {
       budgetUsedPercentage,
       plansExpiringSoon: plansExpiringSoonResult.count,
     };
+  }
+
+  // Department operations - Intake
+  async getReferrals(): Promise<Referral[]> {
+    return await db.select().from(referrals).orderBy(desc(referrals.createdAt));
+  }
+
+  async getReferral(id: string): Promise<Referral | undefined> {
+    const [referral] = await db.select().from(referrals).where(eq(referrals.id, id));
+    return referral;
+  }
+
+  async createReferral(referral: InsertReferral): Promise<Referral> {
+    const [newReferral] = await db.insert(referrals).values(referral).returning();
+    return newReferral;
+  }
+
+  async updateReferral(id: string, referral: Partial<InsertReferral>): Promise<Referral> {
+    const [updated] = await db
+      .update(referrals)
+      .set({ ...referral, updatedAt: new Date() })
+      .where(eq(referrals.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteReferral(id: string): Promise<void> {
+    await db.delete(referrals).where(eq(referrals.id, id));
+  }
+
+  async getServiceAgreements(): Promise<ServiceAgreement[]> {
+    return await db.select().from(serviceAgreements).orderBy(desc(serviceAgreements.createdAt));
+  }
+
+  async getServiceAgreement(id: string): Promise<ServiceAgreement | undefined> {
+    const [agreement] = await db.select().from(serviceAgreements).where(eq(serviceAgreements.id, id));
+    return agreement;
+  }
+
+  async createServiceAgreement(agreement: InsertServiceAgreement): Promise<ServiceAgreement> {
+    const [newAgreement] = await db.insert(serviceAgreements).values(agreement).returning();
+    return newAgreement;
+  }
+
+  async updateServiceAgreement(id: string, agreement: Partial<InsertServiceAgreement>): Promise<ServiceAgreement> {
+    const [updated] = await db
+      .update(serviceAgreements)
+      .set({ ...agreement, updatedAt: new Date() })
+      .where(eq(serviceAgreements.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteServiceAgreement(id: string): Promise<void> {
+    await db.delete(serviceAgreements).where(eq(serviceAgreements.id, id));
+  }
+
+  // Department operations - HR & Recruitment
+  async getStaffQualifications(): Promise<StaffQualification[]> {
+    return await db.select().from(staffQualifications).orderBy(desc(staffQualifications.createdAt));
+  }
+
+  async getStaffQualificationsByStaff(staffId: string): Promise<StaffQualification[]> {
+    return await db.select().from(staffQualifications).where(eq(staffQualifications.staffId, staffId)).orderBy(desc(staffQualifications.createdAt));
+  }
+
+  async createStaffQualification(qualification: InsertStaffQualification): Promise<StaffQualification> {
+    const [newQualification] = await db.insert(staffQualifications).values(qualification).returning();
+    return newQualification;
+  }
+
+  async updateStaffQualification(id: string, qualification: Partial<InsertStaffQualification>): Promise<StaffQualification> {
+    const [updated] = await db
+      .update(staffQualifications)
+      .set({ ...qualification, updatedAt: new Date() })
+      .where(eq(staffQualifications.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteStaffQualification(id: string): Promise<void> {
+    await db.delete(staffQualifications).where(eq(staffQualifications.id, id));
+  }
+
+  async getPerformanceReviews(): Promise<PerformanceReview[]> {
+    return await db.select().from(performanceReviews).orderBy(desc(performanceReviews.createdAt));
+  }
+
+  async getPerformanceReviewsByStaff(staffId: string): Promise<PerformanceReview[]> {
+    return await db.select().from(performanceReviews).where(eq(performanceReviews.staffId, staffId)).orderBy(desc(performanceReviews.createdAt));
+  }
+
+  async createPerformanceReview(review: InsertPerformanceReview): Promise<PerformanceReview> {
+    const [newReview] = await db.insert(performanceReviews).values(review).returning();
+    return newReview;
+  }
+
+  async updatePerformanceReview(id: string, review: Partial<InsertPerformanceReview>): Promise<PerformanceReview> {
+    const [updated] = await db
+      .update(performanceReviews)
+      .set({ ...review, updatedAt: new Date() })
+      .where(eq(performanceReviews.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePerformanceReview(id: string): Promise<void> {
+    await db.delete(performanceReviews).where(eq(performanceReviews.id, id));
+  }
+
+  // Department operations - Finance & Awards
+  async getAwardRates(): Promise<AwardRate[]> {
+    return await db.select().from(awardRates).orderBy(desc(awardRates.createdAt));
+  }
+
+  async getAwardRate(id: string): Promise<AwardRate | undefined> {
+    const [rate] = await db.select().from(awardRates).where(eq(awardRates.id, id));
+    return rate;
+  }
+
+  async createAwardRate(rate: InsertAwardRate): Promise<AwardRate> {
+    const [newRate] = await db.insert(awardRates).values(rate).returning();
+    return newRate;
+  }
+
+  async updateAwardRate(id: string, rate: Partial<InsertAwardRate>): Promise<AwardRate> {
+    const [updated] = await db
+      .update(awardRates)
+      .set({ ...rate, updatedAt: new Date() })
+      .where(eq(awardRates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAwardRate(id: string): Promise<void> {
+    await db.delete(awardRates).where(eq(awardRates.id, id));
+  }
+
+  async getPayroll(): Promise<Payroll[]> {
+    return await db.select().from(payroll).orderBy(desc(payroll.createdAt));
+  }
+
+  async getPayrollByStaff(staffId: string): Promise<Payroll[]> {
+    return await db.select().from(payroll).where(eq(payroll.staffId, staffId)).orderBy(desc(payroll.createdAt));
+  }
+
+  async createPayroll(payrollData: InsertPayroll): Promise<Payroll> {
+    const [newPayroll] = await db.insert(payroll).values(payrollData).returning();
+    return newPayroll;
+  }
+
+  async updatePayroll(id: string, payrollData: Partial<InsertPayroll>): Promise<Payroll> {
+    const [updated] = await db
+      .update(payroll)
+      .set({ ...payrollData, updatedAt: new Date() })
+      .where(eq(payroll.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePayroll(id: string): Promise<void> {
+    await db.delete(payroll).where(eq(payroll.id, id));
+  }
+
+  // Department operations - Service Delivery
+  async getShifts(): Promise<Shift[]> {
+    return await db.select().from(shifts).orderBy(desc(shifts.createdAt));
+  }
+
+  async getShift(id: string): Promise<Shift | undefined> {
+    const [shift] = await db.select().from(shifts).where(eq(shifts.id, id));
+    return shift;
+  }
+
+  async getShiftsByStaff(staffId: string): Promise<Shift[]> {
+    return await db.select().from(shifts).where(eq(shifts.assignedStaffId, staffId)).orderBy(desc(shifts.createdAt));
+  }
+
+  async getShiftsByParticipant(participantId: string): Promise<Shift[]> {
+    return await db.select().from(shifts).where(eq(shifts.participantId, participantId)).orderBy(desc(shifts.createdAt));
+  }
+
+  async createShift(shift: InsertShift): Promise<Shift> {
+    const [newShift] = await db.insert(shifts).values(shift).returning();
+    return newShift;
+  }
+
+  async updateShift(id: string, shift: Partial<InsertShift>): Promise<Shift> {
+    const [updated] = await db
+      .update(shifts)
+      .set({ ...shift, updatedAt: new Date() })
+      .where(eq(shifts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteShift(id: string): Promise<void> {
+    await db.delete(shifts).where(eq(shifts.id, id));
+  }
+
+  async getStaffAvailability(): Promise<StaffAvailability[]> {
+    return await db.select().from(staffAvailability).orderBy(desc(staffAvailability.createdAt));
+  }
+
+  async getStaffAvailabilityByStaff(staffId: string): Promise<StaffAvailability[]> {
+    return await db.select().from(staffAvailability).where(eq(staffAvailability.staffId, staffId)).orderBy(desc(staffAvailability.createdAt));
+  }
+
+  async createStaffAvailability(availability: InsertStaffAvailability): Promise<StaffAvailability> {
+    const [newAvailability] = await db.insert(staffAvailability).values(availability).returning();
+    return newAvailability;
+  }
+
+  async updateStaffAvailability(id: string, availability: Partial<InsertStaffAvailability>): Promise<StaffAvailability> {
+    const [updated] = await db
+      .update(staffAvailability)
+      .set({ ...availability, updatedAt: new Date() })
+      .where(eq(staffAvailability.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteStaffAvailability(id: string): Promise<void> {
+    await db.delete(staffAvailability).where(eq(staffAvailability.id, id));
+  }
+
+  // Department operations - Compliance & Quality
+  async getAudits(): Promise<Audit[]> {
+    return await db.select().from(audits).orderBy(desc(audits.createdAt));
+  }
+
+  async getAudit(id: string): Promise<Audit | undefined> {
+    const [audit] = await db.select().from(audits).where(eq(audits.id, id));
+    return audit;
+  }
+
+  async createAudit(audit: InsertAudit): Promise<Audit> {
+    const [newAudit] = await db.insert(audits).values(audit).returning();
+    return newAudit;
+  }
+
+  async updateAudit(id: string, audit: Partial<InsertAudit>): Promise<Audit> {
+    const [updated] = await db
+      .update(audits)
+      .set({ ...audit, updatedAt: new Date() })
+      .where(eq(audits.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteAudit(id: string): Promise<void> {
+    await db.delete(audits).where(eq(audits.id, id));
+  }
+
+  async getIncidents(): Promise<Incident[]> {
+    return await db.select().from(incidents).orderBy(desc(incidents.createdAt));
+  }
+
+  async getIncident(id: string): Promise<Incident | undefined> {
+    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+    return incident;
+  }
+
+  async createIncident(incident: InsertIncident): Promise<Incident> {
+    const [newIncident] = await db.insert(incidents).values(incident).returning();
+    return newIncident;
+  }
+
+  async updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident> {
+    const [updated] = await db
+      .update(incidents)
+      .set({ ...incident, updatedAt: new Date() })
+      .where(eq(incidents.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteIncident(id: string): Promise<void> {
+    await db.delete(incidents).where(eq(incidents.id, id));
   }
 }
 

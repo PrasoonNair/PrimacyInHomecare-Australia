@@ -14,6 +14,14 @@ export default function Sidebar() {
     { name: "Reports", href: "/reports", icon: "fas fa-chart-bar" },
   ];
 
+  const departmentNavigation = [
+    { name: "Intake", href: "/intake", icon: "fas fa-user-plus" },
+    { name: "HR & Recruitment", href: "/hr-recruitment", icon: "fas fa-user-friends" },
+    { name: "Finance & Awards", href: "/finance-awards", icon: "fas fa-coins" },
+    { name: "Service Delivery", href: "/service-delivery", icon: "fas fa-truck" },
+    { name: "Compliance & Quality", href: "/compliance-quality", icon: "fas fa-shield-alt" },
+  ];
+
   const isActive = (href: string) => {
     if (href === "/" && location === "/") return true;
     if (href !== "/" && location.startsWith(href)) return true;
@@ -44,6 +52,29 @@ export default function Sidebar() {
               {item.name}
             </Link>
           ))}
+        </div>
+
+        <div className="mt-8 px-4">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            Departments
+          </h3>
+          <div className="space-y-2">
+            {departmentNavigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center px-4 py-3 rounded-l-lg transition-colors ${
+                  isActive(item.href)
+                    ? "text-ndis-primary bg-blue-50 border-r-2 border-ndis-primary"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+                data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                <i className={`${item.icon} mr-3 ${isActive(item.href) ? "text-ndis-primary" : ""}`}></i>
+                {item.name}
+              </Link>
+            ))}
+          </div>
         </div>
       </nav>
     </div>

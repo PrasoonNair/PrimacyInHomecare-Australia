@@ -55,6 +55,17 @@ export const serviceCategoryEnum = pgEnum("service_category", [
   "specialist_disability_accommodation"
 ]);
 
+// Department enums
+export const departmentEnum = pgEnum("department", ["intake", "hr_recruitment", "finance", "service_delivery", "compliance_quality"]);
+export const agreementStatusEnum = pgEnum("agreement_status", ["draft", "pending", "active", "expired", "cancelled"]);
+export const staffStatusEnum = pgEnum("staff_status", ["pending", "active", "on_leave", "terminated"]);
+export const shiftStatusEnum = pgEnum("shift_status", ["scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"]);
+export const payrollStatusEnum = pgEnum("payroll_status", ["pending", "processed", "paid", "cancelled"]);
+export const auditStatusEnum = pgEnum("audit_status", ["pending", "in_progress", "completed", "requires_action"]);
+export const awardTypeEnum = pgEnum("award_type", ["schads", "healthcare", "general", "casual"]);
+export const referralSourceEnum = pgEnum("referral_source", ["ndis_planner", "family", "healthcare_provider", "self_referral", "other"]);
+export const qualificationStatusEnum = pgEnum("qualification_status", ["current", "expired", "pending_renewal"]);
+
 // Participants table
 export const participants = pgTable("participants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -179,6 +190,220 @@ export const invoiceLineItems = pgTable("invoice_line_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// 1. INTAKE DEPARTMENT TABLES
+
+// Referrals table for intake management
+export const referrals = pgTable("referrals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id),
+  referralSource: referralSourceEnum("referral_source").notNull(),
+  referrerName: varchar("referrer_name"),
+  referrerContact: varchar("referrer_contact"),
+  referralDate: date("referral_date").notNull(),
+  status: varchar("status").default("pending"),
+  priority: varchar("priority").default("standard"), // urgent, high, standard, low
+  notes: text("notes"),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  followUpDate: date("follow_up_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Service Agreements table
+export const serviceAgreements = pgTable("service_agreements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  planId: varchar("plan_id").references(() => ndisPlans.id),
+  agreementNumber: varchar("agreement_number").unique().notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  status: agreementStatusEnum("status").default("draft"),
+  servicesIncluded: text("services_included").array(),
+  specialConditions: text("special_conditions"),
+  renewalDate: date("renewal_date"),
+  createdBy: varchar("created_by").references(() => users.id),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 2. HR & RECRUITMENT DEPARTMENT TABLES
+
+// Staff Qualifications table
+export const staffQualifications = pgTable("staff_qualifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  qualificationType: varchar("qualification_type").notNull(),
+  qualificationName: varchar("qualification_name").notNull(),
+  issuingBody: varchar("issuing_body"),
+  dateObtained: date("date_obtained"),
+  expiryDate: date("expiry_date"),
+  status: qualificationStatusEnum("status").default("current"),
+  documentUrl: varchar("document_url"),
+  verificationNotes: text("verification_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Performance Reviews table
+export const performanceReviews = pgTable("performance_reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  reviewPeriodStart: date("review_period_start").notNull(),
+  reviewPeriodEnd: date("review_period_end").notNull(),
+  reviewDate: date("review_date").notNull(),
+  reviewedBy: varchar("reviewed_by").references(() => users.id).notNull(),
+  overallRating: integer("overall_rating"), // 1-5 scale
+  performanceGoals: text("performance_goals"),
+  achievements: text("achievements"),
+  areasForImprovement: text("areas_for_improvement"),
+  nextReviewDate: date("next_review_date"),
+  status: varchar("status").default("draft"), // draft, completed, approved
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 3. FINANCE DEPARTMENT TABLES
+
+// Award Rates table (SCHADS and other awards)
+export const awardRates = pgTable("award_rates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  awardType: awardTypeEnum("award_type").notNull(),
+  level: varchar("level").notNull(), // e.g., Level 1, Level 2, etc.
+  classification: varchar("classification"), // e.g., Support Worker, Team Leader
+  baseHourlyRate: decimal("base_hourly_rate", { precision: 8, scale: 2 }).notNull(),
+  casualLoading: decimal("casual_loading", { precision: 5, scale: 2 }).default("0.25"), // 25% casual loading
+  weekendRate: decimal("weekend_rate", { precision: 5, scale: 2 }).default("1.5"), // 150%
+  publicHolidayRate: decimal("public_holiday_rate", { precision: 5, scale: 2 }).default("2.0"), // 200%
+  overnightRate: decimal("overnight_rate", { precision: 5, scale: 2 }).default("1.0"), // 100%
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Payroll table
+export const payroll = pgTable("payroll", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  payPeriodStart: date("pay_period_start").notNull(),
+  payPeriodEnd: date("pay_period_end").notNull(),
+  regularHours: decimal("regular_hours", { precision: 8, scale: 2 }).default("0"),
+  overtimeHours: decimal("overtime_hours", { precision: 8, scale: 2 }).default("0"),
+  weekendHours: decimal("weekend_hours", { precision: 8, scale: 2 }).default("0"),
+  publicHolidayHours: decimal("public_holiday_hours", { precision: 8, scale: 2 }).default("0"),
+  overnightHours: decimal("overnight_hours", { precision: 8, scale: 2 }).default("0"),
+  grossPay: decimal("gross_pay", { precision: 10, scale: 2 }),
+  superannuation: decimal("superannuation", { precision: 10, scale: 2 }),
+  tax: decimal("tax", { precision: 10, scale: 2 }),
+  netPay: decimal("net_pay", { precision: 10, scale: 2 }),
+  status: payrollStatusEnum("status").default("pending"),
+  payDate: date("pay_date"),
+  awardRateId: varchar("award_rate_id").references(() => awardRates.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 4. SERVICE DELIVERY DEPARTMENT TABLES
+
+// Shifts table for staff allocation and shift management
+export const shifts = pgTable("shifts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  serviceId: varchar("service_id").references(() => services.id),
+  assignedStaffId: varchar("assigned_staff_id").references(() => staff.id),
+  coverStaffId: varchar("cover_staff_id").references(() => staff.id), // for cover shifts
+  shiftDate: date("shift_date").notNull(),
+  startTime: varchar("start_time").notNull(), // HH:MM format
+  endTime: varchar("end_time").notNull(), // HH:MM format
+  duration: integer("duration"), // in minutes
+  shiftType: varchar("shift_type").notNull(), // regular, cover, emergency, overnight
+  location: text("location"),
+  status: shiftStatusEnum("status").default("scheduled"),
+  notes: text("notes"),
+  clockInTime: timestamp("clock_in_time"),
+  clockOutTime: timestamp("clock_out_time"),
+  actualDuration: integer("actual_duration"), // in minutes
+  travelTime: integer("travel_time"), // in minutes
+  isUrgent: boolean("is_urgent").default(false),
+  requestedBy: varchar("requested_by").references(() => users.id),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Availability table
+export const staffAvailability = pgTable("staff_availability", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0-6 (Sunday-Saturday)
+  startTime: varchar("start_time").notNull(), // HH:MM format
+  endTime: varchar("end_time").notNull(), // HH:MM format
+  isAvailable: boolean("is_available").default(true),
+  maxHoursPerDay: integer("max_hours_per_day").default(8),
+  preferredRegions: text("preferred_regions").array(),
+  notes: text("notes"),
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// 5. COMPLIANCE & QUALITY DEPARTMENT TABLES
+
+// Audits table
+export const audits = pgTable("audits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  auditType: varchar("audit_type").notNull(), // internal, external, spot_check, participant_feedback
+  auditDate: date("audit_date").notNull(),
+  auditorName: varchar("auditor_name").notNull(),
+  departmentAudited: departmentEnum("department_audited"),
+  participantId: varchar("participant_id").references(() => participants.id),
+  staffId: varchar("staff_id").references(() => staff.id),
+  serviceId: varchar("service_id").references(() => services.id),
+  complianceScore: integer("compliance_score"), // 0-100
+  findings: text("findings"),
+  recommendations: text("recommendations"),
+  actionItems: text("action_items").array(),
+  status: auditStatusEnum("status").default("pending"),
+  dueDate: date("due_date"),
+  completedDate: date("completed_date"),
+  followUpRequired: boolean("follow_up_required").default(false),
+  nextAuditDate: date("next_audit_date"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Incidents table
+export const incidents = pgTable("incidents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentNumber: varchar("incident_number").unique().notNull(),
+  incidentDate: timestamp("incident_date").notNull(),
+  incidentType: varchar("incident_type").notNull(), // injury, medication_error, behavioral, safeguarding, other
+  severity: varchar("severity").notNull(), // low, medium, high, critical
+  participantId: varchar("participant_id").references(() => participants.id),
+  staffId: varchar("staff_id").references(() => staff.id),
+  location: text("location"),
+  description: text("description").notNull(),
+  immediateActions: text("immediate_actions"),
+  investigation: text("investigation"),
+  rootCause: text("root_cause"),
+  correctiveActions: text("corrective_actions").array(),
+  preventiveActions: text("preventive_actions").array(),
+  reportedBy: varchar("reported_by").references(() => users.id).notNull(),
+  investigatedBy: varchar("investigated_by").references(() => users.id),
+  reportedToAuthorities: boolean("reported_to_authorities").default(false),
+  authorityReference: varchar("authority_reference"),
+  status: varchar("status").default("open"), // open, investigating, closed
+  closedDate: date("closed_date"),
+  followUpRequired: boolean("follow_up_required").default(false),
+  followUpDate: date("follow_up_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Define relations
 export const participantsRelations = relations(participants, ({ many }) => ({
   plans: many(ndisPlans),
@@ -260,6 +485,86 @@ export const invoiceLineItemsRelations = relations(invoiceLineItems, ({ one }) =
   }),
 }));
 
+// Additional relations for department tables
+export const referralsRelations = relations(referrals, ({ one }) => ({
+  participant: one(participants, {
+    fields: [referrals.participantId],
+    references: [participants.id],
+  }),
+  assignedUser: one(users, {
+    fields: [referrals.assignedTo],
+    references: [users.id],
+  }),
+}));
+
+export const serviceAgreementsRelations = relations(serviceAgreements, ({ one }) => ({
+  participant: one(participants, {
+    fields: [serviceAgreements.participantId],
+    references: [participants.id],
+  }),
+  plan: one(ndisPlans, {
+    fields: [serviceAgreements.planId],
+    references: [ndisPlans.id],
+  }),
+  createdByUser: one(users, {
+    fields: [serviceAgreements.createdBy],
+    references: [users.id],
+  }),
+  approvedByUser: one(users, {
+    fields: [serviceAgreements.approvedBy],
+    references: [users.id],
+  }),
+}));
+
+export const shiftsRelations = relations(shifts, ({ one }) => ({
+  participant: one(participants, {
+    fields: [shifts.participantId],
+    references: [participants.id],
+  }),
+  service: one(services, {
+    fields: [shifts.serviceId],
+    references: [services.id],
+  }),
+  assignedStaff: one(staff, {
+    fields: [shifts.assignedStaffId],
+    references: [staff.id],
+  }),
+  coverStaff: one(staff, {
+    fields: [shifts.coverStaffId],
+    references: [staff.id],
+  }),
+}));
+
+export const payrollRelations = relations(payroll, ({ one }) => ({
+  staff: one(staff, {
+    fields: [payroll.staffId],
+    references: [staff.id],
+  }),
+  awardRate: one(awardRates, {
+    fields: [payroll.awardRateId],
+    references: [awardRates.id],
+  }),
+}));
+
+export const auditsRelations = relations(audits, ({ one }) => ({
+  participant: one(participants, {
+    fields: [audits.participantId],
+    references: [participants.id],
+  }),
+  staff: one(staff, {
+    fields: [audits.staffId],
+    references: [staff.id],
+  }),
+  service: one(services, {
+    fields: [audits.serviceId],
+    references: [services.id],
+  }),
+  createdByUser: one(users, {
+    fields: [audits.createdBy],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -308,6 +613,67 @@ export const insertInvoiceLineItemSchema = createInsertSchema(invoiceLineItems).
   createdAt: true,
 });
 
+// Department-specific insert schemas
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertServiceAgreementSchema = createInsertSchema(serviceAgreements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffQualificationSchema = createInsertSchema(staffQualifications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPerformanceReviewSchema = createInsertSchema(performanceReviews).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAwardRateSchema = createInsertSchema(awardRates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPayrollSchema = createInsertSchema(payroll).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShiftSchema = createInsertSchema(shifts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffAvailabilitySchema = createInsertSchema(staffAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAuditSchema = createInsertSchema(audits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertIncidentSchema = createInsertSchema(incidents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -325,3 +691,25 @@ export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoiceLineItem = z.infer<typeof insertInvoiceLineItemSchema>;
 export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+
+// Department types
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+export type Referral = typeof referrals.$inferSelect;
+export type InsertServiceAgreement = z.infer<typeof insertServiceAgreementSchema>;
+export type ServiceAgreement = typeof serviceAgreements.$inferSelect;
+export type InsertStaffQualification = z.infer<typeof insertStaffQualificationSchema>;
+export type StaffQualification = typeof staffQualifications.$inferSelect;
+export type InsertPerformanceReview = z.infer<typeof insertPerformanceReviewSchema>;
+export type PerformanceReview = typeof performanceReviews.$inferSelect;
+export type InsertAwardRate = z.infer<typeof insertAwardRateSchema>;
+export type AwardRate = typeof awardRates.$inferSelect;
+export type InsertPayroll = z.infer<typeof insertPayrollSchema>;
+export type Payroll = typeof payroll.$inferSelect;
+export type InsertShift = z.infer<typeof insertShiftSchema>;
+export type Shift = typeof shifts.$inferSelect;
+export type InsertStaffAvailability = z.infer<typeof insertStaffAvailabilitySchema>;
+export type StaffAvailability = typeof staffAvailability.$inferSelect;
+export type InsertAudit = z.infer<typeof insertAuditSchema>;
+export type Audit = typeof audits.$inferSelect;
+export type InsertIncident = z.infer<typeof insertIncidentSchema>;
+export type Incident = typeof incidents.$inferSelect;
