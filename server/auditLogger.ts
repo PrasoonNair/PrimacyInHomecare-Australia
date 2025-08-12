@@ -285,10 +285,10 @@ export async function logAudit({
 
   await auditLogger.log({
     userId: performedBy,
-    entityType: (entityTypeMap[entityType] || entityType.toLowerCase()) as any,
-    entityId,
+    entityType: (entityTypeMap[entityType] || entityType?.toLowerCase() || 'unknown') as any,
+    entityId: entityId || 'unknown',
     action: actionMap[action] || AuditAction.PARTICIPANT_UPDATED,
     details: changes || {},
-    department,
+    department: department || 'General',
   });
 }
