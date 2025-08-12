@@ -467,6 +467,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // KPI Dashboard routes
+  app.get("/api/dashboard/kpis/:role", isAuthenticated, async (req, res) => {
+    try {
+      const { KPIService } = await import("./kpiService");
+      const kpiService = new KPIService();
+      const role = req.params.role;
+      const userId = (req as any).user?.claims?.sub;
+      
+      const dashboard = await kpiService.getDashboardSummary(role, userId);
+      res.json(dashboard);
+    } catch (error) {
+      console.error("Error fetching KPI dashboard:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch KPI dashboard" 
+      });
+    }
+  });
+
+  app.get("/api/dashboard/kpi-trends/:role/:kpiId", isAuthenticated, async (req, res) => {
+    try {
+      const { KPIService } = await import("./kpiService");
+      const kpiService = new KPIService();
+      const { role, kpiId } = req.params;
+      const days = parseInt(req.query.days as string) || 30;
+      
+      const trends = await kpiService.getKPITrends(role, kpiId, days);
+      res.json(trends);
+    } catch (error) {
+      console.error("Error fetching KPI trends:", error);
+      res.status(500).json({ 
+        message: "Failed to fetch KPI trends" 
+      });
+    }
+  });
+
   // Progress Notes routes
   app.get("/api/progress-notes", isAuthenticated, async (req, res) => {
     try {

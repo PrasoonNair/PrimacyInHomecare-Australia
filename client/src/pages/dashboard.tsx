@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { KPIDashboard } from "@/components/kpi-dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -125,7 +126,7 @@ export default function Dashboard() {
       },
       {
         title: "Active Participants", 
-        value: dashboardStats?.activeParticipants || 0,
+        value: (dashboardStats as any)?.activeParticipants || 0,
         change: "+18",
         trend: "up",
         icon: Users,
@@ -137,7 +138,7 @@ export default function Dashboard() {
       },
       {
         title: "Services This Week",
-        value: dashboardStats?.servicesThisWeek || 0,
+        value: (dashboardStats as any)?.servicesThisWeek || 0,
         change: "+24%",
         trend: "up",
         icon: Calendar,
@@ -432,19 +433,19 @@ export default function Dashboard() {
                     <CardContent className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Database</span>
-                        <Badge variant="success" className="bg-green-100 text-green-800">
+                        <Badge variant="default" className="bg-green-100 text-green-800">
                           Healthy
                         </Badge>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">API Performance</span>
-                        <Badge variant="success" className="bg-green-100 text-green-800">
+                        <Badge variant="default" className="bg-green-100 text-green-800">
                           Optimal
                         </Badge>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Security</span>
-                        <Badge variant="success" className="bg-green-100 text-green-800">
+                        <Badge variant="default" className="bg-green-100 text-green-800">
                           Secure
                         </Badge>
                       </div>
@@ -625,7 +626,7 @@ export default function Dashboard() {
                         <h4 className="font-medium text-gray-700 mb-2">Service Delivery</h4>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Weekly Services</span>
-                          <span className="text-xl font-bold">{dashboardStats?.servicesThisWeek || 156}</span>
+                          <span className="text-xl font-bold">{(dashboardStats as any)?.servicesThisWeek || 156}</span>
                         </div>
                         <div className="flex justify-between items-center mt-2">
                           <span className="text-sm text-gray-600">Completion Rate</span>
@@ -691,7 +692,7 @@ export default function Dashboard() {
                             <h4 className="font-medium">{metric.metric}</h4>
                             <div className="flex items-center space-x-2">
                               <Badge 
-                                variant={metric.status === 'Compliant' ? 'success' : 'warning'}
+                                variant={metric.status === 'Compliant' ? 'default' : 'secondary'}
                                 className={metric.status === 'Compliant' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
                               >
                                 {metric.status}

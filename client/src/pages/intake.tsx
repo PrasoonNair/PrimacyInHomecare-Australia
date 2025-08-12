@@ -14,13 +14,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertReferralSchema, insertServiceAgreementSchema, type Referral, type ServiceAgreement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon, Upload } from "lucide-react";
+import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon, Upload, BarChart3 } from "lucide-react";
 import { NdisPlanUpload } from "@/components/ndis-plan-upload";
+import { KPIDashboard } from "@/components/kpi-dashboard";
 import { ParticipantForm } from "@/components/forms/participant-form";
 import { format } from "date-fns";
 
 export default function Intake() {
-  const [activeTab, setActiveTab] = useState("plan-upload");
+  const [activeTab, setActiveTab] = useState("kpis");
   const [referralDialogOpen, setReferralDialogOpen] = useState(false);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
   const [planUploadDialogOpen, setPlanUploadDialogOpen] = useState(false);
@@ -131,11 +132,39 @@ export default function Intake() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="kpis" data-testid="tab-kpis">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              KPI Dashboard
+            </TabsTrigger>
             <TabsTrigger value="plan-upload" data-testid="tab-plan-upload">NDIS Plan Upload</TabsTrigger>
             <TabsTrigger value="referrals" data-testid="tab-referrals">Referrals</TabsTrigger>
             <TabsTrigger value="agreements" data-testid="tab-agreements">Service Agreements</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="kpis" className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-semibold">Intake Coordinator KPI Dashboard</h2>
+                  <p className="text-muted-foreground mt-1">
+                    Track your intake performance metrics and key performance indicators
+                  </p>
+                </div>
+              </div>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <KPIDashboard 
+                    role="Intake Coordinator"
+                    metrics={[]}
+                    title="Intake Performance Metrics"
+                    description="Real-time KPIs for intake coordination and participant onboarding"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="plan-upload" className="space-y-6">
             <div className="space-y-4">
