@@ -14,13 +14,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertReferralSchema, insertServiceAgreementSchema, type Referral, type ServiceAgreement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon } from "lucide-react";
+import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon, Upload } from "lucide-react";
+import { NdisPlanUpload } from "@/components/ndis-plan-upload";
+import { ParticipantForm } from "@/components/forms/participant-form";
 import { format } from "date-fns";
 
 export default function Intake() {
-  const [activeTab, setActiveTab] = useState("referrals");
+  const [activeTab, setActiveTab] = useState("plan-upload");
   const [referralDialogOpen, setReferralDialogOpen] = useState(false);
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
+  const [planUploadDialogOpen, setPlanUploadDialogOpen] = useState(false);
+  const [participantFormOpen, setParticipantFormOpen] = useState(false);
+  const [extractedPlanData, setExtractedPlanData] = useState<any>(null);
   const { toast } = useToast();
 
   const { data: referrals = [], isLoading: referralsLoading } = useQuery<Referral[]>({
@@ -126,10 +131,75 @@ export default function Intake() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="plan-upload" data-testid="tab-plan-upload">NDIS Plan Upload</TabsTrigger>
             <TabsTrigger value="referrals" data-testid="tab-referrals">Referrals</TabsTrigger>
             <TabsTrigger value="agreements" data-testid="tab-agreements">Service Agreements</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="plan-upload" className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-semibold">NDIS Plan Upload & Participant Intake</h2>
+                  <p className="text-muted-foreground mt-1">
+                    Upload NDIS plans to automatically extract and pre-populate participant information
+                  </p>
+                </div>
+              </div>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <NdisPlanUpload 
+                    onDataExtracted={(data) => {
+                      setExtractedPlanData(data);
+                      toast({
+                        title: "Data Extracted Successfully",
+                        description: "Participant information has been extracted from the NDIS plan",
+                      });
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              {extractedPlanData && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Extracted Participant Details</CardTitle>
+                    <CardDescription>
+                      Review and confirm the extracted information before creating the participant record
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-sm text-muted-foreground">Name</span>
+                          <p className="font-medium">
+                            {extractedPlanData.participant.firstName} {extractedPlanData.participant.lastName}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-sm text-muted-foreground">NDIS Number</span>
+                          <p className="font-medium">{extractedPlanData.participant.ndisNumber}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setExtractedPlanData(null)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={() => {
+                          setParticipantFormOpen(true);
+                        }}>
+                          Create Participant Record
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
 
           <TabsContent value="referrals" className="space-y-6">
             <div className="flex justify-between items-center">

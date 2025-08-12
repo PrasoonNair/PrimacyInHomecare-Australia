@@ -16,13 +16,7 @@ import {
 import { db } from "./db";
 import { planDocuments, digitalServiceAgreements, participantGoals } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { 
-  processNdisPlanWithAI, 
-  generateServiceAgreement, 
-  sendAgreement, 
-  signAgreement,
-  type ExtractedParticipantInfo 
-} from "./ndisPlanProcessor";
+// Import ndisPlanProcessor functions dynamically to avoid startup errors
 import { 
   insertParticipantSchema,
   insertNdisplanSchema,
@@ -439,6 +433,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching NDIS plans:", error);
       res.status(500).json({ message: "Failed to fetch NDIS plans" });
+    }
+  });
+
+  // NDIS Plan Upload route
+  app.post("/api/ndis-plans/upload", isAuthenticated, async (req, res) => {
+    try {
+      // In production, this would handle file upload and processing
+      // For now, we'll simulate the extraction process
+      const { extractDataFromNdisPlan, saveExtractedPlanData } = await import("./ndisPlanProcessor");
+      
+      // Mock file buffer (in production, get from multipart form data)
+      const mockBuffer = Buffer.from("mock pdf content");
+      
+      // Extract data from the plan
+      const extractedData = await extractDataFromNdisPlan(mockBuffer, "plan.pdf");
+      
+      // Save to database
+      const userId = (req as any).user?.claims?.sub || "test-user";
+      const result = await saveExtractedPlanData(extractedData, userId);
+      
+      res.json({
+        success: true,
+        extractedData,
+        ...result
+      });
+    } catch (error) {
+      console.error("Error processing NDIS plan:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to process NDIS plan" 
+      });
     }
   });
 
