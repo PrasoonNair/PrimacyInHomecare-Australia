@@ -45,27 +45,27 @@ export default function WorkflowManagement() {
   const { toast } = useToast();
 
   // Fetch data
-  const { data: participants = [], isLoading: participantsLoading } = useQuery({
+  const { data: participants = [], isLoading: participantsLoading } = useQuery<any[]>({
     queryKey: ["/api/participants"],
   });
 
-  const { data: staff = [], isLoading: staffLoading } = useQuery({
+  const { data: staff = [], isLoading: staffLoading } = useQuery<any[]>({
     queryKey: ["/api/staff"],
   });
 
-  const { data: services = [], isLoading: servicesLoading } = useQuery({
+  const { data: services = [], isLoading: servicesLoading } = useQuery<any[]>({
     queryKey: ["/api/services"],
   });
 
-  const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
+  const { data: shifts = [], isLoading: shiftsLoading } = useQuery<any[]>({
     queryKey: ["/api/shifts"],
   });
 
-  const { data: referrals = [] } = useQuery({
+  const { data: referrals = [] } = useQuery<any[]>({
     queryKey: ["/api/referrals"],
   });
 
-  const { data: audits = [] } = useQuery({
+  const { data: audits = [] } = useQuery<any[]>({
     queryKey: ["/api/audits"],
   });
 
@@ -92,7 +92,7 @@ export default function WorkflowManagement() {
 
   // Workflow progress for participant
   const getParticipantWorkflow = (participantId: string): WorkflowStep[] => {
-    const participantAudits = audits.filter((a: any) => {
+    const participantAudits = (audits as any[]).filter((a: any) => {
       const findings = JSON.parse(a.findings || "{}");
       return findings.entityId === participantId && findings.entityType === "participant";
     });
@@ -102,15 +102,15 @@ export default function WorkflowManagement() {
         id: "referral",
         title: "Initial Referral",
         description: "Participant referred to service",
-        status: referrals.some((r: any) => r.participantId === participantId) ? "completed" : "pending",
-        timestamp: referrals.find((r: any) => r.participantId === participantId)?.createdAt,
+        status: (referrals as any[]).some((r: any) => r.participantId === participantId) ? "completed" : "pending",
+        timestamp: (referrals as any[]).find((r: any) => r.participantId === participantId)?.createdAt,
       },
       {
         id: "intake",
         title: "Intake & Registration",
         description: "Participant details registered",
-        status: participants.some((p: any) => p.id === participantId) ? "completed" : "pending",
-        timestamp: participants.find((p: any) => p.id === participantId)?.createdAt,
+        status: (participants as any[]).some((p: any) => p.id === participantId) ? "completed" : "pending",
+        timestamp: (participants as any[]).find((p: any) => p.id === participantId)?.createdAt,
       },
       {
         id: "plan",
@@ -122,20 +122,20 @@ export default function WorkflowManagement() {
         id: "service",
         title: "Service Allocation",
         description: "Services allocated to participant",
-        status: services.some((s: any) => s.participantId === participantId) ? "completed" : "pending",
+        status: (services as any[]).some((s: any) => s.participantId === participantId) ? "completed" : "pending",
       },
       {
         id: "shift",
         title: "Shift Management",
         description: "Support worker shifts scheduled",
-        status: shifts.some((s: any) => s.participantId === participantId) ? "completed" : "pending",
+        status: (shifts as any[]).some((s: any) => s.participantId === participantId) ? "completed" : "pending",
       },
     ];
   };
 
   // Staff onboarding workflow
   const getStaffWorkflow = (staffId: string): WorkflowStep[] => {
-    const staffAudits = audits.filter((a: any) => {
+    const staffAudits = (audits as any[]).filter((a: any) => {
       const findings = JSON.parse(a.findings || "{}");
       return findings.entityId === staffId && findings.entityType === "staff";
     });
@@ -145,8 +145,8 @@ export default function WorkflowManagement() {
         id: "registration",
         title: "Staff Registration",
         description: "Basic information collected",
-        status: staff.some((s: any) => s.id === staffId) ? "completed" : "pending",
-        timestamp: staff.find((s: any) => s.id === staffId)?.createdAt,
+        status: (staff as any[]).some((s: any) => s.id === staffId) ? "completed" : "pending",
+        timestamp: (staff as any[]).find((s: any) => s.id === staffId)?.createdAt,
       },
       {
         id: "qualifications",
@@ -170,7 +170,7 @@ export default function WorkflowManagement() {
         id: "allocation",
         title: "First Service Allocation",
         description: "Assigned to first participant",
-        status: services.some((s: any) => s.assignedTo === staffId) ? "completed" : "pending",
+        status: (services as any[]).some((s: any) => s.assignedTo === staffId) ? "completed" : "pending",
       },
     ];
   };
@@ -235,10 +235,10 @@ export default function WorkflowManagement() {
                     <h4 className="text-sm font-medium">Recent Participants</h4>
                     {participantsLoading ? (
                       <p className="text-sm text-muted-foreground">Loading...</p>
-                    ) : participants.length === 0 ? (
+                    ) : (participants as any[]).length === 0 ? (
                       <p className="text-sm text-muted-foreground">No participants yet</p>
                     ) : (
-                      participants.slice(0, 3).map((participant: any) => (
+                      (participants as any[]).slice(0, 3).map((participant: any) => (
                         <div 
                           key={participant.id}
                           className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer"
@@ -298,10 +298,10 @@ export default function WorkflowManagement() {
                     <h4 className="text-sm font-medium">Recent Staff</h4>
                     {staffLoading ? (
                       <p className="text-sm text-muted-foreground">Loading...</p>
-                    ) : staff.length === 0 ? (
+                    ) : (staff as any[]).length === 0 ? (
                       <p className="text-sm text-muted-foreground">No staff yet</p>
                     ) : (
-                      staff.slice(0, 3).map((member: any) => (
+                      (staff as any[]).slice(0, 3).map((member: any) => (
                         <div 
                           key={member.id}
                           className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent cursor-pointer"
@@ -402,10 +402,10 @@ export default function WorkflowManagement() {
                 <div className="space-y-3">
                   {servicesLoading ? (
                     <p className="text-sm text-muted-foreground">Loading services...</p>
-                  ) : services.length === 0 ? (
+                  ) : (services as any[]).length === 0 ? (
                     <p className="text-sm text-muted-foreground">No services allocated yet</p>
                   ) : (
-                    services.map((service: any) => (
+                    (services as any[]).map((service: any) => (
                       <div key={service.id} className="p-4 border rounded-lg">
                         <div className="flex items-center justify-between">
                           <div>
@@ -466,10 +466,10 @@ export default function WorkflowManagement() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {shiftsLoading ? (
                     <p className="text-sm text-muted-foreground col-span-full">Loading shifts...</p>
-                  ) : shifts.length === 0 ? (
+                  ) : (shifts as any[]).length === 0 ? (
                     <p className="text-sm text-muted-foreground col-span-full">No shifts scheduled</p>
                   ) : (
-                    shifts.map((shift: any) => (
+                    (shifts as any[]).map((shift: any) => (
                       <Card key={shift.id}>
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
@@ -516,10 +516,10 @@ export default function WorkflowManagement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {audits.length === 0 ? (
+                  {(audits as any[]).length === 0 ? (
                     <p className="text-sm text-muted-foreground">No audit records yet</p>
                   ) : (
-                    audits.slice(0, 10).map((audit: any) => {
+                    (audits as any[]).slice(0, 10).map((audit: any) => {
                       const findings = JSON.parse(audit.findings || "{}");
                       return (
                         <div key={audit.id} className="p-3 border rounded-lg">
