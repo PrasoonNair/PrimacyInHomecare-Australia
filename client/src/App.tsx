@@ -56,8 +56,8 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/participants" component={Participants} />
-            <Route path="/plans" component={Plans} />
             <Route path="/plans/new" component={PlanNew} />
+            <Route path="/plans" component={Plans} />
             <Route path="/plan-reader" component={PlanReader} />
             <Route path="/services" component={Services} />
             <Route path="/progress-notes" component={ProgressNotes} />
