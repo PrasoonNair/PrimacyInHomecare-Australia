@@ -704,7 +704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         NDIS Number: 4301234567
         Date of Birth: 15/03/1995
         Primary Disability: Autism Spectrum Disorder
-        Plan Number: PLN-2024-001234
+        Plan Number: PLN-${Date.now()}
         Plan Start Date: 01/01/2024
         Plan End Date: 31/12/2024
         Total Plan Budget: $85,000
@@ -793,7 +793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           primaryDisability: "Autism Spectrum Disorder"
         },
         planDetails: {
-          planNumber: "PLN-2024-001234",
+          planNumber: `PLN-${Date.now()}`,
           startDate: "2024-01-01",
           endDate: "2024-12-31",
           totalBudget: 85000,

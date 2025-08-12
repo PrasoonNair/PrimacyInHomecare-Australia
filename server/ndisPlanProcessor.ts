@@ -119,20 +119,20 @@ export async function saveExtractedPlanData(data: any, userId: string) {
     // If no NDIS number, create a placeholder participant
     const newParticipant = await db.insert(participants)
       .values({
-        firstName: participantInfo?.firstName || "Unknown",
-        lastName: participantInfo?.lastName || "Participant",
-        dateOfBirth: participantInfo?.dateOfBirth || new Date().toISOString().split('T')[0],
-        ndisNumber: `TEMP-${Date.now()}`,
-        primaryDisability: participantInfo?.primaryDisability || "Not specified",
+        first_name: participantInfo?.firstName || "Unknown",
+        last_name: participantInfo?.lastName || "Participant",
+        date_of_birth: participantInfo?.dateOfBirth || new Date().toISOString().split('T')[0],
+        ndis_number: `TEMP-${Date.now()}`,
+        primary_disability: participantInfo?.primaryDisability || "Not specified",
         address: "",
         phone: "",
         email: "",
-        emergencyContact: "",
-        emergencyPhone: "",
-        culturalBackground: null,
-        preferredLanguage: "English",
-        communicationNeeds: null,
-        isActive: true
+        emergency_contact: "",
+        emergency_phone: "",
+        cultural_background: null,
+        preferred_language: "English",
+        communication_needs: null,
+        is_active: true
       })
       .returning();
     participantId = newParticipant[0].id;
@@ -146,31 +146,31 @@ export async function saveExtractedPlanData(data: any, userId: string) {
       // Update participant information
       await db.update(participants)
         .set({
-          firstName: participantInfo.firstName || existingParticipant[0].firstName,
-          lastName: participantInfo.lastName || existingParticipant[0].lastName,
-          dateOfBirth: participantInfo.dateOfBirth || existingParticipant[0].dateOfBirth,
-          primaryDisability: participantInfo.primaryDisability || existingParticipant[0].primaryDisability,
-          updatedAt: new Date()
+          first_name: participantInfo.firstName || existingParticipant[0].first_name,
+          last_name: participantInfo.lastName || existingParticipant[0].last_name,
+          date_of_birth: participantInfo.dateOfBirth || existingParticipant[0].date_of_birth,
+          primary_disability: participantInfo.primaryDisability || existingParticipant[0].primary_disability,
+          updated_at: new Date()
         })
         .where(eq(participants.id, participantId));
     } else {
       // Create new participant
       const newParticipant = await db.insert(participants)
         .values({
-          firstName: participantInfo.firstName || "Unknown",
-          lastName: participantInfo.lastName || "Participant",
-          dateOfBirth: participantInfo.dateOfBirth || new Date().toISOString().split('T')[0],
-          ndisNumber: ndisNumber,
-          primaryDisability: participantInfo.primaryDisability || "Not specified",
+          first_name: participantInfo.firstName || "Unknown",
+          last_name: participantInfo.lastName || "Participant",
+          date_of_birth: participantInfo.dateOfBirth || new Date().toISOString().split('T')[0],
+          ndis_number: ndisNumber,
+          primary_disability: participantInfo.primaryDisability || "Not specified",
           address: "",
           phone: "",
           email: "",
-          emergencyContact: "",
-          emergencyPhone: "",
-          culturalBackground: null,
-          preferredLanguage: "English",
-          communicationNeeds: null,
-          isActive: true
+          emergency_contact: "",
+          emergency_phone: "",
+          cultural_background: null,
+          preferred_language: "English",
+          communication_needs: null,
+          is_active: true
         })
         .returning();
       participantId = newParticipant[0].id;
@@ -192,19 +192,19 @@ export async function saveExtractedPlanData(data: any, userId: string) {
   await db.insert(ndisPlans)
     .values({
       id: planId,
-      participantId,
-      planNumber: planDetails.planNumber || `PLAN-${Date.now()}`,
-      planVersion: "1.0",
-      startDate: planDetails.startDate || new Date().toISOString().split('T')[0],
-      endDate: planDetails.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      participant_id: participantId,
+      plan_number: planDetails.planNumber || `PLAN-${Date.now()}`,
+      plan_version: "1.0",
+      start_date: planDetails.startDate || new Date().toISOString().split('T')[0],
+      end_date: planDetails.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: "active",
-      totalBudget: totalBudget,
-      coreSupportsbudget: budgetBreakdown.coreSupports || 0,
-      capacityBuildingBudget: budgetBreakdown.capacityBuilding || 0,
-      capitalSupportsBudget: budgetBreakdown.capitalSupports || 0,
-      planManagerName: "",
-      planManagerContact: "",
-      supportCoordinator: "",
+      total_budget: totalBudget,
+      core_supports_budget: budgetBreakdown.coreSupports || 0,
+      capacity_building_budget: budgetBreakdown.capacityBuilding || 0,
+      capital_supports_budget: budgetBreakdown.capitalSupports || 0,
+      plan_manager_name: "",
+      plan_manager_contact: "",
+      support_coordinator: "",
       goals: JSON.stringify(goals)
     });
 
@@ -213,20 +213,20 @@ export async function saveExtractedPlanData(data: any, userId: string) {
     for (const goal of goals) {
       await db.insert(participantGoals)
         .values({
-          participantId: participantId,
-          planId: planId,
-          goalType: "long_term", // Default to long-term goal
+          participant_id: participantId,
+          plan_id: planId,
+          goal_type: "long_term", // Default to long-term goal
           category: goal.category || "daily_living",
           title: goal.description ? goal.description.substring(0, 100) : "NDIS Goal",
           description: goal.description || "Goal description",
           priority: goal.priority?.toLowerCase() || "medium",
-          targetDate: goal.targetDate ? 
+          target_date: goal.targetDate ? 
             new Date(goal.targetDate).toISOString().split('T')[0] : 
             new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           status: "active",
-          supportBudgetCategory: "capacity_building",
-          estimatedHours: "40",
-          assignedStaffId: null
+          support_budget_category: "capacity_building",
+          estimated_hours: "40",
+          assigned_staff_id: null
         });
     }
   }
