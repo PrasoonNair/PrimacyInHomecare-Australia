@@ -4,6 +4,15 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { auditLogger, AuditAction } from "./auditLogger";
 import { logAudit } from "./auditLogger";
+import { 
+  securityHeaders, 
+  apiRateLimiter, 
+  authRateLimiter, 
+  sanitizeInput, 
+  privacyHeaders,
+  dataRetentionCheck,
+  essentialEightCompliance 
+} from "./middleware/security";
 import { db } from "./db";
 import { planDocuments, digitalServiceAgreements, participantGoals } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -57,6 +66,17 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Apply security middleware
+  app.use(securityHeaders);
+  app.use(privacyHeaders);
+  app.use(dataRetentionCheck);
+  app.use(essentialEightCompliance);
+  app.use(sanitizeInput);
+  
+  // Apply rate limiting to API routes
+  app.use('/api/', apiRateLimiter);
+  app.use('/api/auth/', authRateLimiter);
+  
   // Auth middleware
   await setupAuth(app);
 

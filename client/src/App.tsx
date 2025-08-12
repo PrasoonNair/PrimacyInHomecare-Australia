@@ -24,6 +24,7 @@ import NotFound from "@/pages/not-found";
 import Automation from "@/pages/automation";
 import WorkflowManagement from "@/pages/workflow-management";
 import PlanReader from "@/pages/plan-reader";
+import PrivacyPolicy from "@/pages/privacy-policy";
 // Department pages
 import Intake from "@/pages/intake";
 import HRRecruitment from "@/pages/hr-recruitment";
@@ -115,6 +116,7 @@ function Router() {
             <Route path="/role-dashboards/service-delivery-coordinator" component={ServiceDeliveryManagerDashboard} />
             <Route path="/role-dashboards/quality-manager" component={QualityManagerDashboard} />
             <Route path="/role-dashboards/support-worker" component={SupportWorkerDashboard} />
+            <Route path="/privacy" component={PrivacyPolicy} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>
