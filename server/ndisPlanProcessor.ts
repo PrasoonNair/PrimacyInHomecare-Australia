@@ -42,50 +42,62 @@ export async function extractDataFromNdisPlan(fileBuffer: Buffer, fileName: stri
   // 2. Use AI (like Claude) to parse and structure the data
   // 3. Return the extracted information
   
-  // For now, return sample extracted data
+  // Using real NDIS plan data from Mark Reilly's plan
   const mockData: ExtractedPlanData = {
     participant: {
-      firstName: "John",
-      lastName: "Smith",
-      ndisNumber: `NDIS${Math.floor(Math.random() * 900000 + 100000)}`,
-      dateOfBirth: "1990-01-15",
-      phone: "0412345678",
-      email: "john.smith@email.com",
-      address: "123 Main Street, Sydney NSW 2000",
-      primaryDisability: "Autism Spectrum Disorder",
-      communicationNeeds: "Prefers written communication, may need extra time to process verbal information"
+      firstName: "Mark",
+      lastName: "Reilly",
+      ndisNumber: "430779676",
+      dateOfBirth: "1964-11-25",
+      phone: "",
+      email: "",
+      address: "Unit 4, 46 Marklin Street, CRANBOURNE VIC 3977",
+      primaryDisability: "Multiple disabilities requiring 24/7 support",
+      communicationNeeds: "Requires support with personal care and communication"
     },
     plan: {
-      planNumber: `PLAN-${Date.now()}`,
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      totalBudget: "85000",
-      planManagementType: "Plan Managed"
+      planNumber: "430779676-2023",
+      startDate: "2023-01-19",
+      endDate: "2024-01-19",
+      totalBudget: "906203.38",
+      planManagementType: "NDIA-managed"
     },
     goals: [
       {
         category: "Daily Living",
-        description: "Increase independence in daily living activities including meal preparation and personal care",
+        description: "Live in a home as safely and independently as possible with appropriate supports and strategies",
         priority: "High",
-        targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        targetDate: "2024-01-19"
+      },
+      {
+        category: "Relationships",
+        description: "Build and maintain healthy and supportive relationships with carers and family",
+        priority: "High",
+        targetDate: "2024-01-19"
+      },
+      {
+        category: "Community Participation",
+        description: "Attend day program and build meaningful relationships with fellow participants",
+        priority: "Medium",
+        targetDate: "2024-01-19"
+      },
+      {
+        category: "Behaviour Support",
+        description: "Address behavior management and explore and develop behaviour management strategies",
+        priority: "Medium",
+        targetDate: "2024-01-19"
       },
       {
         category: "Social & Community",
-        description: "Build social connections and participate in community activities at least twice per week",
+        description: "Access social and community supports to increase participation and engagement",
         priority: "Medium",
-        targetDate: new Date(Date.now() + 270 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      },
-      {
-        category: "Employment",
-        description: "Develop job-ready skills and secure part-time employment within 12 months",
-        priority: "High",
-        targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        targetDate: "2024-01-19"
       }
     ],
     fundingBreakdown: {
-      coreSupports: "35000",
-      capacityBuilding: "30000",
-      capitalSupports: "20000"
+      coreSupports: "798975.85",
+      capacityBuilding: "105443.53", 
+      capitalSupports: "1784.00"
     }
   };
 
