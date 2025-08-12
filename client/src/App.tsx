@@ -9,6 +9,7 @@ import Header from "@/components/layout/header";
 import Dashboard from "@/pages/dashboard";
 import Participants from "@/pages/participants";
 import Plans from "@/pages/plans";
+import PlanNew from "@/pages/plan-new";
 import Services from "@/pages/services";
 import ProgressNotes from "@/pages/progress-notes";
 import Financials from "@/pages/financials";
@@ -56,6 +57,7 @@ function Router() {
             <Route path="/" component={Dashboard} />
             <Route path="/participants" component={Participants} />
             <Route path="/plans" component={Plans} />
+            <Route path="/plans/new" component={PlanNew} />
             <Route path="/plan-reader" component={PlanReader} />
             <Route path="/services" component={Services} />
             <Route path="/progress-notes" component={ProgressNotes} />
