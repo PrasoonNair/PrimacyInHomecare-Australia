@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+// Sidebar and Header are provided by AppLayout wrapper
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -209,13 +208,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/20">
-      <Sidebar />
-      <div className="flex-1 overflow-hidden">
-        <Header title="NDIS Manager Dashboard" subtitle="Real-time Business Intelligence & Analytics" />
-        <main className="flex-1 overflow-y-auto">
-          {/* Welcome Section with Quick Actions */}
-          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white px-6 py-8">
+    <div className="flex-1 bg-gradient-to-br from-gray-50 via-white to-blue-50/20 overflow-y-auto">
+      {/* Welcome Section with Quick Actions */}
+      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white px-6 py-8">
             <div className="max-w-7xl mx-auto">
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div className="flex items-center gap-4">
@@ -753,11 +748,9 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             </TabsContent>
-          </Tabs>
-            </div>
-          </div>
-        </main>
+        </Tabs>
       </div>
+    </div>
     </div>
   );
 }
