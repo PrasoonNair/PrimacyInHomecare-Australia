@@ -251,3 +251,44 @@ export class AuditLogger {
 }
 
 export const auditLogger = new AuditLogger();
+
+// Convenience function for direct audit logging
+export async function logAudit({
+  action,
+  entityType,
+  entityId,
+  changes,
+  performedBy,
+  department
+}: {
+  action: string;
+  entityType: string;
+  entityId: string;
+  changes?: any;
+  performedBy: string;
+  department?: string;
+}) {
+  const actionMap: { [key: string]: AuditAction } = {
+    'CREATE': AuditAction.PARTICIPANT_CREATED,
+    'UPDATE': AuditAction.PARTICIPANT_UPDATED,
+    'DELETE': AuditAction.PARTICIPANT_DELETED,
+    'UPLOAD': AuditAction.PARTICIPANT_UPDATED,
+    'SIGN': AuditAction.AGREEMENT_SIGNED,
+    'SEND': AuditAction.AGREEMENT_UPDATED,
+  };
+
+  const entityTypeMap: { [key: string]: string } = {
+    'PARTICIPANT_GOAL': 'participant',
+    'SERVICE_AGREEMENT': 'agreement',
+    'PLAN_DOCUMENT': 'plan',
+  };
+
+  await auditLogger.log({
+    userId: performedBy,
+    entityType: (entityTypeMap[entityType] || entityType.toLowerCase()) as any,
+    entityId,
+    action: actionMap[action] || AuditAction.PARTICIPANT_UPDATED,
+    details: changes || {},
+    department,
+  });
+}

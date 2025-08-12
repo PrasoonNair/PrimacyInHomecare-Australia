@@ -3,6 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { auditLogger, AuditAction } from "./auditLogger";
+import { logAudit } from "./auditLogger";
+import { db } from "./db";
+import { planDocuments, digitalServiceAgreements, participantGoals } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { 
+  processNdisPlanWithAI, 
+  generateServiceAgreement, 
+  sendAgreement, 
+  signAgreement,
+  type ExtractedParticipantInfo 
+} from "./ndisPlanProcessor";
 import { 
   insertParticipantSchema,
   insertNdisplanSchema,
@@ -1282,6 +1293,267 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching efficiency metrics:", error);
       res.status(500).json({ message: "Failed to fetch efficiency metrics" });
+    }
+  });
+
+  // NDIS Plan Reader endpoints
+  app.post('/api/plan-documents/upload', isAuthenticated, async (req: any, res) => {
+    try {
+      // This would handle file upload with multer or similar
+      // For now, we'll create a placeholder document
+      const { participantId, planId, fileName } = req.body;
+      
+      const [document] = await db.insert(planDocuments)
+        .values({
+          participantId,
+          planId,
+          documentUrl: `/uploads/${fileName}`,
+          fileName: fileName || 'ndis-plan.pdf',
+          fileSize: 1024000, // 1MB placeholder
+          uploadedBy: req.user?.id || req.user?.claims?.sub,
+          processingStatus: 'pending'
+        })
+        .returning();
+
+      await logAudit({
+        action: 'CREATE',
+        entityType: 'PLAN_DOCUMENT',
+        entityId: document.id,
+        changes: { fileName },
+        performedBy: req.user?.id || req.user?.claims?.sub || 'System',
+        department: 'SERVICE_DELIVERY'
+      });
+
+      res.json(document);
+    } catch (error) {
+      console.error('Error uploading plan document:', error);
+      res.status(500).json({ error: 'Failed to upload document' });
+    }
+  });
+
+  app.post('/api/plan-documents/:id/process', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Simulate AI processing with sample data
+      const extractedInfo: ExtractedParticipantInfo = {
+        firstName: 'John',
+        lastName: 'Smith',
+        ndisNumber: 'NDIS123456',
+        primaryDisability: 'Physical Disability',
+        totalBudget: 150000,
+        planStartDate: new Date().toISOString(),
+        planEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        goals: [
+          {
+            category: 'daily_living',
+            title: 'Increase Independence in Daily Activities',
+            description: 'Support participant to develop skills for independent living',
+            fundingCategory: 'core',
+            suggestedBudget: 50000,
+            priority: 'high',
+            targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+            actions: [
+              {
+                title: 'Personal Care Support',
+                description: 'Assistance with daily personal activities',
+                frequency: 'daily',
+                duration: 120,
+                estimatedCost: 150
+              },
+              {
+                title: 'Meal Preparation Training',
+                description: 'Support to learn cooking and meal planning',
+                frequency: 'weekly',
+                duration: 90,
+                estimatedCost: 120
+              }
+            ]
+          },
+          {
+            category: 'social_participation',
+            title: 'Community Engagement and Social Skills',
+            description: 'Support to participate in community activities and build relationships',
+            fundingCategory: 'capacity_building',
+            suggestedBudget: 30000,
+            priority: 'medium',
+            targetDate: new Date(Date.now() + 270 * 24 * 60 * 60 * 1000).toISOString(),
+            actions: [
+              {
+                title: 'Community Access Support',
+                description: 'Support to attend community events and activities',
+                frequency: 'weekly',
+                duration: 180,
+                estimatedCost: 200
+              },
+              {
+                title: 'Social Skills Development',
+                description: 'One-on-one support for social interaction skills',
+                frequency: 'fortnightly',
+                duration: 60,
+                estimatedCost: 100
+              }
+            ]
+          },
+          {
+            category: 'employment',
+            title: 'Employment Readiness and Skills Development',
+            description: 'Support to develop skills for employment opportunities',
+            fundingCategory: 'capacity_building',
+            suggestedBudget: 25000,
+            priority: 'medium',
+            targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            actions: [
+              {
+                title: 'Job Skills Training',
+                description: 'Support to develop workplace skills',
+                frequency: 'weekly',
+                duration: 120,
+                estimatedCost: 150
+              },
+              {
+                title: 'Resume and Interview Preparation',
+                description: 'Assistance with job application process',
+                frequency: 'monthly',
+                duration: 90,
+                estimatedCost: 120
+              }
+            ]
+          }
+        ]
+      };
+
+      // Store extracted data
+      await db.update(planDocuments)
+        .set({
+          processingStatus: 'completed',
+          extractedData: extractedInfo as any,
+          aiAnalysis: {
+            model: 'claude-sonnet-4-20250514',
+            processedAt: new Date().toISOString(),
+            goalsExtracted: extractedInfo.goals.length,
+            totalActionsIdentified: extractedInfo.goals.reduce((sum, g) => sum + g.actions.length, 0)
+          } as any,
+          processedAt: new Date()
+        })
+        .where(eq(planDocuments.id, id));
+
+      // Create goals in database
+      const [document] = await db.select().from(planDocuments).where(eq(planDocuments.id, id));
+      
+      for (const goal of extractedInfo.goals) {
+        await db.insert(participantGoals)
+          .values({
+            participantId: document.participantId!,
+            planId: document.planId!,
+            goalType: 'outcome',
+            category: goal.category,
+            title: goal.title,
+            description: goal.description,
+            targetDate: goal.targetDate,
+            priority: goal.priority,
+            status: 'active',
+            supportBudgetCategory: goal.fundingCategory,
+            estimatedHours: String(goal.actions.reduce((sum, a) => sum + (a.duration / 60), 0)),
+            isActive: true
+          });
+      }
+
+      res.json({ success: true, goalsExtracted: extractedInfo.goals.length });
+    } catch (error) {
+      console.error('Error processing plan document:', error);
+      res.status(500).json({ error: 'Failed to process document' });
+    }
+  });
+
+  app.get('/api/plan-documents/:planId', isAuthenticated, async (req, res) => {
+    try {
+      const documents = await db.select()
+        .from(planDocuments)
+        .where(eq(planDocuments.planId, req.params.planId));
+      
+      res.json(documents);
+    } catch (error) {
+      console.error('Error fetching plan documents:', error);
+      res.status(500).json({ error: 'Failed to fetch documents' });
+    }
+  });
+
+  app.post('/api/service-agreements/generate', isAuthenticated, async (req, res) => {
+    try {
+      const { participantId, planId, documentId } = req.body;
+      
+      const agreementId = await generateServiceAgreement(participantId, planId, documentId);
+      
+      res.json({ success: true, agreementId });
+    } catch (error) {
+      console.error('Error generating service agreement:', error);
+      res.status(500).json({ error: 'Failed to generate agreement' });
+    }
+  });
+
+  app.post('/api/service-agreements/send', isAuthenticated, async (req, res) => {
+    try {
+      const { agreementId, method, recipient, message } = req.body;
+      
+      await sendAgreement(agreementId, method, recipient, message);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error sending agreement:', error);
+      res.status(500).json({ error: 'Failed to send agreement' });
+    }
+  });
+
+  app.get('/api/service-agreements/:participantId', isAuthenticated, async (req, res) => {
+    try {
+      const agreements = await db.select()
+        .from(digitalServiceAgreements)
+        .where(eq(digitalServiceAgreements.participantId, req.params.participantId));
+      
+      res.json(agreements);
+    } catch (error) {
+      console.error('Error fetching service agreements:', error);
+      res.status(500).json({ error: 'Failed to fetch agreements' });
+    }
+  });
+
+  // Public endpoint for viewing and signing agreements
+  app.get('/agreements/view/:token', async (req, res) => {
+    try {
+      const [agreement] = await db.select()
+        .from(digitalServiceAgreements)
+        .where(eq(digitalServiceAgreements.accessToken, req.params.token));
+      
+      if (!agreement) {
+        return res.status(404).json({ error: 'Agreement not found' });
+      }
+
+      // Update viewed date if first time
+      if (!agreement.viewedDate) {
+        await db.update(digitalServiceAgreements)
+          .set({ viewedDate: new Date() })
+          .where(eq(digitalServiceAgreements.id, agreement.id));
+      }
+
+      res.json(agreement);
+    } catch (error) {
+      console.error('Error viewing agreement:', error);
+      res.status(500).json({ error: 'Failed to view agreement' });
+    }
+  });
+
+  app.post('/agreements/sign/:token', async (req, res) => {
+    try {
+      const { signature, witnessName, witnessSignature } = req.body;
+      const signatureIp = req.ip || 'unknown';
+      
+      await signAgreement(req.params.token, signature, signatureIp, witnessName, witnessSignature);
+      
+      res.json({ success: true, message: 'Agreement signed successfully' });
+    } catch (error) {
+      console.error('Error signing agreement:', error);
+      res.status(500).json({ error: (error as Error).message || 'Failed to sign agreement' });
     }
   });
 

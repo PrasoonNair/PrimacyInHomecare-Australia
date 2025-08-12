@@ -503,11 +503,11 @@ export default function PlanReaderPage() {
                       <div className="space-y-1">
                         <p className="font-medium">Agreement #{agreement.agreementNumber}</p>
                         <p className="text-sm text-gray-500">
-                          Created: {agreement.createdAt ? new Date(agreement.createdAt as string).toLocaleDateString() : 'N/A'}
+                          Created: {agreement.createdAt ? new Date(String(agreement.createdAt)).toLocaleDateString() : 'N/A'}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        {getStatusBadge(agreement.status)}
+                        {getStatusBadge(agreement.status || 'draft')}
                         <Button variant="outline" size="sm" data-testid={`button-view-${agreement.id}`}>
                           <Eye className="h-4 w-4 mr-1" />
                           View
@@ -569,7 +569,7 @@ export default function PlanReaderPage() {
                         <div className="space-y-1">
                           <p className="font-medium">{doc.fileName}</p>
                           <p className="text-sm text-gray-500">
-                            Uploaded: {doc.createdAt ? new Date(doc.createdAt as string).toLocaleDateString() : 'N/A'}
+                            Uploaded: {doc.createdAt ? new Date(String(doc.createdAt)).toLocaleDateString() : 'N/A'}
                           </p>
                         </div>
                       </div>
