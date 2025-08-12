@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { Service } from "@shared/schema";
 
 export default function UpcomingServices() {
-  const { data: services, isLoading } = useQuery({
+  const { data: services, isLoading } = useQuery<Service[]>({
     queryKey: ["/api/services/upcoming"],
     retry: false,
   });

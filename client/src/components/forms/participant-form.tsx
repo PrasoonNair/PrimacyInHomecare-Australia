@@ -179,7 +179,12 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
               <FormItem>
                 <FormLabel>Date of Birth</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} data-testid="input-date-of-birth" />
+                  <Input 
+                    type="date" 
+                    {...field} 
+                    value={field.value || ''} 
+                    data-testid="input-date-of-birth" 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -192,7 +197,7 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Preferred Language</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || undefined}>
                   <FormControl>
                     <SelectTrigger data-testid="select-preferred-language">
                       <SelectValue />
@@ -222,7 +227,12 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                  <Input {...field} type="tel" data-testid="input-phone" />
+                  <Input 
+                    {...field} 
+                    value={field.value || ''} 
+                    type="tel" 
+                    data-testid="input-phone" 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -236,7 +246,12 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" data-testid="input-email" />
+                  <Input 
+                    {...field} 
+                    value={field.value || ''} 
+                    type="email" 
+                    data-testid="input-email" 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -251,7 +266,7 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
             <FormItem>
               <FormLabel>Address</FormLabel>
               <FormControl>
-                <Textarea {...field} rows={3} data-testid="textarea-address" />
+                <Textarea {...field} value={field.value || ''} rows={3} data-testid="textarea-address" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -265,7 +280,7 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
             <FormItem>
               <FormLabel>Emergency Contact</FormLabel>
               <FormControl>
-                <Textarea {...field} rows={2} data-testid="textarea-emergency-contact" />
+                <Textarea {...field} value={field.value || ''} rows={2} data-testid="textarea-emergency-contact" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -279,7 +294,7 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
             <FormItem>
               <FormLabel>Primary Disability</FormLabel>
               <FormControl>
-                <Input {...field} data-testid="input-primary-disability" />
+                <Input {...field} value={field.value || ''} data-testid="input-primary-disability" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -293,7 +308,7 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
             <FormItem>
               <FormLabel>Communication Needs</FormLabel>
               <FormControl>
-                <Textarea {...field} rows={2} data-testid="textarea-communication-needs" />
+                <Textarea {...field} value={field.value || ''} rows={2} data-testid="textarea-communication-needs" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -307,7 +322,7 @@ export default function ParticipantForm({ participant, onClose }: ParticipantFor
             <FormItem>
               <FormLabel>Cultural Background</FormLabel>
               <FormControl>
-                <Input {...field} data-testid="input-cultural-background" />
+                <Input {...field} value={field.value || ''} data-testid="input-cultural-background" />
               </FormControl>
               <FormMessage />
             </FormItem>

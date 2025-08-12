@@ -206,7 +206,7 @@ export default function IncidentReportForm({ onSuccess, onCancel }: IncidentRepo
                   setValue("participantId", value);
                   const participant = participants.find(p => p.id === value);
                   if (participant) {
-                    setValue("participantName", participant.name);
+                    setValue("participantName", `${participant.firstName} ${participant.lastName}`);
                     setValue("ndisNumber", participant.ndisNumber || "");
                   }
                 }}>
@@ -216,7 +216,7 @@ export default function IncidentReportForm({ onSuccess, onCancel }: IncidentRepo
                   <SelectContent>
                     {participants.map((participant) => (
                       <SelectItem key={participant.id} value={participant.id}>
-                        {participant.name} - {participant.ndisNumber}
+                        {participant.firstName} {participant.lastName} - {participant.ndisNumber}
                       </SelectItem>
                     ))}
                   </SelectContent>

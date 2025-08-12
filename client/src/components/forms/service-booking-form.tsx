@@ -21,12 +21,12 @@ export default function ServiceBookingForm({ onClose }: ServiceBookingFormProps)
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: participants } = useQuery({
+  const { data: participants = [] } = useQuery<any[]>({
     queryKey: ["/api/participants"],
     retry: false,
   });
 
-  const { data: staff } = useQuery({
+  const { data: staff = [] } = useQuery<any[]>({
     queryKey: ["/api/staff"],
     retry: false,
   });
@@ -48,8 +48,10 @@ export default function ServiceBookingForm({ onClose }: ServiceBookingFormProps)
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertService) => {
-      const response = await apiRequest("POST", "/api/services", data);
-      return response.json();
+      return await apiRequest("/api/services", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
@@ -113,7 +115,7 @@ export default function ServiceBookingForm({ onClose }: ServiceBookingFormProps)
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {participants?.map((participant: any) => (
+                  {participants.map((participant: any) => (
                     <SelectItem key={participant.id} value={participant.id}>
                       {participant.firstName} {participant.lastName} - {participant.ndisNumber}
                     </SelectItem>
@@ -216,7 +218,7 @@ export default function ServiceBookingForm({ onClose }: ServiceBookingFormProps)
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {staff?.map((member: any) => (
+                  {staff.map((member: any) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.firstName} {member.lastName} - {member.position}
                     </SelectItem>
@@ -235,7 +237,7 @@ export default function ServiceBookingForm({ onClose }: ServiceBookingFormProps)
             <FormItem>
               <FormLabel>Location</FormLabel>
               <FormControl>
-                <Input {...field} data-testid="input-location" />
+                <Input {...field} value={field.value || ''} data-testid="input-location" />
               </FormControl>
               <FormMessage />
             </FormItem>

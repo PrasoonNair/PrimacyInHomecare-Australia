@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import type { Participant } from "@shared/schema";
 
 export default function RecentParticipants() {
-  const { data: participants, isLoading } = useQuery({
+  const { data: participants, isLoading } = useQuery<Participant[]>({
     queryKey: ["/api/participants"],
     retry: false,
   });

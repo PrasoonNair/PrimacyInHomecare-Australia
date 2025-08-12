@@ -28,7 +28,13 @@ export default function IncidentApprovalFlow({ incidentId }: IncidentApprovalFlo
     queryKey: [`/api/incidents/${incidentId}/approvals`],
   });
 
-  const { data: incident } = useQuery({
+  const { data: incident } = useQuery<{
+    id: string;
+    currentApprovalLevel: number;
+    severity: string;
+    ndisNotified: boolean;
+    status: string;
+  }>({
     queryKey: [`/api/incidents/${incidentId}`],
   });
 
@@ -74,7 +80,7 @@ export default function IncidentApprovalFlow({ incidentId }: IncidentApprovalFlo
     submitApproval.mutate({
       action,
       comments,
-      approverName: user?.firstName + " " + user?.lastName || "Unknown",
+      approverName: (user?.firstName || '') + " " + (user?.lastName || '') || "Unknown",
       approverRole: userRole,
       approvalLevel,
     });
@@ -212,7 +218,7 @@ export default function IncidentApprovalFlow({ incidentId }: IncidentApprovalFlo
                       </Badge>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {new Date(approval.createdAt).toLocaleString()}
+                      {approval.createdAt ? new Date(approval.createdAt).toLocaleString() : 'Unknown date'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mb-2">

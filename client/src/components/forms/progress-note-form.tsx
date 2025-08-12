@@ -20,17 +20,17 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: participants } = useQuery({
+  const { data: participants = [] } = useQuery<any[]>({
     queryKey: ["/api/participants"],
     retry: false,
   });
 
-  const { data: services } = useQuery({
+  const { data: services = [] } = useQuery<any[]>({
     queryKey: ["/api/services"],
     retry: false,
   });
 
-  const { data: staff } = useQuery({
+  const { data: staff = [] } = useQuery<any[]>({
     queryKey: ["/api/staff"],
     retry: false,
   });
@@ -105,7 +105,7 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {participants?.map((participant: any) => (
+                  {participants.map((participant: any) => (
                     <SelectItem key={participant.id} value={participant.id}>
                       {participant.firstName} {participant.lastName} - {participant.ndisNumber}
                     </SelectItem>
@@ -131,7 +131,7 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {services?.map((service: any) => (
+                    {services.map((service: any) => (
                       <SelectItem key={service.id} value={service.id}>
                         {service.serviceName} - {new Date(service.scheduledDate).toLocaleDateString()}
                       </SelectItem>

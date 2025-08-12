@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
-import { getRoleDashboardPath } from "@/lib/roles";
+import { getRoleDashboardPath, type UserRole } from "@/lib/roles";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import Dashboard from "@/pages/dashboard";
@@ -64,7 +64,7 @@ function Router() {
   // Redirect to role-specific dashboard if at root
   useEffect(() => {
     if (isAuthenticated && user?.role && location === "/") {
-      const dashboardPath = getRoleDashboardPath(user.role);
+      const dashboardPath = getRoleDashboardPath(user.role as UserRole);
       setLocation(dashboardPath);
     }
   }, [isAuthenticated, user, location, setLocation]);
