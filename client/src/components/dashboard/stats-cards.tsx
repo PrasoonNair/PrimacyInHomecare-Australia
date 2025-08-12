@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 interface DashboardStats {
   activeParticipants: number;
   servicesThisWeek: number;
-  budgetUsedPercentage: number;
+  budgetUsedPercentage?: number;
+  hoursCompletedThisMonth?: number;
   plansExpiringSoon: number;
 }
 
@@ -30,11 +31,11 @@ export default function StatsCards() {
       testId: "stat-services-week"
     },
     {
-      title: "Monthly Budget Used",
-      value: `${stats?.budgetUsedPercentage || 0}%`,
-      icon: "fas fa-dollar-sign", 
+      title: "Hours Completed",
+      value: `${stats?.hoursCompletedThisMonth || 0} hrs`,
+      icon: "fas fa-clock", 
       color: "bg-orange-100 text-ndis-accent",
-      testId: "stat-budget-used"
+      testId: "stat-hours-completed"
     },
     {
       title: "Plans Expiring Soon",

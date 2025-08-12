@@ -289,6 +289,18 @@ export const roleKPIs: Record<string, KPIMetric[]> = {
 
   "Support Worker": [
     {
+      id: "hours_of_support",
+      title: "Hours of Support Provided",
+      value: 156,
+      target: 160,
+      unit: "hrs",
+      trend: "up",
+      trendValue: "+12 hrs",
+      status: "warning",
+      description: "Total support hours delivered this month",
+      category: "productivity"
+    },
+    {
       id: "shift_attendance",
       title: "Shift Attendance Rate",
       value: 96,

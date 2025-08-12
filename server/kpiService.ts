@@ -85,17 +85,35 @@ export class KPIService {
 
   private async getSupportWorkerKPIs(baseKPIs: KPIMetric[], userId?: string): Promise<KPIMetric[]> {
     try {
-      // Get shift attendance data
-      const shiftData = await db.select({ 
+      // Get shift attendance data (simplified hours calculation for now)
+      let query = db.select({ 
         total: count(),
         completed: count(sql`CASE WHEN status = 'completed' THEN 1 END`)
       }).from(shifts);
+      
+      if (userId) {
+        query = query.where(eq(shifts.staffId, userId));
+      }
+      
+      const shiftData = await query;
 
       const totalShifts = shiftData[0]?.total || 0;
       const completedShifts = shiftData[0]?.completed || 0;
+      // Calculate hours based on completed shifts (estimated 8 hours per shift for demo)
+      const hoursWorked = completedShifts * 8; // In production, this would sum actual clock-in/out times
       const attendanceRate = totalShifts > 0 ? Math.round((completedShifts / totalShifts) * 100) : 96;
 
       return baseKPIs.map(kpi => {
+        if (kpi.id === "hours_of_support") {
+          return {
+            ...kpi,
+            value: hoursWorked,
+            description: `Total support hours delivered this month`,
+            trend: hoursWorked >= 160 ? "up" : hoursWorked >= 140 ? "stable" : "down",
+            trendValue: hoursWorked >= 160 ? `+${hoursWorked - 160} hrs` : hoursWorked >= 140 ? "0 hrs" : `${hoursWorked - 160} hrs`,
+            status: hoursWorked >= 160 ? "good" : hoursWorked >= 140 ? "warning" : "critical"
+          };
+        }
         if (kpi.id === "shift_attendance") {
           return {
             ...kpi,
