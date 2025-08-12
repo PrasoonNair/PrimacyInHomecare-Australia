@@ -42,62 +42,62 @@ export async function extractDataFromNdisPlan(fileBuffer: Buffer, fileName: stri
   // 2. Use AI (like Claude) to parse and structure the data
   // 3. Return the extracted information
   
-  // Using real NDIS plan data from Mark Reilly's plan
+  // Using generic sample data for demonstration
   const mockData: ExtractedPlanData = {
     participant: {
-      firstName: "Mark",
-      lastName: "Reilly",
-      ndisNumber: "430779676",
-      dateOfBirth: "1964-11-25",
-      phone: "",
-      email: "",
-      address: "Unit 4, 46 Marklin Street, CRANBOURNE VIC 3977",
-      primaryDisability: "Multiple disabilities requiring 24/7 support",
-      communicationNeeds: "Requires support with personal care and communication"
+      firstName: "Sample",
+      lastName: "Participant",
+      ndisNumber: `NDIS${Date.now().toString().substring(6)}`,
+      dateOfBirth: "1985-06-15",
+      phone: "0400000000",
+      email: "participant@example.com",
+      address: "123 Example Street, Melbourne VIC 3000",
+      primaryDisability: "Physical disability",
+      communicationNeeds: "Standard communication preferences"
     },
     plan: {
-      planNumber: "430779676-2023",
-      startDate: "2023-01-19",
-      endDate: "2024-01-19",
-      totalBudget: "906203.38",
-      planManagementType: "NDIA-managed"
+      planNumber: `PLAN-${Date.now()}`,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      totalBudget: "120000.00",
+      planManagementType: "Plan-managed"
     },
     goals: [
       {
         category: "Daily Living",
-        description: "Live in a home as safely and independently as possible with appropriate supports and strategies",
+        description: "Improve independence in daily activities and personal care",
         priority: "High",
-        targetDate: "2024-01-19"
-      },
-      {
-        category: "Relationships",
-        description: "Build and maintain healthy and supportive relationships with carers and family",
-        priority: "High",
-        targetDate: "2024-01-19"
+        targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       {
         category: "Community Participation",
-        description: "Attend day program and build meaningful relationships with fellow participants",
+        description: "Increase social participation and community engagement",
         priority: "Medium",
-        targetDate: "2024-01-19"
+        targetDate: new Date(Date.now() + 270 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       {
-        category: "Behaviour Support",
-        description: "Address behavior management and explore and develop behaviour management strategies",
-        priority: "Medium",
-        targetDate: "2024-01-19"
+        category: "Employment",
+        description: "Develop employment skills and explore work opportunities",
+        priority: "High",
+        targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       },
       {
-        category: "Social & Community",
-        description: "Access social and community supports to increase participation and engagement",
+        category: "Health and Wellbeing",
+        description: "Maintain physical and mental health through regular therapy",
+        priority: "High",
+        targetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      },
+      {
+        category: "Learning",
+        description: "Develop new skills through education and training programs",
         priority: "Medium",
-        targetDate: "2024-01-19"
+        targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       }
     ],
     fundingBreakdown: {
-      coreSupports: "798975.85",
-      capacityBuilding: "105443.53", 
-      capitalSupports: "1784.00"
+      coreSupports: "50000.00",
+      capacityBuilding: "45000.00", 
+      capitalSupports: "25000.00"
     }
   };
 
