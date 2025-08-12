@@ -1846,6 +1846,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Enhanced Shift Management endpoints for NDIS billing
+  app.get("/api/shifts", isAuthenticated, async (req, res) => {
+    try {
+      const shifts = await storage.getShiftsWithDetails();
+      res.json(shifts);
+    } catch (error) {
+      console.error("Error fetching shifts:", error);
+      res.status(500).json({ error: "Failed to fetch shifts" });
+    }
+  });
+
+  app.post("/api/shifts/:id/clock-in", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const shift = await storage.clockInShift(id);
+      res.json(shift);
+    } catch (error) {
+      console.error("Error clocking in:", error);
+      res.status(500).json({ error: "Failed to clock in" });
+    }
+  });
+
+  app.post("/api/shifts/:id/clock-out", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const shift = await storage.clockOutShift(id);
+      res.json(shift);
+    } catch (error) {
+      console.error("Error clocking out:", error);
+      res.status(500).json({ error: "Failed to clock out" });
+    }
+  });
+
+  app.post("/api/shift-case-notes", isAuthenticated, async (req, res) => {
+    try {
+      const caseNote = await storage.createShiftCaseNote(req.body);
+      await storage.updateShiftCaseNoteStatus(req.body.shiftId, true);
+      res.json(caseNote);
+    } catch (error) {
+      console.error("Error creating case note:", error);
+      res.status(500).json({ error: "Failed to create case note" });
+    }
+  });
+
+  app.get("/api/shift-case-notes", isAuthenticated, async (req, res) => {
+    try {
+      const caseNotes = await storage.getShiftCaseNotes();
+      res.json(caseNotes);
+    } catch (error) {
+      console.error("Error fetching case notes:", error);
+      res.status(500).json({ error: "Failed to fetch case notes" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -23,6 +23,7 @@ import {
   awardRates,
   payroll,
   shifts,
+  shiftCaseNotes,
   staffAvailability,
   audits,
   // Incident Management tables
@@ -143,6 +144,14 @@ export interface IStorage {
   getIncidentTimeline(incidentId: string): Promise<IncidentTimelineEntry[]>;
   addIncidentTimelineEntry(entry: InsertIncidentTimelineEntry): Promise<IncidentTimelineEntry>;
   getIncidentDocuments(incidentId: string): Promise<IncidentDocument[]>;
+  
+  // Enhanced Shift Management for NDIS Billing
+  getShiftsWithDetails(): Promise<any[]>;
+  clockInShift(shiftId: string): Promise<any>;
+  clockOutShift(shiftId: string): Promise<any>;
+  createShiftCaseNote(caseNote: any): Promise<any>;
+  updateShiftCaseNoteStatus(shiftId: string, completed: boolean): Promise<any>;
+  getShiftCaseNotes(): Promise<any[]>;
   addIncidentDocument(document: InsertIncidentDocument): Promise<IncidentDocument>;
   
   // User operations
@@ -1066,6 +1075,102 @@ export class DatabaseStorage implements IStorage {
 
   async deleteShift(id: string): Promise<void> {
     await db.delete(shifts).where(eq(shifts.id, id));
+  }
+
+  // Enhanced Shift Management for NDIS Billing
+  async getShiftsWithDetails(): Promise<any[]> {
+    const shiftsWithDetails = await db
+      .select({
+        id: shifts.id,
+        participantId: shifts.participantId,
+        participantName: sql<string>`${participants.firstName} || ' ' || ${participants.lastName}`,
+        assignedStaffId: shifts.assignedStaffId,
+        staffName: sql<string>`${staff.firstName} || ' ' || ${staff.lastName}`,
+        shiftDate: shifts.shiftDate,
+        startTime: shifts.startTime,
+        endTime: shifts.endTime,
+        duration: shifts.duration,
+        location: shifts.location,
+        participantAddress: shifts.participantAddress,
+        status: shifts.status,
+        clockInTime: shifts.clockInTime,
+        clockOutTime: shifts.clockOutTime,
+        actualDuration: shifts.actualDuration,
+        hourlyRate: shifts.hourlyRate,
+        totalAmount: shifts.totalAmount,
+        caseNoteCompleted: shifts.caseNoteCompleted,
+        billingStatus: shifts.billingStatus,
+        ndisSupportItemNumber: shifts.ndisSupportItemNumber,
+      })
+      .from(shifts)
+      .leftJoin(participants, eq(shifts.participantId, participants.id))
+      .leftJoin(staff, eq(shifts.assignedStaffId, staff.id))
+      .orderBy(desc(shifts.shiftDate));
+    
+    return shiftsWithDetails;
+  }
+
+  async clockInShift(shiftId: string): Promise<any> {
+    const now = new Date();
+    const [updated] = await db
+      .update(shifts)
+      .set({ 
+        clockInTime: now,
+        status: "in_progress",
+        updatedAt: now
+      })
+      .where(eq(shifts.id, shiftId))
+      .returning();
+    return updated;
+  }
+
+  async clockOutShift(shiftId: string): Promise<any> {
+    const now = new Date();
+    
+    // Get the shift to calculate actual duration
+    const [shift] = await db.select().from(shifts).where(eq(shifts.id, shiftId));
+    if (!shift || !shift.clockInTime) {
+      throw new Error("Shift not found or not clocked in");
+    }
+    
+    const actualDurationMs = now.getTime() - new Date(shift.clockInTime).getTime();
+    const actualDurationMinutes = Math.round(actualDurationMs / (1000 * 60));
+    const totalAmount = shift.hourlyRate ? 
+      Number(shift.hourlyRate) * (actualDurationMinutes / 60) : 0;
+    
+    const [updated] = await db
+      .update(shifts)
+      .set({ 
+        clockOutTime: now,
+        actualDuration: actualDurationMinutes,
+        totalAmount: totalAmount.toString(),
+        status: "completed",
+        updatedAt: now
+      })
+      .where(eq(shifts.id, shiftId))
+      .returning();
+    return updated;
+  }
+
+  async createShiftCaseNote(caseNote: any): Promise<any> {
+    const [newCaseNote] = await db.insert(shiftCaseNotes).values(caseNote).returning();
+    return newCaseNote;
+  }
+
+  async updateShiftCaseNoteStatus(shiftId: string, completed: boolean): Promise<any> {
+    const [updated] = await db
+      .update(shifts)
+      .set({ 
+        caseNoteCompleted: completed,
+        updatedAt: new Date()
+      })
+      .where(eq(shifts.id, shiftId))
+      .returning();
+    return updated;
+  }
+
+  async getShiftCaseNotes(): Promise<any[]> {
+    return await db.select().from(shiftCaseNotes).orderBy(desc(shiftCaseNotes.createdAt));
   }
 
   async getStaffAvailability(): Promise<StaffAvailability[]> {

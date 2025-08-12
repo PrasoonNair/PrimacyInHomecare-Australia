@@ -512,15 +512,75 @@ export const shifts = pgTable("shifts", {
   duration: integer("duration"), // in minutes
   shiftType: varchar("shift_type").notNull(), // regular, cover, emergency, overnight
   location: text("location"),
+  participantAddress: text("participant_address"), // Specific address for the shift
   status: shiftStatusEnum("status").default("scheduled"),
   notes: text("notes"),
   clockInTime: timestamp("clock_in_time"),
   clockOutTime: timestamp("clock_out_time"),
+  clockInLocation: text("clock_in_location"), // GPS/address where staff clocked in
+  clockOutLocation: text("clock_out_location"), // GPS/address where staff clocked out
   actualDuration: integer("actual_duration"), // in minutes
   travelTime: integer("travel_time"), // in minutes
+  breakTime: integer("break_time"), // in minutes
   isUrgent: boolean("is_urgent").default(false),
   requestedBy: varchar("requested_by").references(() => users.id),
   approvedBy: varchar("approved_by").references(() => users.id),
+  // Billing and NDIS specific fields
+  hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
+  ndisSupportItemNumber: varchar("ndis_support_item_number"),
+  billingStatus: varchar("billing_status").default("pending"), // pending, approved, invoiced, paid
+  invoiceId: varchar("invoice_id").references(() => invoices.id),
+  // Compliance tracking
+  caseNoteCompleted: boolean("case_note_completed").default(false),
+  participantSignature: boolean("participant_signature").default(false),
+  qualityCheckPassed: boolean("quality_check_passed").default(false),
+  supervisorApproval: boolean("supervisor_approval").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shift Case Notes table - Enhanced for NDIS compliance
+export const shiftCaseNotes = pgTable("shift_case_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shiftId: varchar("shift_id").references(() => shifts.id).notNull(),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  noteDate: timestamp("note_date").defaultNow(),
+  
+  // NDIS specific fields
+  goalProgress: text("goal_progress"),
+  activitiesCompleted: text("activities_completed"),
+  supportProvided: text("support_provided"),
+  participantMood: varchar("participant_mood"), // excellent, good, fair, poor
+  participantEngagement: varchar("participant_engagement"), // high, medium, low
+  skillsObserved: text("skills_observed"),
+  challengesFaced: text("challenges_faced"),
+  breakthroughs: text("breakthroughs"),
+  
+  // Medication and health
+  medicationGiven: boolean("medication_given").default(false),
+  medicationDetails: text("medication_details"),
+  healthObservations: text("health_observations"),
+  incidentOccurred: boolean("incident_occurred").default(false),
+  incidentDetails: text("incident_details"),
+  
+  // Support and outcomes
+  outcomes: text("outcomes"),
+  nextSteps: text("next_steps"),
+  participantFeedback: text("participant_feedback"),
+  supportWorkerReflection: text("support_worker_reflection"),
+  
+  // Compliance and approval
+  supervisorReviewed: boolean("supervisor_reviewed").default(false),
+  supervisorNotes: text("supervisor_notes"),
+  qualityRating: integer("quality_rating"), // 1-5 stars
+  
+  // Digital signatures
+  participantSignatureUrl: varchar("participant_signature_url"),
+  staffSignatureUrl: varchar("staff_signature_url"),
+  supervisorSignatureUrl: varchar("supervisor_signature_url"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1162,6 +1222,12 @@ export const insertServiceSchema = createInsertSchema(services).omit({
 });
 
 export const insertProgressNoteSchema = createInsertSchema(progressNotes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShiftCaseNoteSchema = createInsertSchema(shiftCaseNotes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

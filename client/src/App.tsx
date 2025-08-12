@@ -27,6 +27,7 @@ import Intake from "@/pages/intake";
 import HRRecruitment from "@/pages/hr-recruitment";
 import FinanceAwards from "@/pages/finance-awards";
 import ServiceDelivery from "@/pages/service-delivery";
+import ShiftManagement from "@/pages/shift-management";
 import ComplianceQuality from "@/pages/compliance-quality";
 import Incidents from "@/pages/incidents";
 
@@ -73,6 +74,7 @@ function Router() {
             <Route path="/hr-recruitment" component={HRRecruitment} />
             <Route path="/finance-awards" component={FinanceAwards} />
             <Route path="/service-delivery" component={ServiceDelivery} />
+            <Route path="/shift-management" component={ShiftManagement} />
             <Route path="/compliance-quality" component={ComplianceQuality} />
             <Route path="/incidents" component={Incidents} />
             <Route component={NotFound} />
