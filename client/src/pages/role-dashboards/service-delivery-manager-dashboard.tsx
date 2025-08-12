@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { 
   CalendarIcon,
   UsersIcon,
@@ -12,9 +13,11 @@ import {
   AlertCircleIcon,
   CheckCircleIcon,
   ClockIcon,
-  BarChart3Icon
+  BarChart3Icon,
+  ShieldCheckIcon
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { getRoleEfficiencyMetrics } from "@/lib/ndis-compliance";
 
 export default function ServiceDeliveryManagerDashboard() {
   const { user } = useAuth();
@@ -27,6 +30,15 @@ export default function ServiceDeliveryManagerDashboard() {
   const { data: shifts = [] } = useQuery({
     queryKey: ["/api/shifts"],
   });
+
+  const efficiencyMetrics = getRoleEfficiencyMetrics('service_delivery_manager');
+  
+  // Mock current performance data
+  const currentPerformance = {
+    serviceUtilization: 87,
+    staffProductivity: 82,
+    qualityScore: 4.6
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -323,11 +335,95 @@ export default function ServiceDeliveryManagerDashboard() {
           <TabsContent value="performance" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Performance Analytics</CardTitle>
-                <CardDescription>Detailed service delivery metrics</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheckIcon className="h-5 w-5" />
+                  NDIS Service Delivery Compliance & Efficiency
+                </CardTitle>
+                <CardDescription>Performance against NDIS standards and efficiency targets</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Efficiency Metrics vs Targets */}
+                  <div>
+                    <h4 className="font-medium mb-4">Efficiency Performance vs NDIS Targets</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium">Service Utilization</span>
+                          <span className="text-sm">
+                            {currentPerformance.serviceUtilization}% / {efficiencyMetrics.serviceUtilization?.target}% target
+                          </span>
+                        </div>
+                        <Progress 
+                          value={(currentPerformance.serviceUtilization / efficiencyMetrics.serviceUtilization?.target) * 100} 
+                          className="h-2"
+                        />
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium">Staff Productivity</span>
+                          <span className="text-sm">
+                            {currentPerformance.staffProductivity}% / {efficiencyMetrics.staffProductivity?.target}% target
+                          </span>
+                        </div>
+                        <Progress 
+                          value={(currentPerformance.staffProductivity / efficiencyMetrics.staffProductivity?.target) * 100} 
+                          className="h-2"
+                        />
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium">Quality Score</span>
+                          <span className="text-sm">
+                            {currentPerformance.qualityScore} / {efficiencyMetrics.qualityScore?.target} target
+                          </span>
+                        </div>
+                        <Progress 
+                          value={(currentPerformance.qualityScore / efficiencyMetrics.qualityScore?.target) * 100} 
+                          className="h-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* NDIS Compliance Workflow */}
+                  <div className="p-4 border rounded-lg bg-green-50">
+                    <h4 className="font-medium mb-3">NDIS Service Delivery Workflow Compliance</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Support worker qualifications verified</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Service agreements in place</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Progress notes completed timely</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Incident reporting within 24hrs</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <AlertCircleIcon className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm">Supervision notes pending (2)</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Participant feedback collected</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Key Performance Indicators */}
                   <div className="grid grid-cols-3 gap-4">
                     <div className="p-3 border rounded-lg">
                       <p className="text-sm font-medium text-muted-foreground">Weekly Services</p>
@@ -335,18 +431,18 @@ export default function ServiceDeliveryManagerDashboard() {
                       <p className="text-xs text-green-600">+12% vs last week</p>
                     </div>
                     <div className="p-3 border rounded-lg">
-                      <p className="text-sm font-medium text-muted-foreground">Avg Response Time</p>
-                      <p className="text-xl font-bold">2.3 hrs</p>
-                      <p className="text-xs text-green-600">Within SLA</p>
+                      <p className="text-sm font-medium text-muted-foreground">NDIS Compliance Rate</p>
+                      <p className="text-xl font-bold">96.5%</p>
+                      <p className="text-xs text-green-600">Exceeds requirement</p>
                     </div>
                     <div className="p-3 border rounded-lg">
-                      <p className="text-sm font-medium text-muted-foreground">Cost per Service</p>
-                      <p className="text-xl font-bold">$127</p>
-                      <p className="text-xs text-orange-600">-3% efficiency gain</p>
+                      <p className="text-sm font-medium text-muted-foreground">Cost Efficiency</p>
+                      <p className="text-xl font-bold">$127/service</p>
+                      <p className="text-xs text-green-600">-3% improvement</p>
                     </div>
                   </div>
 
-                  <Button className="w-full">Generate Detailed Report</Button>
+                  <Button className="w-full">Generate NDIS Compliance Report</Button>
                 </div>
               </CardContent>
             </Card>

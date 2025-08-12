@@ -16,10 +16,21 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
+import { ComplianceDashboard } from "@/components/compliance/compliance-dashboard";
+import { validateWorkerCompliance } from "@/lib/ndis-compliance";
 
 export default function SupportWorkerDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("today");
+  
+  // Mock compliance data for demonstration
+  const workerComplianceData = {
+    screeningValid: true,
+    trainingComplete: true,
+    progressNotesCompliant: false
+  };
+  
+  const complianceChecks = validateWorkerCompliance(workerComplianceData);
 
   // Mock shift data
   const todayShifts = [
@@ -103,10 +114,11 @@ export default function SupportWorkerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="today">Today's Schedule</TabsTrigger>
             <TabsTrigger value="participants">My Participants</TabsTrigger>
             <TabsTrigger value="notes">Progress Notes</TabsTrigger>
+            <TabsTrigger value="compliance">NDIS Compliance</TabsTrigger>
             <TabsTrigger value="resources">Resources</TabsTrigger>
           </TabsList>
 
@@ -267,6 +279,10 @@ export default function SupportWorkerDashboard() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="compliance" className="space-y-4">
+            <ComplianceDashboard role="support_worker" checks={complianceChecks} />
           </TabsContent>
 
           <TabsContent value="resources" className="space-y-4">

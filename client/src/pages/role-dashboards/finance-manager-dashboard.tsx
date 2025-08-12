@@ -12,10 +12,12 @@ import {
   PieChartIcon,
   AlertCircleIcon,
   CalculatorIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  CheckCircleIcon
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
+import { ComplianceDashboard } from "@/components/compliance/compliance-dashboard";
 
 export default function FinanceManagerDashboard() {
   const { user } = useAuth();
@@ -97,11 +99,12 @@ export default function FinanceManagerDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="billing">Billing</TabsTrigger>
             <TabsTrigger value="payroll">Payroll</TabsTrigger>
             <TabsTrigger value="budgets">Budgets</TabsTrigger>
+            <TabsTrigger value="compliance">NDIS Compliance</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
@@ -273,6 +276,117 @@ export default function FinanceManagerDashboard() {
                       <div className="bg-green-600 h-2 rounded-full" style={{width: '56%'}}></div>
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="compliance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>NDIS Financial Compliance</CardTitle>
+                <CardDescription>Price guide compliance and billing validation</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                        <p className="font-medium">Price Guide Compliance</p>
+                      </div>
+                      <p className="text-2xl font-bold">99.2%</p>
+                      <p className="text-xs text-muted-foreground">All invoices within limits</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircleIcon className="h-5 w-5 text-yellow-500" />
+                        <p className="font-medium">SCHADS Compliance</p>
+                      </div>
+                      <p className="text-2xl font-bold">98.5%</p>
+                      <p className="text-xs text-muted-foreground">2 payroll reviews pending</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileTextIcon className="h-5 w-5 text-blue-500" />
+                        <p className="font-medium">Audit Trail</p>
+                      </div>
+                      <p className="text-2xl font-bold">100%</p>
+                      <p className="text-xs text-muted-foreground">Complete documentation</p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border rounded-lg bg-blue-50">
+                    <h4 className="font-medium mb-3">NDIS Billing Workflow Checks</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Service agreements verified before billing</span>
+                        </div>
+                        <Badge className="bg-green-500">Compliant</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Support ratios within NDIS guidelines</span>
+                        </div>
+                        <Badge className="bg-green-500">Compliant</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">Travel claims follow NDIS rules</span>
+                        </div>
+                        <Badge className="bg-green-500">Compliant</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <AlertCircleIcon className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm">Provider travel documentation</span>
+                        </div>
+                        <Badge className="bg-yellow-500">Review Required</Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ComplianceDashboard 
+                    role="finance_manager" 
+                    checks={[
+                      {
+                        id: 'fm-001',
+                        name: 'NDIS Price Guide Adherence',
+                        description: 'All billing follows current price guide',
+                        category: 'documentation',
+                        severity: 'critical',
+                        status: 'compliant'
+                      },
+                      {
+                        id: 'fm-002',
+                        name: 'Invoice Accuracy',
+                        description: '99.5% accuracy target',
+                        category: 'service_delivery',
+                        severity: 'high',
+                        status: 'compliant'
+                      },
+                      {
+                        id: 'fm-003',
+                        name: 'Payment Processing',
+                        description: 'Within 14-day target',
+                        category: 'service_delivery',
+                        severity: 'medium',
+                        status: 'compliant'
+                      },
+                      {
+                        id: 'fm-004',
+                        name: 'Financial Audit Trail',
+                        description: '7-year retention policy',
+                        category: 'documentation',
+                        severity: 'high',
+                        status: 'compliant'
+                      }
+                    ]} 
+                  />
                 </div>
               </CardContent>
             </Card>

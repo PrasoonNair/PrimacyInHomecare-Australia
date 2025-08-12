@@ -15,6 +15,8 @@ import {
   AlertTriangleIcon
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { ComplianceDashboard } from "@/components/compliance/compliance-dashboard";
+import { NDIS_PRACTICE_STANDARDS } from "@/lib/ndis-compliance";
 
 export default function QualityManagerDashboard() {
   const { user } = useAuth();
@@ -23,6 +25,50 @@ export default function QualityManagerDashboard() {
   const { data: audits = [] } = useQuery({
     queryKey: ["/api/audits"],
   });
+
+  // Mock compliance checks for demonstration
+  const complianceChecks = [
+    {
+      id: 'qm-ndis-001',
+      name: 'NDIS Practice Standards Compliance',
+      description: 'All practice standards fully implemented',
+      category: 'quality_safety' as const,
+      severity: 'critical' as const,
+      status: 'compliant' as const
+    },
+    {
+      id: 'qm-ndis-002',
+      name: 'Incident Management System',
+      description: 'Reportable incidents managed within timeframes',
+      category: 'quality_safety' as const,
+      severity: 'critical' as const,
+      status: 'compliant' as const
+    },
+    {
+      id: 'qm-ndis-003',
+      name: 'Complaints Resolution',
+      description: 'All complaints resolved within 28 days',
+      category: 'participant_rights' as const,
+      severity: 'high' as const,
+      status: 'review' as const
+    },
+    {
+      id: 'qm-ndis-004',
+      name: 'Worker Screening Compliance',
+      description: '100% of workers have valid screening',
+      category: 'worker_screening' as const,
+      severity: 'critical' as const,
+      status: 'compliant' as const
+    },
+    {
+      id: 'qm-ndis-005',
+      name: 'Audit Schedule',
+      description: 'Quarterly audits completed on schedule',
+      category: 'quality_safety' as const,
+      severity: 'medium' as const,
+      status: 'pending' as const
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -95,10 +141,41 @@ export default function QualityManagerDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
+            <ComplianceDashboard role="quality_manager" checks={complianceChecks} />
+            
             <Card>
               <CardHeader>
-                <CardTitle>Quality Dashboard</CardTitle>
-                <CardDescription>Current quality and compliance status</CardDescription>
+                <CardTitle>NDIS Practice Standards Overview</CardTitle>
+                <CardDescription>Compliance with core NDIS requirements</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  {Object.values(NDIS_PRACTICE_STANDARDS).map((standard) => (
+                    <div key={standard.name} className="p-4 border rounded-lg">
+                      <h4 className="font-medium mb-3">{standard.name}</h4>
+                      <div className="space-y-1">
+                        {standard.requirements.slice(0, 3).map((req) => (
+                          <div key={req} className="flex items-center gap-2 text-sm">
+                            <CheckCircleIcon className="h-3 w-3 text-green-500 flex-shrink-0" />
+                            <span className="text-muted-foreground">{req}</span>
+                          </div>
+                        ))}
+                        {standard.requirements.length > 3 && (
+                          <p className="text-xs text-muted-foreground ml-5">
+                            +{standard.requirements.length - 3} more requirements
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Quality Workflow Status</CardTitle>
+                <CardDescription>Real-time workflow compliance monitoring</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -111,56 +188,28 @@ export default function QualityManagerDashboard() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">Medication Error - High Priority</p>
-                          <p className="text-sm text-muted-foreground">Reported 2 days ago</p>
+                          <p className="text-sm text-muted-foreground">Reported 2 days ago - NDIS reportable</p>
                         </div>
                         <Button size="sm" variant="destructive">Investigate</Button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-3">NDIS Practice Standards</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Rights & Responsibilities</span>
-                          <Badge className="bg-green-500">100%</Badge>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Governance & Operations</span>
-                          <Badge className="bg-green-500">98%</Badge>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Service Provision</span>
-                          <Badge className="bg-green-500">96%</Badge>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Service Environment</span>
-                          <Badge className="bg-green-500">99%</Badge>
-                        </div>
-                      </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="p-3 border rounded-lg">
+                      <p className="text-sm font-medium text-muted-foreground">Audit Efficiency</p>
+                      <p className="text-2xl font-bold">95%</p>
+                      <p className="text-xs text-green-600">On schedule</p>
                     </div>
-
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-medium mb-3">Recent Quality Activities</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Internal audit completed</span>
-                          <span className="text-muted-foreground">Today</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Staff training conducted</span>
-                          <span className="text-muted-foreground">Yesterday</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Policy review completed</span>
-                          <span className="text-muted-foreground">3 days ago</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Incident investigation closed</span>
-                          <span className="text-muted-foreground">5 days ago</span>
-                        </div>
-                      </div>
+                    <div className="p-3 border rounded-lg">
+                      <p className="text-sm font-medium text-muted-foreground">Incident Resolution</p>
+                      <p className="text-2xl font-bold">4.2 days</p>
+                      <p className="text-xs text-green-600">Within target</p>
+                    </div>
+                    <div className="p-3 border rounded-lg">
+                      <p className="text-sm font-medium text-muted-foreground">Compliance Score</p>
+                      <p className="text-2xl font-bold">98%</p>
+                      <p className="text-xs text-green-600">Exceeds standard</p>
                     </div>
                   </div>
                 </div>
