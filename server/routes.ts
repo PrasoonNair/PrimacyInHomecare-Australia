@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { auditLogger, AuditAction } from "./auditLogger";
 import { 
   insertParticipantSchema,
   insertNdisplanSchema,
@@ -103,10 +104,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/participants", isAuthenticated, async (req, res) => {
+  app.post("/api/participants", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertParticipantSchema.parse(req.body);
       const participant = await storage.createParticipant(validatedData);
+      
+      // Log participant creation
+      const userId = req.user?.claims?.sub;
+      await auditLogger.logParticipantCreated(
+        participant.id,
+        userId,
+        validatedData
+      );
+      
       res.status(201).json(participant);
     } catch (error) {
       console.error("Error creating participant:", error);
@@ -114,10 +124,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/participants/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/participants/:id", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertParticipantSchema.partial().parse(req.body);
+      const previousParticipant = await storage.getParticipant(req.params.id);
+      
+      if (!previousParticipant) {
+        return res.status(404).json({ message: "Participant not found" });
+      }
+      
       const participant = await storage.updateParticipant(req.params.id, validatedData);
+      
+      // Log participant update
+      const userId = req.user?.claims?.sub;
+      await auditLogger.logParticipantUpdated(
+        req.params.id,
+        userId,
+        previousParticipant,
+        validatedData
+      );
+      
       res.json(participant);
     } catch (error) {
       console.error("Error updating participant:", error);
@@ -125,9 +151,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/participants/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/participants/:id", isAuthenticated, async (req: any, res) => {
     try {
       await storage.deleteParticipant(req.params.id);
+      
+      // Log participant deletion
+      const userId = req.user?.claims?.sub;
+      await auditLogger.log({
+        userId,
+        entityType: "participant",
+        entityId: req.params.id,
+        action: AuditAction.PARTICIPANT_DELETED,
+        details: { deletedAt: new Date().toISOString() }
+      });
+      
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting participant:", error);
@@ -178,14 +215,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/staff", isAuthenticated, async (req, res) => {
+  app.post("/api/staff", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertStaffSchema.parse(req.body);
       const staffMember = await storage.createStaffMember(validatedData);
+      
+      // Log staff onboarding
+      const userId = req.user?.claims?.sub;
+      await auditLogger.logStaffOnboarded(
+        staffMember.id,
+        userId,
+        validatedData
+      );
+      
       res.status(201).json(staffMember);
     } catch (error) {
       console.error("Error creating staff member:", error);
       res.status(400).json({ message: "Failed to create staff member" });
+    }
+  });
+
+  app.put("/api/staff/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = insertStaffSchema.partial().parse(req.body);
+      const previousStaff = await storage.getStaffMember(req.params.id);
+      
+      if (!previousStaff) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+      
+      const updatedStaff = await storage.updateStaffMember(req.params.id, validatedData);
+      
+      // Log staff update
+      const userId = req.user?.claims?.sub;
+      await auditLogger.log({
+        userId,
+        entityType: "staff",
+        entityId: req.params.id,
+        action: AuditAction.STAFF_UPDATED,
+        details: { updatedFields: Object.keys(validatedData) },
+        previousValues: previousStaff,
+        newValues: validatedData
+      });
+      
+      res.json(updatedStaff);
+    } catch (error) {
+      console.error("Error updating staff member:", error);
+      res.status(400).json({ message: "Failed to update staff member" });
     }
   });
 
@@ -222,14 +298,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/services", isAuthenticated, async (req, res) => {
+  app.post("/api/services", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertServiceSchema.parse(req.body);
       const service = await storage.createService(validatedData);
+      
+      // Log service creation
+      const userId = req.user?.claims?.sub;
+      await auditLogger.log({
+        userId,
+        entityType: "service",
+        entityId: service.id,
+        action: AuditAction.SERVICE_CREATED,
+        details: validatedData
+      });
+      
       res.status(201).json(service);
     } catch (error) {
       console.error("Error creating service:", error);
       res.status(400).json({ message: "Failed to create service" });
+    }
+  });
+
+  // Service allocation endpoint
+  app.post("/api/services/:id/allocate", isAuthenticated, async (req: any, res) => {
+    try {
+      const { staffId } = req.body;
+      const serviceId = req.params.id;
+      
+      const service = await storage.getService(serviceId);
+      if (!service) {
+        return res.status(404).json({ message: "Service not found" });
+      }
+      
+      await storage.assignServiceToStaff(serviceId, staffId);
+      
+      // Log service allocation
+      const userId = req.user?.claims?.sub;
+      await auditLogger.logServiceAllocated(
+        serviceId,
+        staffId,
+        service.participantId,
+        userId
+      );
+      
+      res.json({ message: "Service allocated successfully" });
+    } catch (error) {
+      console.error("Error allocating service:", error);
+      res.status(400).json({ message: "Failed to allocate service" });
     }
   });
 
