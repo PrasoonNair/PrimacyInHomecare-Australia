@@ -520,7 +520,12 @@ export default function WorkflowManagement() {
                     <p className="text-sm text-muted-foreground">No audit records yet</p>
                   ) : (
                     (audits as any[]).slice(0, 10).map((audit: any) => {
-                      const findings = JSON.parse(audit.findings || "{}");
+                      let findings: any = {};
+                      try {
+                        findings = typeof audit.findings === 'string' ? JSON.parse(audit.findings) : audit.findings || {};
+                      } catch (e) {
+                        findings = { action: audit.auditType, entityType: 'system' };
+                      }
                       return (
                         <div key={audit.id} className="p-3 border rounded-lg">
                           <div className="flex items-center justify-between mb-2">

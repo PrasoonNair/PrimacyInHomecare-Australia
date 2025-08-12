@@ -27,19 +27,6 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table for Replit Auth
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role").default("staff"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 // NDIS-specific enums
 export const planStatusEnum = pgEnum("plan_status", ["active", "inactive", "pending", "expired"]);
 export const serviceStatusEnum = pgEnum("service_status", ["scheduled", "in_progress", "completed", "cancelled"]);
@@ -55,8 +42,44 @@ export const serviceCategoryEnum = pgEnum("service_category", [
   "specialist_disability_accommodation"
 ]);
 
-// Department enums
+// Department enums - moved before userRoleEnum
 export const departmentEnum = pgEnum("department", ["intake", "hr_recruitment", "finance", "service_delivery", "compliance_quality"]);
+
+// Define specific role enum for all 15 roles
+export const userRoleEnum = pgEnum("user_role", [
+  "super_admin",
+  "ceo",
+  "general_manager",
+  "intake_coordinator",
+  "intake_manager",
+  "finance_officer_billing",
+  "finance_officer_payroll", 
+  "finance_manager",
+  "hr_manager",
+  "hr_recruiter",
+  "service_delivery_manager",
+  "service_delivery_allocation",
+  "service_delivery_coordinator",
+  "quality_manager",
+  "support_worker"
+]);
+
+// User storage table for Replit Auth
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role").default("support_worker"), // Keep as varchar to avoid data loss
+  department: varchar("department"),
+  position: varchar("position"),
+  phone: varchar("phone"),
+  isActive: boolean("is_active").default(true),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 export const agreementStatusEnum = pgEnum("agreement_status", ["draft", "pending", "active", "expired", "cancelled"]);
 export const staffStatusEnum = pgEnum("staff_status", ["pending", "active", "on_leave", "terminated"]);
 export const shiftStatusEnum = pgEnum("shift_status", ["scheduled", "confirmed", "in_progress", "completed", "cancelled", "no_show"]);
