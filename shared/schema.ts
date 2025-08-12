@@ -236,16 +236,72 @@ export const invoiceLineItems = pgTable("invoice_line_items", {
 // Referrals table for intake management
 export const referrals = pgTable("referrals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Document upload and OCR/AI extraction
+  documentUrl: varchar("document_url"),
+  documentType: varchar("document_type"), // pdf, word, excel
+  autoExtractedData: jsonb("auto_extracted_data"),
+  extractionStatus: varchar("extraction_status").default("pending"), // pending, processing, completed, failed
+  
+  // Participant information
   participantId: varchar("participant_id").references(() => participants.id),
+  ndisNumber: varchar("ndis_number"),
+  participantFirstName: varchar("participant_first_name"),
+  participantLastName: varchar("participant_last_name"),
+  participantDob: date("participant_dob"),
+  participantPhone: varchar("participant_phone"),
+  participantEmail: varchar("participant_email"),
+  
+  // Plan details
+  planStartDate: date("plan_start_date"),
+  planEndDate: date("plan_end_date"),
+  supportCategories: text("support_categories").array(),
+  
+  // Referral source information
   referralSource: referralSourceEnum("referral_source").notNull(),
+  referralType: varchar("referral_type"), // completed_form, rfs_portal, partner_referral
   referrerName: varchar("referrer_name"),
   referrerContact: varchar("referrer_contact"),
+  referrerOrganization: varchar("referrer_organization"),
+  
+  // Workflow status tracking - aligned with brief
+  workflowStatus: varchar("workflow_status").notNull().default("referral_received"),
+  // Flow: referral_received -> data_verified -> pending_service_agreement -> 
+  // agreement_sent -> agreement_signed -> pending_funding_verification -> 
+  // funding_verified -> ready_for_allocation -> worker_allocated -> 
+  // meet_greet_scheduled -> meet_greet_completed -> service_commenced
+  
+  // Verification and compliance
+  mandatoryFieldsComplete: boolean("mandatory_fields_complete").default(false),
+  dataVerifiedBy: varchar("data_verified_by").references(() => users.id),
+  dataVerifiedAt: timestamp("data_verified_at"),
+  
+  // Service agreement tracking
+  agreementTemplateId: varchar("agreement_template_id"),
+  agreementSentAt: timestamp("agreement_sent_at"),
+  agreementSignedAt: timestamp("agreement_signed_at"),
+  
+  // Funding verification
+  fundingVerified: boolean("funding_verified").default(false),
+  fundingNotes: text("funding_notes"),
+  
+  // Staff allocation
+  allocatedStaffId: varchar("allocated_staff_id").references(() => staff.id),
+  allocationDate: timestamp("allocation_date"),
+  
+  // Meet & greet
+  meetGreetScheduled: timestamp("meet_greet_scheduled"),
+  meetGreetCompleted: boolean("meet_greet_completed").default(false),
+  meetGreetOutcome: varchar("meet_greet_outcome"), // successful, participant_declined, worker_declined, rescheduled
+  
+  // General fields
   referralDate: date("referral_date").notNull(),
-  status: varchar("status").default("pending"),
+  status: varchar("status").default("pending"), // pending, approved, rejected, on_hold
   priority: varchar("priority").default("standard"), // urgent, high, standard, low
   notes: text("notes"),
   assignedTo: varchar("assigned_to").references(() => users.id),
   followUpDate: date("follow_up_date"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -255,15 +311,46 @@ export const serviceAgreements = pgTable("service_agreements", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   participantId: varchar("participant_id").references(() => participants.id).notNull(),
   planId: varchar("plan_id").references(() => ndisPlans.id),
+  referralId: varchar("referral_id").references(() => referrals.id),
   agreementNumber: varchar("agreement_number").unique().notNull(),
+  
+  // Agreement dates
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
+  renewalDate: date("renewal_date"),
+  
+  // Enhanced status tracking for workflow
   status: agreementStatusEnum("status").default("draft"),
+  workflowStep: varchar("workflow_step"), // template_selected, pre_populated, sent_for_signature, viewed, signed
+  
+  // Template and content
+  templateUsed: varchar("template_used"),
+  documentUrl: varchar("document_url"),
+  prepopulatedData: jsonb("prepopulated_data"),
+  
+  // E-signature integration
+  signatureMethod: varchar("signature_method"), // docusign, adobe_sign, manual
+  signatureRequestId: varchar("signature_request_id"),
+  sentForSignatureAt: timestamp("sent_for_signature_at"),
+  viewedAt: timestamp("viewed_at"),
+  signedAt: timestamp("signed_at"),
+  signatureIpAddress: varchar("signature_ip_address"),
+  
+  // Service details
   servicesIncluded: text("services_included").array(),
   specialConditions: text("special_conditions"),
-  renewalDate: date("renewal_date"),
+  
+  // Version control
+  versionNumber: integer("version_number").default(1),
+  previousVersionId: varchar("previous_version_id"),
+  
+  // Multi-language support
+  language: varchar("language").default("en"),
+  
+  // Approval workflow
   createdBy: varchar("created_by").references(() => users.id),
   approvedBy: varchar("approved_by").references(() => users.id),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -979,6 +1066,167 @@ export const ndisPlansRelations = relations(ndisPlans, ({ one, many }) => ({
   invoices: many(invoices),
 }));
 
+// Add new tables for enhanced workflow management
+
+// Service Agreement Templates table
+export const serviceAgreementTemplates = pgTable("service_agreement_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  templateType: varchar("template_type").notNull(), // standard, complex_needs, short_term, respite
+  
+  // Template content
+  templateContent: text("template_content").notNull(),
+  placeholderFields: jsonb("placeholder_fields"), // Fields that need to be filled
+  
+  // NDIS compliance
+  ndisCompliant: boolean("ndis_compliant").default(true),
+  complianceNotes: text("compliance_notes"),
+  
+  // Multi-language templates
+  availableLanguages: text("available_languages").array(),
+  translations: jsonb("translations"),
+  
+  // Versioning
+  version: varchar("version").notNull(),
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Funding Budget Tracking table
+export const fundingBudgets = pgTable("funding_budgets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  planId: varchar("plan_id").references(() => ndisPlans.id).notNull(),
+  
+  // Budget categories
+  coreBudget: decimal("core_budget", { precision: 10, scale: 2 }),
+  coreUsed: decimal("core_used", { precision: 10, scale: 2 }).default("0"),
+  coreRemaining: decimal("core_remaining", { precision: 10, scale: 2 }),
+  
+  capacityBuildingBudget: decimal("capacity_building_budget", { precision: 10, scale: 2 }),
+  capacityBuildingUsed: decimal("capacity_building_used", { precision: 10, scale: 2 }).default("0"),
+  capacityBuildingRemaining: decimal("capacity_building_remaining", { precision: 10, scale: 2 }),
+  
+  capitalBudget: decimal("capital_budget", { precision: 10, scale: 2 }),
+  capitalUsed: decimal("capital_used", { precision: 10, scale: 2 }).default("0"),
+  capitalRemaining: decimal("capital_remaining", { precision: 10, scale: 2 }),
+  
+  // Verification status
+  verificationStatus: varchar("verification_status").default("pending"), // pending, verified, insufficient_funds
+  verifiedBy: varchar("verified_by").references(() => users.id),
+  verifiedAt: timestamp("verified_at"),
+  verificationNotes: text("verification_notes"),
+  
+  // Alerts
+  alertThreshold: integer("alert_threshold").default(20), // Percentage
+  alertSent: boolean("alert_sent").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Meet & Greet Scheduling table
+export const meetGreets = pgTable("meet_greets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  referralId: varchar("referral_id").references(() => referrals.id),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  
+  // Scheduling
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  location: varchar("location"),
+  locationType: varchar("location_type"), // in_person, virtual, phone
+  meetingLink: varchar("meeting_link"),
+  
+  // Status tracking
+  status: varchar("status").default("scheduled"), // scheduled, completed, cancelled, rescheduled, no_show
+  
+  // Feedback from both parties
+  participantAttended: boolean("participant_attended"),
+  staffAttended: boolean("staff_attended"),
+  participantDecision: varchar("participant_decision"), // accept, decline, undecided
+  staffDecision: varchar("staff_decision"), // accept, decline, undecided
+  participantFeedback: text("participant_feedback"),
+  staffFeedback: text("staff_feedback"),
+  
+  // Outcome
+  outcome: varchar("outcome"), // successful, participant_declined, worker_declined, rescheduled, no_decision
+  nextSteps: text("next_steps"),
+  
+  // Notifications
+  participantNotified: boolean("participant_notified").default(false),
+  staffNotified: boolean("staff_notified").default(false),
+  reminderSent: boolean("reminder_sent").default(false),
+  
+  createdBy: varchar("created_by").references(() => users.id),
+  completedBy: varchar("completed_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Matching Criteria table
+export const staffMatchingCriteria = pgTable("staff_matching_criteria", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  
+  // Location preferences
+  preferredLocations: text("preferred_locations").array(),
+  maxTravelDistance: integer("max_travel_distance"), // in km
+  
+  // Skills and qualifications
+  requiredQualifications: text("required_qualifications").array(),
+  preferredQualifications: text("preferred_qualifications").array(),
+  requiredSkills: text("required_skills").array(),
+  
+  // Availability
+  preferredDays: text("preferred_days").array(),
+  preferredTimes: text("preferred_times").array(),
+  
+  // Personal preferences
+  genderPreference: varchar("gender_preference"),
+  languagePreference: text("language_preference").array(),
+  culturalRequirements: text("cultural_requirements"),
+  
+  // Matching score thresholds
+  minimumMatchScore: integer("minimum_match_score").default(70),
+  
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Workflow Audit Log table
+export const workflowAuditLog = pgTable("workflow_audit_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  entityType: varchar("entity_type").notNull(), // referral, service_agreement, funding, meet_greet
+  entityId: varchar("entity_id").notNull(),
+  
+  // Workflow tracking
+  previousStatus: varchar("previous_status"),
+  newStatus: varchar("new_status"),
+  action: varchar("action").notNull(),
+  
+  // User tracking
+  performedBy: varchar("performed_by").references(() => users.id),
+  performedByRole: varchar("performed_by_role"),
+  
+  // Details
+  details: jsonb("details"),
+  notes: text("notes"),
+  
+  // Compliance
+  isCompliant: boolean("is_compliant").default(true),
+  complianceNotes: text("compliance_notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const staffRelations = relations(staff, ({ one, many }) => ({
   user: one(users, {
     fields: [staff.userId],
@@ -1446,8 +1694,6 @@ export type InsertStaffAvailability = z.infer<typeof insertStaffAvailabilitySche
 export type StaffAvailability = typeof staffAvailability.$inferSelect;
 export type InsertAudit = z.infer<typeof insertAuditSchema>;
 export type Audit = typeof audits.$inferSelect;
-export type InsertIncident = z.infer<typeof insertIncidentSchema>;
-export type Incident = typeof incidents.$inferSelect;
 export type InsertPlanDocument = z.infer<typeof insertPlanDocumentSchema>;
 export type PlanDocument = typeof planDocuments.$inferSelect;
 export type InsertDigitalServiceAgreement = z.infer<typeof insertDigitalServiceAgreementSchema>;

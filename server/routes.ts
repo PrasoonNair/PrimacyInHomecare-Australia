@@ -118,6 +118,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Workflow Management API endpoints
+  app.post("/api/workflow/referral/:id/upload", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      const { documentUrl, documentType } = req.body;
+      
+      const result = await workflowService.processReferralUpload(
+        req.params.id,
+        documentUrl,
+        documentType
+      );
+      
+      await logAudit(
+        AuditAction.CREATE,
+        "referral_document",
+        req.params.id,
+        (req as any).user?.claims?.sub,
+        { documentType }
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error processing referral upload:", error);
+      res.status(500).json({ message: "Failed to process referral upload" });
+    }
+  });
+
+  app.post("/api/workflow/referral/:id/advance", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      const { currentStatus } = req.body;
+      
+      const result = await workflowService.advanceWorkflow(req.params.id, currentStatus);
+      
+      await logAudit(
+        AuditAction.UPDATE,
+        "referral_workflow",
+        req.params.id,
+        (req as any).user?.claims?.sub,
+        { newStatus: result }
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error advancing workflow:", error);
+      res.status(500).json({ message: "Failed to advance workflow" });
+    }
+  });
+
+  app.get("/api/workflow/matching-staff/:participantId", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      
+      const matchingStaff = await workflowService.findMatchingStaff(req.params.participantId);
+      res.json(matchingStaff);
+    } catch (error) {
+      console.error("Error finding matching staff:", error);
+      res.status(500).json({ message: "Failed to find matching staff" });
+    }
+  });
+
+  app.post("/api/workflow/referral/:id/allocate-staff", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      const { staffId } = req.body;
+      
+      const result = await workflowService.allocateStaff(req.params.id, staffId);
+      
+      await logAudit(
+        AuditAction.UPDATE,
+        "staff_allocation",
+        req.params.id,
+        (req as any).user?.claims?.sub,
+        { staffId }
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error allocating staff:", error);
+      res.status(500).json({ message: "Failed to allocate staff" });
+    }
+  });
+
+  app.post("/api/workflow/meet-greet/:id/outcome", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      const { participantDecision, staffDecision, participantFeedback, staffFeedback } = req.body;
+      
+      const result = await workflowService.recordMeetGreetOutcome(
+        req.params.id,
+        participantDecision,
+        staffDecision,
+        participantFeedback,
+        staffFeedback
+      );
+      
+      await logAudit(
+        AuditAction.UPDATE,
+        "meet_greet_outcome",
+        req.params.id,
+        (req as any).user?.claims?.sub,
+        { outcome: result.outcome }
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error recording meet & greet outcome:", error);
+      res.status(500).json({ message: "Failed to record meet & greet outcome" });
+    }
+  });
+
+  app.post("/api/workflow/funding/verify", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      const { participantId, serviceCategory, amount } = req.body;
+      
+      const result = await workflowService.verifyFunding(participantId, serviceCategory, amount);
+      
+      await logAudit(
+        AuditAction.VIEW,
+        "funding_verification",
+        participantId,
+        (req as any).user?.claims?.sub,
+        { result }
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error verifying funding:", error);
+      res.status(500).json({ message: "Failed to verify funding" });
+    }
+  });
+
+  app.get("/api/workflow/history/:entityType/:entityId", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      
+      const history = await workflowService.getWorkflowHistory(
+        req.params.entityType,
+        req.params.entityId
+      );
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching workflow history:", error);
+      res.status(500).json({ message: "Failed to fetch workflow history" });
+    }
+  });
+
+  app.get("/api/workflow/templates", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      
+      const templates = await workflowService.getServiceAgreementTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      res.status(500).json({ message: "Failed to fetch templates" });
+    }
+  });
+
+  app.post("/api/workflow/templates", isAuthenticated, async (req, res) => {
+    try {
+      const { WorkflowService } = await import("./workflowService");
+      const workflowService = new WorkflowService();
+      
+      const templateId = await workflowService.upsertServiceAgreementTemplate(req.body);
+      
+      await logAudit(
+        AuditAction.CREATE,
+        "service_agreement_template",
+        templateId,
+        (req as any).user?.claims?.sub,
+        { templateName: req.body.name }
+      );
+      
+      res.json({ success: true, templateId });
+    } catch (error) {
+      console.error("Error creating/updating template:", error);
+      res.status(500).json({ message: "Failed to create/update template" });
+    }
+  });
+
   // Dashboard routes
   app.get("/api/dashboard/stats", isAuthenticated, async (req, res) => {
     try {

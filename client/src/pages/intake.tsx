@@ -14,10 +14,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertReferralSchema, insertServiceAgreementSchema, type Referral, type ServiceAgreement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon, Upload, BarChart3 } from "lucide-react";
+import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon, Upload, BarChart3, Workflow, Eye } from "lucide-react";
 import { NdisPlanUpload } from "@/components/ndis-plan-upload";
 import { KPIDashboard } from "@/components/kpi-dashboard";
-import { ParticipantForm } from "@/components/forms/participant-form";
+import ParticipantForm from "@/components/forms/participant-form";
+import { WorkflowTracker } from "@/components/workflow-tracker";
 import { format } from "date-fns";
 
 export default function Intake() {
@@ -26,6 +27,8 @@ export default function Intake() {
   const [agreementDialogOpen, setAgreementDialogOpen] = useState(false);
   const [planUploadDialogOpen, setPlanUploadDialogOpen] = useState(false);
   const [participantFormOpen, setParticipantFormOpen] = useState(false);
+  const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
+  const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
   const [extractedPlanData, setExtractedPlanData] = useState<any>(null);
   const { toast } = useToast();
 
@@ -248,12 +251,25 @@ export default function Intake() {
                     <form onSubmit={referralForm.handleSubmit((data) => createReferralMutation.mutate(data))} className="space-y-4">
                       <FormField
                         control={referralForm.control}
-                        name="referrerName"
+                        name="referralSource"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Referrer Name</FormLabel>
+                            <FormLabel>Referral Source</FormLabel>
                             <FormControl>
-                              <Input {...field} data-testid="input-referrer-name" />
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select source" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="ndis_planner">NDIS Planner</SelectItem>
+                                  <SelectItem value="support_coordinator">Support Coordinator</SelectItem>
+                                  <SelectItem value="lac">LAC</SelectItem>
+                                  <SelectItem value="self">Self</SelectItem>
+                                  <SelectItem value="family">Family</SelectItem>
+                                  <SelectItem value="health_professional">Health Professional</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -262,12 +278,22 @@ export default function Intake() {
 
                       <FormField
                         control={referralForm.control}
-                        name="referrerContact"
+                        name="priority"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Contact Information</FormLabel>
+                            <FormLabel>Priority</FormLabel>
                             <FormControl>
-                              <Input {...field} data-testid="input-referrer-contact" />
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select priority" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="urgent">Urgent</SelectItem>
+                                  <SelectItem value="high">High</SelectItem>
+                                  <SelectItem value="standard">Standard</SelectItem>
+                                  <SelectItem value="low">Low</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -323,19 +349,7 @@ export default function Intake() {
                         )}
                       />
 
-                      <FormField
-                        control={referralForm.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Notes</FormLabel>
-                            <FormControl>
-                              <Textarea {...field} rows={3} data-testid="textarea-notes" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+
 
                       <Button type="submit" className="w-full" disabled={createReferralMutation.isPending} data-testid="button-submit-referral">
                         {createReferralMutation.isPending ? "Creating..." : "Create Referral"}
@@ -391,6 +405,19 @@ export default function Intake() {
                             <p className="text-sm">{referral.notes}</p>
                           </div>
                         )}
+                        <div className="mt-4 flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedReferral(referral);
+                              setWorkflowDialogOpen(true);
+                            }}
+                          >
+                            <Workflow className="mr-2 h-4 w-4" />
+                            View Workflow
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -415,44 +442,7 @@ export default function Intake() {
                   </DialogHeader>
                   <Form {...agreementForm}>
                     <form onSubmit={agreementForm.handleSubmit((data) => createAgreementMutation.mutate(data))} className="space-y-4">
-                      <FormField
-                        control={agreementForm.control}
-                        name="participantId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Participant</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-participant">
-                                  <SelectValue placeholder="Select participant" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {participants?.map((participant: any) => (
-                                  <SelectItem key={participant.id} value={participant.id}>
-                                    {participant.firstName} {participant.lastName}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
-                      <FormField
-                        control={agreementForm.control}
-                        name="agreementNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Agreement Number</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="AG-2024-001" data-testid="input-agreement-number" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
                       <FormField
                         control={agreementForm.control}
@@ -468,33 +458,7 @@ export default function Intake() {
                         )}
                       />
 
-                      <FormField
-                        control={agreementForm.control}
-                        name="endDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>End Date</FormLabel>
-                            <FormControl>
-                              <Input {...field} type="date" data-testid="input-end-date" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
-                      <FormField
-                        control={agreementForm.control}
-                        name="specialConditions"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Special Conditions</FormLabel>
-                            <FormControl>
-                              <Textarea {...field} rows={3} data-testid="textarea-conditions" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
                       <Button type="submit" className="w-full" disabled={createAgreementMutation.isPending} data-testid="button-submit-agreement">
                         {createAgreementMutation.isPending ? "Creating..." : "Create Agreement"}
@@ -551,6 +515,52 @@ export default function Intake() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Workflow Tracker Dialog */}
+        <Dialog open={workflowDialogOpen} onOpenChange={setWorkflowDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Referral Workflow Progress</DialogTitle>
+            </DialogHeader>
+            {selectedReferral && (
+              <WorkflowTracker
+                referralId={selectedReferral.id}
+                currentStatus={selectedReferral.workflowStatus || "referral_received"}
+                referralData={selectedReferral}
+                onStatusChange={(newStatus) => {
+                  // Update the selected referral's status
+                  setSelectedReferral({
+                    ...selectedReferral,
+                    workflowStatus: newStatus
+                  });
+                  // Refresh the referrals list
+                  queryClient.invalidateQueries({ queryKey: ["/api/referrals"] });
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Participant Form Dialog */}
+        <Dialog open={participantFormOpen} onOpenChange={setParticipantFormOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Create Participant Record</DialogTitle>
+            </DialogHeader>
+            <ParticipantForm
+              initialData={extractedPlanData?.participant}
+              onSuccess={() => {
+                setParticipantFormOpen(false);
+                setExtractedPlanData(null);
+                toast({
+                  title: "Success",
+                  description: "Participant record created successfully",
+                });
+              }}
+              onCancel={() => setParticipantFormOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

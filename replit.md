@@ -6,6 +6,8 @@ Primacy Care Australia CMS is a comprehensive case management system specificall
 
 The system now includes an advanced NDIS Plan Reader that can automatically extract participant goals from uploaded plans and provide detailed breakdowns for staff and support workers to manage their workflow efficiently.
 
+The system features a comprehensive 9-stage workflow management system that guides referrals through the complete service delivery process: from initial referral intake through service agreements, funding verification, staff allocation, meet & greet scheduling, to service commencement. Each stage has automated tracking, compliance checks, and visual progress indicators.
+
 The system also features a comprehensive automation engine that optimizes operations through intelligent scheduling, automated invoicing, SCHADS payroll calculations, budget monitoring, and compliance reporting - delivering significant efficiency improvements and cost savings.
 
 The application now includes advanced quick search functionality with global search across all participants, staff, plans, services, and system features, accessible via keyboard shortcut (Ctrl/Cmd + K) or the search button in the header.
@@ -123,6 +125,16 @@ Advanced plan processing and goal management capabilities:
 - **Action Planning**: Detailed action items for each goal with frequency, cost tracking, and completion status
 - **Staff Workflow**: Assignment of goals and actions to specific staff members with progress tracking
 - **Integration**: Seamless integration with existing NDIS price guide for cost estimation and budget management
+
+### Comprehensive Workflow Management System
+Advanced 9-stage workflow engine for managing the complete referral-to-service lifecycle:
+
+- **Workflow Stages**: Referral Received → Data Verified → Service Agreement Prepared → Agreement Sent → Agreement Signed → Funding Verification → Funding Verified → Staff Allocation → Worker Allocated → Meet & Greet Scheduled → Meet & Greet Completed → Service Commenced
+- **Visual Workflow Tracker**: Interactive component showing real-time progress through workflow stages with status indicators, automated advancement capabilities, and detailed stage information
+- **API Service Layer**: Complete WorkflowService class managing all workflow operations including document processing, status advancement, staff matching, funding verification, and audit logging
+- **Database Tables**: New workflow tracking tables including serviceAgreementTemplates, fundingBudgets, meetGreets, staffMatchingCriteria, and workflowAuditLog
+- **Automated Features**: OCR document extraction (simulated), mandatory field validation, e-signature integration (DocuSign ready), funding verification, intelligent staff matching based on qualifications/location/preferences
+- **Compliance Tracking**: Complete audit trail of all workflow actions with user tracking, timestamp logging, and compliance status verification
 
 ### Comprehensive Automation System
 Advanced automation engine delivering operational efficiency:

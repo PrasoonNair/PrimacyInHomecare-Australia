@@ -1,0 +1,106 @@
+Efficiency & Automation Enhancements
+1. Referral Intake & Client Onboarding
+Auto-Routing of Referrals – Based on referral type or source, automatically assign to an Intake Coordinator’s queue for immediate action.
+
+Duplicate Detection – System checks if a participant already exists (via NDIS number, DOB, name) to avoid duplicate profiles.
+
+Intake KPI Tracking – Automatically log referral date/time and track SLA for “time to profile creation” per staff member.
+
+Role Accountability: Intake Coordinators receive dashboard alerts for pending referrals > 24 hours.
+
+2. Service Agreement Preparation & Signing
+Pre-Approval Draft Mode – Service agreement can be pre-generated and reviewed internally before sending to participant.
+
+E-Signature with Status Tracking – Dashboard shows agreements sent, pending, and overdue; sends auto-reminders every 48 hours.
+
+Cost Validation Pre-Send – System automatically checks requested supports against available budget before sending agreement.
+
+Role Accountability: Intake Manager sees a report of staff agreement turnaround times and pending signatures.
+
+3. Funding Verification
+NDIS API/Data Import – If possible, integrate with NDIS participant plan data to auto-pull remaining funds.
+
+Budget Burn Rate Calculator – System projects how long funds will last at planned service levels.
+
+Automated Alerts – Send reminders 60, 30, and 7 days before funds are likely to run out.
+
+Role Accountability: Finance Officer has a daily “Pending Funding Checks” dashboard list.
+
+4. Allocation to Support Worker
+Automated Matching Engine – Match participant to workers based on:
+
+Skills, qualifications, and experience
+
+Availability matching participant’s schedule
+
+Geographic proximity
+
+Worker preferences (languages, gender, type of support)
+
+Live Availability Map – Colour-coded map showing worker availability in participant’s area.
+
+Allocation Confirmation Workflow – Digital accept/decline button for workers via mobile app to confirm match.
+
+Role Accountability: Allocation staff performance tracked by “time from ready-to-allocate to confirmed allocation”.
+
+5. Meet & Greet Process
+Automated Feedback Capture – Mobile app prompts worker and participant to provide post-meeting feedback immediately.
+
+Instant Escalation Loop – If either party declines, the system automatically reopens allocation task.
+
+Role Accountability: Allocation Manager dashboard shows % of meet & greets resulting in ongoing service.
+
+6. Ongoing Shift Scheduling & Service Delivery
+AI-Driven Scheduling Suggestions – Suggests best-fit workers for open shifts due to absence or plan changes.
+
+Automated Shift Reminders – SMS/email reminders sent 24 hours and 2 hours before each shift to reduce no-shows.
+
+Clock-In Geo-Validation – GPS check ensures worker is at participant location when clocking in.
+
+Live Shift Status Board – Shows real-time updates: “In Progress”, “Completed”, “No Show”.
+
+Role Accountability: Service Delivery Coordinators have KPIs for shift completion rate and incident response time.
+
+7. Recruitment & Staffing Management
+Forecasting Dashboard – Predict staffing needs based on new intakes and upcoming service plans.
+
+Applicant Tracking Automation – Automatically moves candidates through recruitment stages based on checklist completion.
+
+Role Accountability: HR Manager gets alerts if compliance documents for any active worker are within 30 days of expiry.
+
+8. Compliance & Legal
+Automated Compliance Dashboard – Red/amber/green status for each worker and participant file.
+
+Role-Based Access Control (RBAC) – Ensures only authorised roles can edit sensitive NDIS or health information.
+
+Incident Reporting Integration – Staff can lodge incident reports via mobile app, auto-routing to Quality Manager for review.
+
+Role Accountability: Quality Manager measured on incident closure time and % of staff fully compliant.
+
+9. Reporting & Analytics
+Role-Specific Dashboards – Each role sees only KPIs relevant to them:
+
+Intake: referral processing time
+
+Finance: funding verification turnaround
+
+Service Delivery: shift fulfilment rate
+
+HR: compliance currency
+
+Automated Weekly Reports – Emailed to CEO & General Manager with departmental performance summary.
+
+Drill-Down Capability – From KPIs to individual case records for audit follow-up.
+
+Overall System Efficiency Improvements
+Workflow Automation Engine – Use rule-based triggers to automatically move participants from one stage to the next without manual intervention.
+
+Accountability Logging – Every action is time-stamped and tied to a specific user for performance review and audit.
+
+Mobile-First Staff Tools – Give workers full shift, feedback, and compliance functionality via app to reduce admin delays.
+
+Predictive Workload Balancing – Automatically assign tasks evenly to avoid bottlenecks in specific roles.
+
+Real-Time Alerts & Notifications – Keep all staff informed of urgent tasks, expiring documents, or missed steps.
+
+Audit & Compliance Export – One-click generation of compliance evidence for NDIS audits.
