@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Users, DollarSign, AlertTriangle, Calendar, FileText, CheckCircle, Clock, Activity, Target, Zap } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Calendar, FileText, CheckCircle, Activity, Target, Zap } from "lucide-react";
 
 // Sample data for charts and analytics - In real app, this would come from your API
 const revenueData = [
@@ -101,8 +101,8 @@ export default function Dashboard() {
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-semibold">Total Revenue</p>
-              <p className="text-3xl font-bold mb-1">$1.2M</p>
+              <p className="text-blue-100 text-sm font-semibold">Monthly Revenue</p>
+              <p className="text-3xl font-bold mb-1">$178K</p>
               <p className="text-blue-100 text-sm flex items-center">
                 <TrendingUp className="w-4 h-4 mr-1" />
                 +12% from last month
@@ -120,11 +120,11 @@ export default function Dashboard() {
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-semibold">Active Participants</p>
-              <p className="text-3xl font-bold mb-1">{dashboardStats?.activeParticipants || 247}</p>
+              <p className="text-green-100 text-sm font-semibold">Total Participants</p>
+              <p className="text-3xl font-bold mb-1">{dashboardStats?.activeParticipants || 0}</p>
               <p className="text-green-100 text-sm flex items-center">
                 <Users className="w-4 h-4 mr-1" />
-                +18 new this month
+                Active in system
               </p>
             </div>
             <div className="p-3 bg-white/20 rounded-2xl">
@@ -139,15 +139,15 @@ export default function Dashboard() {
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-semibold">Staff Efficiency</p>
-              <p className="text-3xl font-bold mb-1">94.2%</p>
+              <p className="text-purple-100 text-sm font-semibold">Active Services</p>
+              <p className="text-3xl font-bold mb-1">{dashboardStats?.servicesThisWeek || 0}</p>
               <p className="text-purple-100 text-sm flex items-center">
                 <Activity className="w-4 h-4 mr-1" />
-                Above target 90%
+                This week
               </p>
             </div>
             <div className="p-3 bg-white/20 rounded-2xl">
-              <Target className="w-8 h-8 text-white" />
+              <Calendar className="w-8 h-8 text-white" />
             </div>
           </div>
         </CardContent>
@@ -158,15 +158,15 @@ export default function Dashboard() {
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm font-semibold">Compliance Score</p>
+              <p className="text-orange-100 text-sm font-semibold">Quality Score</p>
               <p className="text-3xl font-bold mb-1">96.8%</p>
               <p className="text-orange-100 text-sm flex items-center">
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Fully compliant
+                <Zap className="w-4 h-4 mr-1" />
+                Excellence rating
               </p>
             </div>
             <div className="p-3 bg-white/20 rounded-2xl">
-              <CheckCircle className="w-8 h-8 text-white" />
+              <Target className="w-8 h-8 text-white" />
             </div>
           </div>
         </CardContent>
@@ -341,76 +341,123 @@ export default function Dashboard() {
             </TabsContent>
 
             <TabsContent value="financial" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Monthly Revenue</CardTitle>
+                    <CardTitle>Budget Allocation by Department</CardTitle>
+                    <CardDescription>Current quarter spending analysis</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold text-green-600">$178,420</div>
-                    <p className="text-sm text-gray-500">+8.2% from last month</p>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={[
+                        { department: 'Service Delivery', budget: 450000, spent: 380000 },
+                        { department: 'HR & Recruitment', budget: 120000, spent: 95000 },
+                        { department: 'Compliance', budget: 80000, spent: 72000 },
+                        { department: 'Finance', budget: 60000, spent: 52000 },
+                        { department: 'Intake', budget: 40000, spent: 31000 },
+                      ]}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="department" angle={-20} textAnchor="end" height={80} />
+                        <YAxis />
+                        <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                        <Bar dataKey="budget" fill="#94a3b8" name="Budget" />
+                        <Bar dataKey="spent" fill="#3b82f6" name="Spent" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
+                
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Outstanding Invoices</CardTitle>
+                    <CardTitle>Cash Flow Analysis</CardTitle>
+                    <CardDescription>Income vs Expenses (Last 6 months)</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-3xl font-bold text-orange-600">$12,340</div>
-                    <p className="text-sm text-gray-500">7 invoices pending</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Profit Margin</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-blue-600">23.4%</div>
-                    <p className="text-sm text-gray-500">Above industry average</p>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Outstanding Invoices</span>
+                        <span className="text-2xl font-bold text-orange-600">$12,340</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Pending Payments</span>
+                        <span className="text-2xl font-bold text-blue-600">$8,750</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Net Profit Margin</span>
+                        <span className="text-2xl font-bold text-green-600">23.4%</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Operating Costs</span>
+                        <span className="text-2xl font-bold text-gray-600">$892,000</span>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
             </TabsContent>
 
             <TabsContent value="operations" className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Active Staff</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{staff?.length || 42}</div>
-                    <p className="text-sm text-gray-500">3 new hires this month</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Services Today</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">{dashboardStats?.servicesThisWeek || 28}</div>
-                    <p className="text-sm text-gray-500">85% completion rate</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Utilization Rate</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">87.3%</div>
-                    <p className="text-sm text-gray-500">+2.1% this week</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Client Satisfaction</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">4.8/5</div>
-                    <p className="text-sm text-gray-500">Based on 156 reviews</p>
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Operational Metrics</CardTitle>
+                  <CardDescription>Real-time service delivery performance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                        <h4 className="font-medium text-gray-700 mb-2">Service Delivery</h4>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Weekly Services</span>
+                          <span className="text-xl font-bold">{dashboardStats?.servicesThisWeek || 156}</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-sm text-gray-600">Completion Rate</span>
+                          <span className="text-xl font-bold text-green-600">94%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+                        <h4 className="font-medium text-gray-700 mb-2">Staff Performance</h4>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Utilization Rate</span>
+                          <span className="text-xl font-bold">87.3%</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-sm text-gray-600">Average Response Time</span>
+                          <span className="text-xl font-bold">2.4h</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+                        <h4 className="font-medium text-gray-700 mb-2">Client Metrics</h4>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Satisfaction Score</span>
+                          <span className="text-xl font-bold">4.8/5</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-sm text-gray-600">Net Promoter Score</span>
+                          <span className="text-xl font-bold text-green-600">+72</span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg">
+                        <h4 className="font-medium text-gray-700 mb-2">Resource Management</h4>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Vehicle Fleet Utilization</span>
+                          <span className="text-xl font-bold">78%</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-sm text-gray-600">Equipment Availability</span>
+                          <span className="text-xl font-bold">95%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="compliance" className="space-y-6">
