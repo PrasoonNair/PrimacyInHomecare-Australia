@@ -49,10 +49,10 @@ export default function StaffManagement() {
     );
   }
 
-  const filteredStaff = staff?.filter((member: Staff) =>
+  const filteredStaff = (staff as Staff[] || []).filter((member: Staff) =>
     `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.position?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const formatCurrency = (amount: string | null) => {
     if (!amount) return "N/A";

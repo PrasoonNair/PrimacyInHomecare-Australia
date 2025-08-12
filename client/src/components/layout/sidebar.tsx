@@ -18,6 +18,7 @@ export default function Sidebar() {
     { name: "Staff Management", href: "/staff", icon: "fas fa-user-tie", badge: "42", description: "Staff & resources" },
     { name: "Automation", href: "/automation", icon: "fas fa-robot", badge: "AI", description: "Efficiency optimization" },
     { name: "Reports", href: "/reports", icon: "fas fa-chart-bar", badge: "12", description: "Business reports" },
+    { name: "Calendar View", href: "/calendar-shifts", icon: "fas fa-calendar-alt", badge: "Live", description: "Visual shift calendar" },
   ];
 
   const departmentNavigation = [

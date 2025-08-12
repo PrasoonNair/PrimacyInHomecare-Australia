@@ -92,7 +92,7 @@ export default function ShiftManagementPage() {
 
   const clockInMutation = useMutation({
     mutationFn: (shiftId: string) => 
-      apiRequest(`/api/shifts/${shiftId}/clock-in`, "POST"),
+      apiRequest(`/api/shifts/${shiftId}/clock-in`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       toast({ title: "Clocked in successfully" });
@@ -108,7 +108,7 @@ export default function ShiftManagementPage() {
 
   const clockOutMutation = useMutation({
     mutationFn: (shiftId: string) => 
-      apiRequest(`/api/shifts/${shiftId}/clock-out`, "POST"),
+      apiRequest(`/api/shifts/${shiftId}/clock-out`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       toast({ title: "Clocked out successfully" });
@@ -145,7 +145,7 @@ export default function ShiftManagementPage() {
 
   const createCaseNoteMutation = useMutation({
     mutationFn: (data: z.infer<typeof caseNoteSchema>) => 
-      apiRequest("/api/shift-case-notes", "POST", data),
+      apiRequest("/api/shift-case-notes", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/shifts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/shift-case-notes"] });

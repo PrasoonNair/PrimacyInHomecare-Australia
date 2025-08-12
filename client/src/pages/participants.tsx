@@ -88,7 +88,7 @@ export default function Participants() {
 
   const deleteParticipantMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/participants/${id}`);
+      await apiRequest(`/api/participants/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/participants"] });
