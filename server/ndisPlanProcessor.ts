@@ -107,7 +107,6 @@ export async function saveExtractedPlanData(data: any, userId: string) {
     // If no NDIS number, create a placeholder participant
     const newParticipant = await db.insert(participants)
       .values({
-        id: randomUUID(),
         firstName: participantInfo?.firstName || "Unknown",
         lastName: participantInfo?.lastName || "Participant",
         dateOfBirth: participantInfo?.dateOfBirth || new Date().toISOString().split('T')[0],
@@ -146,7 +145,6 @@ export async function saveExtractedPlanData(data: any, userId: string) {
       // Create new participant
       const newParticipant = await db.insert(participants)
         .values({
-          id: randomUUID(),
           firstName: participantInfo.firstName || "Unknown",
           lastName: participantInfo.lastName || "Participant",
           dateOfBirth: participantInfo.dateOfBirth || new Date().toISOString().split('T')[0],
@@ -201,17 +199,21 @@ export async function saveExtractedPlanData(data: any, userId: string) {
   // Create participant goals
   if (goals && goals.length > 0) {
     for (const goal of goals) {
-      const goalId = randomUUID();
       await db.insert(participantGoals)
         .values({
-          id: goalId,
           participantId: participantId,
-          category: goal.category || "General",
+          planId: planId,
+          goalType: "long_term", // Default to long-term goal
+          category: goal.category || "daily_living",
+          title: goal.description ? goal.description.substring(0, 100) : "NDIS Goal",
           description: goal.description || "Goal description",
-          priority: goal.priority || "Medium",
-          targetDate: goal.targetDate ? new Date(goal.targetDate) : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
-          status: "Active",
-          estimatedCost: goal.estimatedCost || 0,
+          priority: goal.priority?.toLowerCase() || "medium",
+          targetDate: goal.targetDate ? 
+            new Date(goal.targetDate).toISOString().split('T')[0] : 
+            new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: "active",
+          supportBudgetCategory: "capacity_building",
+          estimatedHours: "40",
           assignedStaffId: null
         });
     }
