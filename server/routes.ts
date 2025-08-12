@@ -1120,6 +1120,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Workflow and automation routes
+  app.post("/api/workflow/advance/:referralId", isAuthenticated, async (req, res) => {
+    try {
+      const { referralId } = req.params;
+      const { targetStage } = req.body;
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      const { workflowService } = await import("./workflowService");
+      await workflowService.advanceWorkflow(referralId, targetStage, userId);
+      
+      res.json({ success: true, message: "Workflow advanced successfully" });
+    } catch (error) {
+      console.error("Error advancing workflow:", error);
+      res.status(500).json({ 
+        error: "Failed to advance workflow", 
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.get("/api/workflow/status/:referralId", isAuthenticated, async (req, res) => {
+    try {
+      const { referralId } = req.params;
+      
+      const { workflowService } = await import("./workflowService");
+      const status = await workflowService.getWorkflowStatus(referralId);
+      
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting workflow status:", error);
+      res.status(500).json({ error: "Failed to get workflow status" });
+    }
+  });
+
+  // Service agreement routes
+  app.post("/api/service-agreements/generate", isAuthenticated, async (req, res) => {
+    try {
+      const { participantId } = req.body;
+      
+      if (!participantId) {
+        return res.status(400).json({ error: "Participant ID is required" });
+      }
+      
+      const { workflowService } = await import("./workflowService");
+      const agreementId = await workflowService.generateServiceAgreement(participantId);
+      
+      res.json({ 
+        success: true, 
+        agreementId,
+        message: "Service agreement generated successfully" 
+      });
+    } catch (error) {
+      console.error("Error generating service agreement:", error);
+      res.status(500).json({ 
+        error: "Failed to generate service agreement",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
+  app.post("/api/service-agreements/send/:agreementId", isAuthenticated, async (req, res) => {
+    try {
+      const { agreementId } = req.params;
+      
+      const { workflowService } = await import("./workflowService");
+      await workflowService.sendServiceAgreement(agreementId);
+      
+      res.json({ success: true, message: "Service agreement sent successfully" });
+    } catch (error) {
+      console.error("Error sending service agreement:", error);
+      res.status(500).json({ error: "Failed to send service agreement" });
+    }
+  });
+
+  app.get("/api/service-agreements", isAuthenticated, async (req, res) => {
+    try {
+      const agreements = await storage.getServiceAgreements();
+      res.json(agreements);
+    } catch (error) {
+      console.error("Error fetching service agreements:", error);
+      res.status(500).json({ error: "Failed to fetch service agreements" });
+    }
+  });
+
+  app.get("/api/service-agreements/:participantId", isAuthenticated, async (req, res) => {
+    try {
+      const { participantId } = req.params;
+      const agreements = await storage.getServiceAgreementsByParticipant(participantId);
+      res.json(agreements);
+    } catch (error) {
+      console.error("Error fetching participant service agreements:", error);
+      res.status(500).json({ error: "Failed to fetch participant service agreements" });
+    }
+  });
+
   // Department routes - Intake
   app.get("/api/referrals", isAuthenticated, async (req, res) => {
     try {

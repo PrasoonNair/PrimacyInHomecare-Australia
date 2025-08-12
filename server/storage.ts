@@ -1822,6 +1822,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(services.id, serviceId));
   }
 
+  // Service agreement methods
+  async getServiceAgreements(): Promise<ServiceAgreement[]> {
+    return await db.select().from(serviceAgreements);
+  }
+
+  async getServiceAgreementsByParticipant(participantId: string): Promise<ServiceAgreement[]> {
+    return await db
+      .select()
+      .from(serviceAgreements)
+      .where(eq(serviceAgreements.participantId, participantId));
+  }
+
   async getAllNDISPlans(): Promise<NdisPlan[]> {
     return await db.select().from(ndisPlans);
   }
