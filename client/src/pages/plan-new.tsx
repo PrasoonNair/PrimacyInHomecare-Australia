@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertNdisplanSchema } from "@shared/schema";
 import { z } from "zod";
 import { FileText, ArrowLeft, Calendar, DollarSign, Users } from "lucide-react";
+import { NdisPlanScanner } from "@/components/ndis-plan-scanner";
 
 const planSchema = insertNdisplanSchema.extend({
   startDate: z.string().min(1, "Start date is required"),
@@ -92,8 +93,41 @@ export default function PlanNewPage() {
     setLocation("/plans");
   };
 
+  const handleScanComplete = (planData: any) => {
+    // Pre-fill form with scanned data
+    if (planData.planData) {
+      const plan = planData.planData;
+      
+      form.setValue("planNumber", plan.planDetails?.planNumber || "");
+      form.setValue("totalBudget", plan.planDetails?.totalBudget || 0);
+      form.setValue("coreSupportsbudget", plan.budgetBreakdown?.coreSupports || 0);
+      form.setValue("capacityBuildingBudget", plan.budgetBreakdown?.capacityBuilding || 0);
+      form.setValue("capitalSupportsBudget", plan.budgetBreakdown?.capitalSupports || 0);
+      
+      if (plan.planDetails?.startDate) {
+        form.setValue("startDate", plan.planDetails.startDate);
+      }
+      if (plan.planDetails?.endDate) {
+        form.setValue("endDate", plan.planDetails.endDate);
+      }
+      
+      // Find matching participant by NDIS number
+      const matchingParticipant = participants.find(p => 
+        p.ndisNumber === plan.participantInfo?.ndisNumber
+      );
+      if (matchingParticipant) {
+        form.setValue("participantId", matchingParticipant.id);
+      }
+      
+      toast({
+        title: "Plan Data Imported",
+        description: "Form has been pre-filled with scanned plan information",
+      });
+    }
+  };
+
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-4">
           <Button variant="ghost" onClick={handleCancel} className="p-2">
@@ -109,6 +143,13 @@ export default function PlanNewPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* AI Plan Scanner Section */}
+      <div className="mb-8">
+        <NdisPlanScanner 
+          onScanComplete={handleScanComplete}
+        />
       </div>
 
       <Card>
