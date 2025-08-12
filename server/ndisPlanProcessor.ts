@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { participants, ndisplans, participantGoals, goalActions } from "@shared/schema";
+import { participants, ndisPlans, participantGoals, goalActions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
@@ -179,7 +179,7 @@ export async function saveExtractedPlanData(data: any, userId: string) {
                      (budgetBreakdown.capacityBuilding || 0) + 
                      (budgetBreakdown.capitalSupports || 0);
   
-  await db.insert(ndisplans)
+  await db.insert(ndisPlans)
     .values({
       id: planId,
       participantId,
