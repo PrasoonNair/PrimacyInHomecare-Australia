@@ -11,6 +11,7 @@ export default function Sidebar() {
     { name: "Admin Dashboard", href: "/", icon: "fas fa-chart-pie", badge: null, description: "Business Intelligence" },
     { name: "Participants", href: "/participants", icon: "fas fa-users", badge: "247", description: "Active participants" },
     { name: "NDIS Plans", href: "/plans", icon: "fas fa-file-contract", badge: "42", description: "Active plans" },
+    { name: "Plan Reader", href: "/plan-reader", icon: "fas fa-brain", badge: "AI", description: "Intelligent plan analysis" },
     { name: "Service Bookings", href: "/services", icon: "fas fa-calendar-check", badge: "28", description: "Today's services" },
     { name: "Progress Notes", href: "/progress-notes", icon: "fas fa-clipboard-list", badge: null, description: "Clinical documentation" },
     { name: "Financials", href: "/financials", icon: "fas fa-dollar-sign", badge: "New", description: "Revenue & invoicing" },

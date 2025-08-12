@@ -20,6 +20,7 @@ import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 import Automation from "@/pages/automation";
 import WorkflowManagement from "@/pages/workflow-management";
+import PlanReader from "@/pages/plan-reader";
 // Department pages
 import Intake from "@/pages/intake";
 import HRRecruitment from "@/pages/hr-recruitment";
@@ -54,6 +55,7 @@ function Router() {
             <Route path="/" component={Dashboard} />
             <Route path="/participants" component={Participants} />
             <Route path="/plans" component={Plans} />
+            <Route path="/plan-reader" component={PlanReader} />
             <Route path="/services" component={Services} />
             <Route path="/progress-notes" component={ProgressNotes} />
             <Route path="/financials" component={Financials} />

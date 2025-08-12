@@ -521,6 +521,68 @@ export const goalActions = pgTable("goal_actions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// NDIS Plan Documents table for PDF storage and processing
+export const planDocuments = pgTable("plan_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id),
+  planId: varchar("plan_id").references(() => ndisPlans.id),
+  documentUrl: varchar("document_url").notNull(),
+  fileName: varchar("file_name").notNull(),
+  fileSize: integer("file_size"),
+  uploadedBy: varchar("uploaded_by").references(() => users.id),
+  processingStatus: varchar("processing_status").default("pending"), // pending, processing, completed, failed
+  extractedData: jsonb("extracted_data"), // Store extracted participant info and goals
+  aiAnalysis: jsonb("ai_analysis"), // Store AI-generated goal breakdown
+  createdAt: timestamp("created_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+});
+
+// Digital Service Agreements with e-signature capability
+export const digitalServiceAgreements = pgTable("digital_service_agreements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  planId: varchar("plan_id").references(() => ndisPlans.id),
+  documentId: varchar("document_id").references(() => planDocuments.id),
+  agreementNumber: varchar("agreement_number").unique().notNull(),
+  agreementType: varchar("agreement_type").default("initial"), // initial, review, amendment, renewal
+  content: jsonb("content").notNull(), // Structured agreement content including goals and funding
+  htmlContent: text("html_content"), // Rendered HTML for display
+  pdfUrl: varchar("pdf_url"), // Generated PDF URL
+  status: varchar("status").default("draft"), // draft, sent, viewed, signed, expired, cancelled
+  sentDate: timestamp("sent_date"),
+  viewedDate: timestamp("viewed_date"),
+  signedDate: timestamp("signed_date"),
+  expiryDate: timestamp("expiry_date"),
+  participantSignature: text("participant_signature"), // Base64 signature image
+  participantSignatureIp: varchar("participant_signature_ip"),
+  witnessName: varchar("witness_name"),
+  witnessSignature: text("witness_signature"),
+  communicationMethod: varchar("communication_method"), // email, sms, whatsapp, portal
+  accessToken: varchar("access_token").unique(), // Secure token for accessing agreement
+  accessUrl: varchar("access_url"), // Public URL for viewing/signing
+  fundingBreakdown: jsonb("funding_breakdown"), // Detailed funding allocation per goal
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Communication logs for service agreements
+export const agreementCommunications = pgTable("agreement_communications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  agreementId: varchar("agreement_id").references(() => digitalServiceAgreements.id).notNull(),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  communicationType: varchar("communication_type").notNull(), // email, sms, whatsapp
+  recipient: varchar("recipient").notNull(), // Email or phone number
+  subject: varchar("subject"),
+  message: text("message"),
+  status: varchar("status").default("pending"), // pending, sent, delivered, failed, bounced
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata"), // Provider-specific metadata (SendGrid, Twilio, etc)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Define relations
 export const participantsRelations = relations(participants, ({ many }) => ({
   plans: many(ndisPlans),
@@ -528,6 +590,8 @@ export const participantsRelations = relations(participants, ({ many }) => ({
   services: many(services),
   progressNotes: many(progressNotes),
   invoices: many(invoices),
+  planDocuments: many(planDocuments),
+  digitalServiceAgreements: many(digitalServiceAgreements),
 }));
 
 export const ndisPlansRelations = relations(ndisPlans, ({ one, many }) => ({
@@ -683,7 +747,52 @@ export const auditsRelations = relations(audits, ({ one }) => ({
   }),
 }));
 
+export const planDocumentsRelations = relations(planDocuments, ({ one, many }) => ({
+  participant: one(participants, {
+    fields: [planDocuments.participantId],
+    references: [participants.id],
+  }),
+  plan: one(ndisPlans, {
+    fields: [planDocuments.planId],
+    references: [ndisPlans.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [planDocuments.uploadedBy],
+    references: [users.id],
+  }),
+  serviceAgreements: many(digitalServiceAgreements),
+}));
 
+export const digitalServiceAgreementsRelations = relations(digitalServiceAgreements, ({ one, many }) => ({
+  participant: one(participants, {
+    fields: [digitalServiceAgreements.participantId],
+    references: [participants.id],
+  }),
+  plan: one(ndisPlans, {
+    fields: [digitalServiceAgreements.planId],
+    references: [ndisPlans.id],
+  }),
+  document: one(planDocuments, {
+    fields: [digitalServiceAgreements.documentId],
+    references: [planDocuments.id],
+  }),
+  createdByUser: one(users, {
+    fields: [digitalServiceAgreements.createdBy],
+    references: [users.id],
+  }),
+  communications: many(agreementCommunications),
+}));
+
+export const agreementCommunicationsRelations = relations(agreementCommunications, ({ one }) => ({
+  agreement: one(digitalServiceAgreements, {
+    fields: [agreementCommunications.agreementId],
+    references: [digitalServiceAgreements.id],
+  }),
+  participant: one(participants, {
+    fields: [agreementCommunications.participantId],
+    references: [participants.id],
+  }),
+}));
 
 export const participantGoalsRelations = relations(participantGoals, ({ one, many }) => ({
   participant: one(participants, {
@@ -837,6 +946,25 @@ export const insertIncidentSchema = createInsertSchema(incidents).omit({
   updatedAt: true,
 });
 
+export const insertPlanDocumentSchema = createInsertSchema(planDocuments).omit({
+  id: true,
+  createdAt: true,
+  processedAt: true,
+});
+
+export const insertDigitalServiceAgreementSchema = createInsertSchema(digitalServiceAgreements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  agreementNumber: true,
+  accessToken: true,
+});
+
+export const insertAgreementCommunicationSchema = createInsertSchema(agreementCommunications).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -880,6 +1008,12 @@ export type InsertAudit = z.infer<typeof insertAuditSchema>;
 export type Audit = typeof audits.$inferSelect;
 export type InsertIncident = z.infer<typeof insertIncidentSchema>;
 export type Incident = typeof incidents.$inferSelect;
+export type InsertPlanDocument = z.infer<typeof insertPlanDocumentSchema>;
+export type PlanDocument = typeof planDocuments.$inferSelect;
+export type InsertDigitalServiceAgreement = z.infer<typeof insertDigitalServiceAgreementSchema>;
+export type DigitalServiceAgreement = typeof digitalServiceAgreements.$inferSelect;
+export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommunicationSchema>;
+export type AgreementCommunication = typeof agreementCommunications.$inferSelect;
 
 // Roles and permissions tables
 export const roles = pgTable("roles", {
