@@ -215,6 +215,13 @@ export const invoices = pgTable("invoices", {
   status: varchar("status").default("pending"),
   paidDate: date("paid_date"),
   notes: text("notes"),
+  
+  // Xero Integration fields
+  xeroSyncId: varchar("xero_sync_id"),
+  xeroInvoiceId: varchar("xero_invoice_id"),
+  xeroSyncStatus: varchar("xero_sync_status"), // pending, synced, error
+  xeroLastSyncedAt: timestamp("xero_last_synced_at"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1223,6 +1230,166 @@ export const workflowAuditLog = pgTable("workflow_audit_log", {
   // Compliance
   isCompliant: boolean("is_compliant").default(true),
   complianceNotes: text("compliance_notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// XERO INTEGRATION TABLES
+
+// Xero Configuration table
+export const xeroConfig = pgTable("xero_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(), // From Xero
+  tenantId: varchar("tenant_id").notNull().unique(), // Xero Tenant ID
+  tenantName: varchar("tenant_name"),
+  tenantType: varchar("tenant_type"), // ORGANISATION, COMPANY, etc.
+  
+  // OAuth2 tokens
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+  scopes: text("scopes").array(),
+  
+  // Connection details
+  connectedAt: timestamp("connected_at").defaultNow(),
+  lastSyncedAt: timestamp("last_synced_at"),
+  syncEnabled: boolean("sync_enabled").default(true),
+  
+  // Sync settings
+  syncInvoices: boolean("sync_invoices").default(true),
+  syncPayments: boolean("sync_payments").default(true),
+  syncContacts: boolean("sync_contacts").default(true),
+  syncBankTransactions: boolean("sync_bank_transactions").default(false),
+  autoReconcile: boolean("auto_reconcile").default(false),
+  
+  // Default accounts (Xero account codes)
+  defaultSalesAccount: varchar("default_sales_account"),
+  defaultTaxRate: varchar("default_tax_rate"),
+  defaultBrandingTheme: varchar("default_branding_theme"),
+  
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Xero Invoice Sync table
+export const xeroInvoiceSync = pgTable("xero_invoice_sync", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id").references(() => invoices.id).notNull(),
+  xeroInvoiceId: varchar("xero_invoice_id").unique(),
+  xeroInvoiceNumber: varchar("xero_invoice_number"),
+  
+  // Sync status
+  syncStatus: varchar("sync_status").default("pending"), // pending, synced, error, cancelled
+  syncDirection: varchar("sync_direction").default("to_xero"), // to_xero, from_xero
+  lastSyncedAt: timestamp("last_synced_at"),
+  
+  // Xero details
+  xeroStatus: varchar("xero_status"), // DRAFT, SUBMITTED, AUTHORISED, PAID, VOIDED
+  xeroTotal: decimal("xero_total", { precision: 10, scale: 2 }),
+  xeroCurrencyCode: varchar("xero_currency_code").default("AUD"),
+  xeroReference: varchar("xero_reference"),
+  xeroUrl: varchar("xero_url"), // Direct link to invoice in Xero
+  
+  // Payment status
+  xeroAmountPaid: decimal("xero_amount_paid", { precision: 10, scale: 2 }).default("0"),
+  xeroAmountDue: decimal("xero_amount_due", { precision: 10, scale: 2 }),
+  xeroFullyPaidDate: timestamp("xero_fully_paid_date"),
+  
+  // Error tracking
+  errorMessage: text("error_message"),
+  errorDetails: jsonb("error_details"),
+  retryCount: integer("retry_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Xero Contact Sync table
+export const xeroContactSync = pgTable("xero_contact_sync", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id),
+  staffId: varchar("staff_id").references(() => staff.id),
+  xeroContactId: varchar("xero_contact_id").unique().notNull(),
+  
+  // Contact details from Xero
+  xeroContactName: varchar("xero_contact_name"),
+  xeroContactNumber: varchar("xero_contact_number"),
+  xeroEmail: varchar("xero_email"),
+  xeroTaxNumber: varchar("xero_tax_number"),
+  
+  // Sync details
+  syncStatus: varchar("sync_status").default("synced"),
+  syncDirection: varchar("sync_direction").default("to_xero"),
+  lastSyncedAt: timestamp("last_synced_at"),
+  
+  // Contact type
+  contactType: varchar("contact_type").notNull(), // participant, staff, supplier
+  isCustomer: boolean("is_customer").default(true),
+  isSupplier: boolean("is_supplier").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Xero Bank Reconciliation table
+export const xeroBankReconciliation = pgTable("xero_bank_reconciliation", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  xeroAccountId: varchar("xero_account_id").notNull(),
+  xeroAccountName: varchar("xero_account_name"),
+  
+  // Transaction details
+  xeroBankTransactionId: varchar("xero_bank_transaction_id").unique(),
+  transactionDate: date("transaction_date").notNull(),
+  reference: varchar("reference"),
+  description: text("description"),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  
+  // Reconciliation details
+  reconciliationStatus: varchar("reconciliation_status").default("unreconciled"), // unreconciled, reconciled, error
+  reconciledAt: timestamp("reconciled_at"),
+  reconciledBy: varchar("reconciled_by").references(() => users.id),
+  
+  // Matching
+  matchedInvoiceId: varchar("matched_invoice_id").references(() => invoices.id),
+  matchedPaymentId: varchar("matched_payment_id"),
+  matchConfidence: integer("match_confidence"), // 0-100 percentage
+  matchMethod: varchar("match_method"), // auto, manual, suggested
+  
+  // Error tracking
+  errorMessage: text("error_message"),
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Xero Sync Log table
+export const xeroSyncLog = pgTable("xero_sync_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  syncType: varchar("sync_type").notNull(), // invoices, payments, contacts, bank_transactions
+  syncDirection: varchar("sync_direction").notNull(), // to_xero, from_xero
+  
+  // Sync details
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  status: varchar("status").default("running"), // running, completed, failed, partial
+  
+  // Statistics
+  totalRecords: integer("total_records").default(0),
+  successfulRecords: integer("successful_records").default(0),
+  failedRecords: integer("failed_records").default(0),
+  skippedRecords: integer("skipped_records").default(0),
+  
+  // Error tracking
+  errors: jsonb("errors"),
+  warnings: jsonb("warnings"),
+  
+  // Metadata
+  syncedBy: varchar("synced_by").references(() => users.id),
+  isScheduled: boolean("is_scheduled").default(false),
+  notes: text("notes"),
   
   createdAt: timestamp("created_at").defaultNow(),
 });

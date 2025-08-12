@@ -2202,6 +2202,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // XERO INTEGRATION ENDPOINTS
+  
+  // Initialize Xero OAuth2 flow
+  app.get("/api/xero/connect", isAuthenticated, async (req, res) => {
+    try {
+      const xeroService = (await import('./xeroService')).xeroService;
+      const authUrl = await xeroService.getAuthorizationUrl();
+      res.json({ authUrl });
+    } catch (error) {
+      console.error("Error initiating Xero connection:", error);
+      res.status(500).json({ error: "Failed to initiate Xero connection" });
+    }
+  });
+
+  // Handle Xero OAuth2 callback
+  app.get("/api/xero/callback", async (req, res) => {
+    try {
+      const { code } = req.query;
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ error: "Invalid authorization code" });
+      }
+      
+      const xeroService = (await import('./xeroService')).xeroService;
+      await xeroService.handleCallback(code);
+      
+      // Redirect to financials page with success message
+      res.redirect("/financials?xero=connected");
+    } catch (error) {
+      console.error("Error handling Xero callback:", error);
+      res.redirect("/financials?xero=error");
+    }
+  });
+
+  // Get Xero sync status
+  app.get("/api/xero/status", isAuthenticated, async (req, res) => {
+    try {
+      const xeroService = (await import('./xeroService')).xeroService;
+      const status = await xeroService.getSyncStatus();
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting Xero status:", error);
+      res.status(500).json({ error: "Failed to get Xero status" });
+    }
+  });
+
+  // Sync invoice to Xero
+  app.post("/api/xero/sync-invoice/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const xeroService = (await import('./xeroService')).xeroService;
+      await xeroService.syncInvoiceToXero(id);
+      res.json({ success: true, message: "Invoice synced to Xero" });
+    } catch (error) {
+      console.error("Error syncing invoice to Xero:", error);
+      res.status(500).json({ error: "Failed to sync invoice to Xero" });
+    }
+  });
+
+  // Fetch and reconcile bank transactions
+  app.post("/api/xero/fetch-transactions", isAuthenticated, async (req, res) => {
+    try {
+      const xeroService = (await import('./xeroService')).xeroService;
+      await xeroService.fetchBankTransactions();
+      res.json({ success: true, message: "Bank transactions fetched" });
+    } catch (error) {
+      console.error("Error fetching bank transactions:", error);
+      res.status(500).json({ error: "Failed to fetch bank transactions" });
+    }
+  });
+
+  // Auto-reconcile transactions
+  app.post("/api/xero/auto-reconcile", isAuthenticated, async (req, res) => {
+    try {
+      const xeroService = (await import('./xeroService')).xeroService;
+      await xeroService.autoReconcileTransactions();
+      res.json({ success: true, message: "Transactions reconciled" });
+    } catch (error) {
+      console.error("Error reconciling transactions:", error);
+      res.status(500).json({ error: "Failed to reconcile transactions" });
+    }
+  });
+
+  // Initialize scheduled sync tasks
+  const initializeScheduledTasks = async () => {
+    try {
+      const xeroService = (await import('./xeroService')).xeroService;
+      xeroService.setupScheduledSync();
+      console.log('Xero scheduled sync tasks initialized');
+    } catch (error) {
+      console.error('Failed to initialize Xero scheduled tasks:', error);
+    }
+  };
+  
+  // Initialize scheduled tasks after server starts
+  setTimeout(initializeScheduledTasks, 5000);
+
   const httpServer = createServer(app);
   return httpServer;
 }

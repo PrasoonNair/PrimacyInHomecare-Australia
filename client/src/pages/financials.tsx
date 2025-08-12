@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { XeroIntegration } from "@/components/xero-integration";
 import type { Invoice } from "@shared/schema";
 
 export default function Financials() {
@@ -85,6 +86,11 @@ export default function Financials() {
 
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      {/* Xero Integration Section */}
+      <div className="mb-8">
+        <XeroIntegration />
+      </div>
+      
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card>
