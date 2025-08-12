@@ -25,6 +25,14 @@ import {
   // Department schemas
   insertReferralSchema,
   insertServiceAgreementSchema,
+  // Recruitment schemas
+  insertJobPostingSchema,
+  insertJobApplicationSchema,
+  insertInterviewScheduleSchema,
+  insertStaffOnboardingSchema,
+  insertStaffLeaveSchema,
+  insertStaffTrainingSchema,
+  insertSchacsAwardRateSchema,
   insertStaffQualificationSchema,
   insertPerformanceReviewSchema,
   insertAwardRateSchema,
@@ -480,6 +488,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Department routes - HR & Recruitment
+  // Recruitment endpoints
+  app.get("/api/job-postings", isAuthenticated, async (req, res) => {
+    try {
+      const postings = await storage.getJobPostings();
+      res.json(postings);
+    } catch (error) {
+      console.error("Error fetching job postings:", error);
+      res.status(500).json({ message: "Failed to fetch job postings" });
+    }
+  });
+
+  app.post("/api/job-postings", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertJobPostingSchema.parse(req.body);
+      const posting = await storage.createJobPosting(validatedData);
+      res.status(201).json(posting);
+    } catch (error) {
+      console.error("Error creating job posting:", error);
+      res.status(400).json({ message: "Failed to create job posting" });
+    }
+  });
+
+  app.get("/api/job-applications", isAuthenticated, async (req, res) => {
+    try {
+      const applications = await storage.getJobApplications();
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching job applications:", error);
+      res.status(500).json({ message: "Failed to fetch job applications" });
+    }
+  });
+
+  app.post("/api/job-applications", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertJobApplicationSchema.parse(req.body);
+      const application = await storage.createJobApplication(validatedData);
+      res.status(201).json(application);
+    } catch (error) {
+      console.error("Error creating job application:", error);
+      res.status(400).json({ message: "Failed to create job application" });
+    }
+  });
+
+  app.get("/api/interview-schedules", isAuthenticated, async (req, res) => {
+    try {
+      const schedules = await storage.getInterviewSchedules();
+      res.json(schedules);
+    } catch (error) {
+      console.error("Error fetching interview schedules:", error);
+      res.status(500).json({ message: "Failed to fetch interview schedules" });
+    }
+  });
+
+  app.post("/api/interview-schedules", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertInterviewScheduleSchema.parse(req.body);
+      const schedule = await storage.createInterviewSchedule(validatedData);
+      res.status(201).json(schedule);
+    } catch (error) {
+      console.error("Error creating interview schedule:", error);
+      res.status(400).json({ message: "Failed to create interview schedule" });
+    }
+  });
+
+  app.get("/api/staff-onboarding", isAuthenticated, async (req, res) => {
+    try {
+      const onboarding = await storage.getStaffOnboarding();
+      res.json(onboarding);
+    } catch (error) {
+      console.error("Error fetching staff onboarding:", error);
+      res.status(500).json({ message: "Failed to fetch staff onboarding" });
+    }
+  });
+
+  app.post("/api/staff-onboarding", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertStaffOnboardingSchema.parse(req.body);
+      const onboarding = await storage.createStaffOnboarding(validatedData);
+      res.status(201).json(onboarding);
+    } catch (error) {
+      console.error("Error creating staff onboarding:", error);
+      res.status(400).json({ message: "Failed to create staff onboarding" });
+    }
+  });
+
+  app.get("/api/staff-leave", isAuthenticated, async (req, res) => {
+    try {
+      const leave = await storage.getStaffLeave();
+      res.json(leave);
+    } catch (error) {
+      console.error("Error fetching staff leave:", error);
+      res.status(500).json({ message: "Failed to fetch staff leave" });
+    }
+  });
+
+  app.post("/api/staff-leave", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertStaffLeaveSchema.parse(req.body);
+      const leave = await storage.createStaffLeave(validatedData);
+      res.status(201).json(leave);
+    } catch (error) {
+      console.error("Error creating staff leave:", error);
+      res.status(400).json({ message: "Failed to create staff leave" });
+    }
+  });
+
+  app.get("/api/staff-training", isAuthenticated, async (req, res) => {
+    try {
+      const training = await storage.getStaffTraining();
+      res.json(training);
+    } catch (error) {
+      console.error("Error fetching staff training:", error);
+      res.status(500).json({ message: "Failed to fetch staff training" });
+    }
+  });
+
+  app.post("/api/staff-training", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertStaffTrainingSchema.parse(req.body);
+      const training = await storage.createStaffTraining(validatedData);
+      res.status(201).json(training);
+    } catch (error) {
+      console.error("Error creating staff training:", error);
+      res.status(400).json({ message: "Failed to create staff training" });
+    }
+  });
+
+  app.get("/api/schads-award-rates", isAuthenticated, async (req, res) => {
+    try {
+      const rates = await storage.getSchacsAwardRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching SCHADS award rates:", error);
+      res.status(500).json({ message: "Failed to fetch SCHADS award rates" });
+    }
+  });
+
+  app.post("/api/schads-award-rates", isAuthenticated, async (req, res) => {
+    try {
+      const validatedData = insertSchacsAwardRateSchema.parse(req.body);
+      const rate = await storage.createSchacsAwardRate(validatedData);
+      res.status(201).json(rate);
+    } catch (error) {
+      console.error("Error creating SCHADS award rate:", error);
+      res.status(400).json({ message: "Failed to create SCHADS award rate" });
+    }
+  });
+
   app.get("/api/staff-qualifications", isAuthenticated, async (req, res) => {
     try {
       const qualifications = await storage.getStaffQualifications();

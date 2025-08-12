@@ -10,6 +10,14 @@ import {
   // Department tables
   referrals,
   serviceAgreements,
+  // Recruitment tables
+  jobPostings,
+  jobApplications,
+  interviewSchedule,
+  staffOnboarding,
+  staffLeave,
+  staffTraining,
+  schacsAwardRates,
   staffQualifications,
   performanceReviews,
   awardRates,
@@ -49,6 +57,21 @@ import {
   type InsertReferral,
   type ServiceAgreement,
   type InsertServiceAgreement,
+  // Recruitment types
+  type JobPosting,
+  type InsertJobPosting,
+  type JobApplication,
+  type InsertJobApplication,
+  type InterviewSchedule,
+  type InsertInterviewSchedule,
+  type StaffOnboarding,
+  type InsertStaffOnboarding,
+  type StaffLeave,
+  type InsertStaffLeave,
+  type StaffTraining,
+  type InsertStaffTraining,
+  type SchacsAwardRate,
+  type InsertSchacsAwardRate,
   type StaffQualification,
   type InsertStaffQualification,
   type PerformanceReview,
@@ -209,6 +232,49 @@ export interface IStorage {
   deleteServiceAgreement(id: string): Promise<void>;
 
   // Department operations - HR & Recruitment
+  // Recruitment operations
+  getJobPostings(): Promise<JobPosting[]>;
+  getJobPosting(id: string): Promise<JobPosting | undefined>;
+  createJobPosting(posting: InsertJobPosting): Promise<JobPosting>;
+  updateJobPosting(id: string, posting: Partial<InsertJobPosting>): Promise<JobPosting>;
+  deleteJobPosting(id: string): Promise<void>;
+
+  getJobApplications(): Promise<JobApplication[]>;
+  getJobApplicationsByPosting(postingId: string): Promise<JobApplication[]>;
+  createJobApplication(application: InsertJobApplication): Promise<JobApplication>;
+  updateJobApplication(id: string, application: Partial<InsertJobApplication>): Promise<JobApplication>;
+  deleteJobApplication(id: string): Promise<void>;
+
+  getInterviewSchedules(): Promise<InterviewSchedule[]>;
+  getInterviewScheduleByApplication(applicationId: string): Promise<InterviewSchedule[]>;
+  createInterviewSchedule(schedule: InsertInterviewSchedule): Promise<InterviewSchedule>;
+  updateInterviewSchedule(id: string, schedule: Partial<InsertInterviewSchedule>): Promise<InterviewSchedule>;
+  deleteInterviewSchedule(id: string): Promise<void>;
+
+  getStaffOnboarding(): Promise<StaffOnboarding[]>;
+  getStaffOnboardingByStaff(staffId: string): Promise<StaffOnboarding | undefined>;
+  createStaffOnboarding(onboarding: InsertStaffOnboarding): Promise<StaffOnboarding>;
+  updateStaffOnboarding(id: string, onboarding: Partial<InsertStaffOnboarding>): Promise<StaffOnboarding>;
+  deleteStaffOnboarding(id: string): Promise<void>;
+
+  getStaffLeave(): Promise<StaffLeave[]>;
+  getStaffLeaveByStaff(staffId: string): Promise<StaffLeave[]>;
+  createStaffLeave(leave: InsertStaffLeave): Promise<StaffLeave>;
+  updateStaffLeave(id: string, leave: Partial<InsertStaffLeave>): Promise<StaffLeave>;
+  deleteStaffLeave(id: string): Promise<void>;
+
+  getStaffTraining(): Promise<StaffTraining[]>;
+  getStaffTrainingByStaff(staffId: string): Promise<StaffTraining[]>;
+  createStaffTraining(training: InsertStaffTraining): Promise<StaffTraining>;
+  updateStaffTraining(id: string, training: Partial<InsertStaffTraining>): Promise<StaffTraining>;
+  deleteStaffTraining(id: string): Promise<void>;
+
+  getSchacsAwardRates(): Promise<SchacsAwardRate[]>;
+  getSchacsAwardRate(id: string): Promise<SchacsAwardRate | undefined>;
+  createSchacsAwardRate(rate: InsertSchacsAwardRate): Promise<SchacsAwardRate>;
+  updateSchacsAwardRate(id: string, rate: Partial<InsertSchacsAwardRate>): Promise<SchacsAwardRate>;
+  deleteSchacsAwardRate(id: string): Promise<void>;
+
   getStaffQualifications(): Promise<StaffQualification[]>;
   getStaffQualificationsByStaff(staffId: string): Promise<StaffQualification[]>;
   createStaffQualification(qualification: InsertStaffQualification): Promise<StaffQualification>;
@@ -674,6 +740,192 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Department operations - HR & Recruitment
+  // Recruitment operations
+  async getJobPostings(): Promise<JobPosting[]> {
+    return await db.select().from(jobPostings).orderBy(desc(jobPostings.createdAt));
+  }
+
+  async getJobPosting(id: string): Promise<JobPosting | undefined> {
+    const [posting] = await db.select().from(jobPostings).where(eq(jobPostings.id, id));
+    return posting;
+  }
+
+  async createJobPosting(posting: InsertJobPosting): Promise<JobPosting> {
+    const [newPosting] = await db.insert(jobPostings).values(posting).returning();
+    return newPosting;
+  }
+
+  async updateJobPosting(id: string, posting: Partial<InsertJobPosting>): Promise<JobPosting> {
+    const [updated] = await db
+      .update(jobPostings)
+      .set({ ...posting, updatedAt: new Date() })
+      .where(eq(jobPostings.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteJobPosting(id: string): Promise<void> {
+    await db.delete(jobPostings).where(eq(jobPostings.id, id));
+  }
+
+  async getJobApplications(): Promise<JobApplication[]> {
+    return await db.select().from(jobApplications).orderBy(desc(jobApplications.createdAt));
+  }
+
+  async getJobApplicationsByPosting(postingId: string): Promise<JobApplication[]> {
+    return await db.select().from(jobApplications).where(eq(jobApplications.jobPostingId, postingId)).orderBy(desc(jobApplications.createdAt));
+  }
+
+  async createJobApplication(application: InsertJobApplication): Promise<JobApplication> {
+    const [newApplication] = await db.insert(jobApplications).values(application).returning();
+    return newApplication;
+  }
+
+  async updateJobApplication(id: string, application: Partial<InsertJobApplication>): Promise<JobApplication> {
+    const [updated] = await db
+      .update(jobApplications)
+      .set({ ...application, updatedAt: new Date() })
+      .where(eq(jobApplications.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteJobApplication(id: string): Promise<void> {
+    await db.delete(jobApplications).where(eq(jobApplications.id, id));
+  }
+
+  async getInterviewSchedules(): Promise<InterviewSchedule[]> {
+    return await db.select().from(interviewSchedule).orderBy(desc(interviewSchedule.createdAt));
+  }
+
+  async getInterviewScheduleByApplication(applicationId: string): Promise<InterviewSchedule[]> {
+    return await db.select().from(interviewSchedule).where(eq(interviewSchedule.applicationId, applicationId)).orderBy(desc(interviewSchedule.createdAt));
+  }
+
+  async createInterviewSchedule(schedule: InsertInterviewSchedule): Promise<InterviewSchedule> {
+    const [newSchedule] = await db.insert(interviewSchedule).values(schedule).returning();
+    return newSchedule;
+  }
+
+  async updateInterviewSchedule(id: string, schedule: Partial<InsertInterviewSchedule>): Promise<InterviewSchedule> {
+    const [updated] = await db
+      .update(interviewSchedule)
+      .set({ ...schedule, updatedAt: new Date() })
+      .where(eq(interviewSchedule.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteInterviewSchedule(id: string): Promise<void> {
+    await db.delete(interviewSchedule).where(eq(interviewSchedule.id, id));
+  }
+
+  async getStaffOnboarding(): Promise<StaffOnboarding[]> {
+    return await db.select().from(staffOnboarding).orderBy(desc(staffOnboarding.createdAt));
+  }
+
+  async getStaffOnboardingByStaff(staffId: string): Promise<StaffOnboarding | undefined> {
+    const [onboarding] = await db.select().from(staffOnboarding).where(eq(staffOnboarding.staffId, staffId));
+    return onboarding;
+  }
+
+  async createStaffOnboarding(onboarding: InsertStaffOnboarding): Promise<StaffOnboarding> {
+    const [newOnboarding] = await db.insert(staffOnboarding).values(onboarding).returning();
+    return newOnboarding;
+  }
+
+  async updateStaffOnboarding(id: string, onboarding: Partial<InsertStaffOnboarding>): Promise<StaffOnboarding> {
+    const [updated] = await db
+      .update(staffOnboarding)
+      .set({ ...onboarding, updatedAt: new Date() })
+      .where(eq(staffOnboarding.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteStaffOnboarding(id: string): Promise<void> {
+    await db.delete(staffOnboarding).where(eq(staffOnboarding.id, id));
+  }
+
+  async getStaffLeave(): Promise<StaffLeave[]> {
+    return await db.select().from(staffLeave).orderBy(desc(staffLeave.createdAt));
+  }
+
+  async getStaffLeaveByStaff(staffId: string): Promise<StaffLeave[]> {
+    return await db.select().from(staffLeave).where(eq(staffLeave.staffId, staffId)).orderBy(desc(staffLeave.createdAt));
+  }
+
+  async createStaffLeave(leave: InsertStaffLeave): Promise<StaffLeave> {
+    const [newLeave] = await db.insert(staffLeave).values(leave).returning();
+    return newLeave;
+  }
+
+  async updateStaffLeave(id: string, leave: Partial<InsertStaffLeave>): Promise<StaffLeave> {
+    const [updated] = await db
+      .update(staffLeave)
+      .set({ ...leave, updatedAt: new Date() })
+      .where(eq(staffLeave.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteStaffLeave(id: string): Promise<void> {
+    await db.delete(staffLeave).where(eq(staffLeave.id, id));
+  }
+
+  async getStaffTraining(): Promise<StaffTraining[]> {
+    return await db.select().from(staffTraining).orderBy(desc(staffTraining.createdAt));
+  }
+
+  async getStaffTrainingByStaff(staffId: string): Promise<StaffTraining[]> {
+    return await db.select().from(staffTraining).where(eq(staffTraining.staffId, staffId)).orderBy(desc(staffTraining.createdAt));
+  }
+
+  async createStaffTraining(training: InsertStaffTraining): Promise<StaffTraining> {
+    const [newTraining] = await db.insert(staffTraining).values(training).returning();
+    return newTraining;
+  }
+
+  async updateStaffTraining(id: string, training: Partial<InsertStaffTraining>): Promise<StaffTraining> {
+    const [updated] = await db
+      .update(staffTraining)
+      .set({ ...training, updatedAt: new Date() })
+      .where(eq(staffTraining.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteStaffTraining(id: string): Promise<void> {
+    await db.delete(staffTraining).where(eq(staffTraining.id, id));
+  }
+
+  async getSchacsAwardRates(): Promise<SchacsAwardRate[]> {
+    return await db.select().from(schacsAwardRates).orderBy(desc(schacsAwardRates.createdAt));
+  }
+
+  async getSchacsAwardRate(id: string): Promise<SchacsAwardRate | undefined> {
+    const [rate] = await db.select().from(schacsAwardRates).where(eq(schacsAwardRates.id, id));
+    return rate;
+  }
+
+  async createSchacsAwardRate(rate: InsertSchacsAwardRate): Promise<SchacsAwardRate> {
+    const [newRate] = await db.insert(schacsAwardRates).values(rate).returning();
+    return newRate;
+  }
+
+  async updateSchacsAwardRate(id: string, rate: Partial<InsertSchacsAwardRate>): Promise<SchacsAwardRate> {
+    const [updated] = await db
+      .update(schacsAwardRates)
+      .set({ ...rate, updatedAt: new Date() })
+      .where(eq(schacsAwardRates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSchacsAwardRate(id: string): Promise<void> {
+    await db.delete(schacsAwardRates).where(eq(schacsAwardRates.id, id));
+  }
+
   async getStaffQualifications(): Promise<StaffQualification[]> {
     return await db.select().from(staffQualifications).orderBy(desc(staffQualifications.createdAt));
   }

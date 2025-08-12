@@ -247,6 +247,139 @@ export const serviceAgreements = pgTable("service_agreements", {
 
 // 2. HR & RECRUITMENT DEPARTMENT TABLES
 
+// Job Postings table for recruitment
+export const jobPostings = pgTable("job_postings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  department: varchar("department"),
+  position: varchar("position").notNull(),
+  schacsLevel: varchar("schacs_level"),
+  jobType: varchar("job_type").notNull(), // full-time, part-time, casual, contract
+  location: varchar("location"),
+  salary: varchar("salary"),
+  description: text("description").notNull(),
+  requirements: text("requirements"),
+  responsibilities: text("responsibilities"),
+  benefits: text("benefits"),
+  status: varchar("status").default("draft"), // draft, published, closed, filled
+  publishedDate: date("published_date"),
+  closingDate: date("closing_date"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Job Applications table
+export const jobApplications = pgTable("job_applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  jobPostingId: varchar("job_posting_id").references(() => jobPostings.id).notNull(),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email").notNull(),
+  phone: varchar("phone"),
+  resumeUrl: varchar("resume_url"),
+  coverLetterUrl: varchar("cover_letter_url"),
+  linkedInProfile: varchar("linkedin_profile"),
+  experience: text("experience"),
+  qualifications: text("qualifications"),
+  ndisWorkerCheck: boolean("ndis_worker_check").default(false),
+  workingWithChildrenCheck: boolean("working_with_children_check").default(false),
+  policeCheck: boolean("police_check").default(false),
+  referenceChecks: boolean("reference_checks").default(false),
+  status: varchar("status").default("new"), // new, screening, interview, reference-check, offer, rejected, withdrawn
+  rating: integer("rating"), // 1-5 star rating
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Interview Schedule table
+export const interviewSchedule = pgTable("interview_schedule", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  applicationId: varchar("application_id").references(() => jobApplications.id).notNull(),
+  interviewType: varchar("interview_type").notNull(), // phone, video, in-person, panel
+  scheduledDate: date("scheduled_date").notNull(),
+  scheduledTime: varchar("scheduled_time").notNull(),
+  duration: integer("duration"), // in minutes
+  location: varchar("location"),
+  meetingLink: varchar("meeting_link"),
+  interviewers: text("interviewers").array(),
+  status: varchar("status").default("scheduled"), // scheduled, completed, cancelled, no-show
+  feedback: text("feedback"),
+  outcome: varchar("outcome"), // proceed, reject, hold
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Onboarding table
+export const staffOnboarding = pgTable("staff_onboarding", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  applicationId: varchar("application_id").references(() => jobApplications.id),
+  onboardingStatus: varchar("onboarding_status").default("pending"), // pending, in-progress, completed
+  contractSigned: boolean("contract_signed").default(false),
+  contractDate: date("contract_date"),
+  bankDetailsProvided: boolean("bank_details_provided").default(false),
+  superannuationSetup: boolean("superannuation_setup").default(false),
+  taxFileDeclaration: boolean("tax_file_declaration").default(false),
+  emergencyContactsProvided: boolean("emergency_contacts_provided").default(false),
+  ndisWorkerCheckCompleted: boolean("ndis_worker_check_completed").default(false),
+  ndisWorkerCheckExpiry: date("ndis_worker_check_expiry"),
+  workingWithChildrenCheckCompleted: boolean("wwcc_completed").default(false),
+  workingWithChildrenCheckExpiry: date("wwcc_expiry"),
+  policeCheckCompleted: boolean("police_check_completed").default(false),
+  policeCheckExpiry: date("police_check_expiry"),
+  inductionCompleted: boolean("induction_completed").default(false),
+  inductionDate: date("induction_date"),
+  mandatoryTrainingCompleted: boolean("mandatory_training_completed").default(false),
+  uniformProvided: boolean("uniform_provided").default(false),
+  equipmentProvided: boolean("equipment_provided").default(false),
+  systemAccessGranted: boolean("system_access_granted").default(false),
+  buddyAssigned: varchar("buddy_assigned").references(() => staff.id),
+  probationEndDate: date("probation_end_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Leave Management table
+export const staffLeave = pgTable("staff_leave", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  leaveType: varchar("leave_type").notNull(), // annual, sick, personal, bereavement, long-service, unpaid
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  totalDays: decimal("total_days", { precision: 5, scale: 2 }),
+  reason: text("reason"),
+  medicalCertificate: boolean("medical_certificate").default(false),
+  status: varchar("status").default("pending"), // pending, approved, rejected, cancelled
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvalDate: date("approval_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Training Records table
+export const staffTraining = pgTable("staff_training", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  trainingType: varchar("training_type").notNull(), // mandatory, professional-development, compliance, skill-specific
+  trainingName: varchar("training_name").notNull(),
+  provider: varchar("provider"),
+  completionDate: date("completion_date"),
+  expiryDate: date("expiry_date"),
+  certificateUrl: varchar("certificate_url"),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  duration: integer("duration"), // in hours
+  status: varchar("status").default("enrolled"), // enrolled, in-progress, completed, expired
+  isNdisMandatory: boolean("is_ndis_mandatory").default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Staff Qualifications table
 export const staffQualifications = pgTable("staff_qualifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -283,17 +416,58 @@ export const performanceReviews = pgTable("performance_reviews", {
 
 // 3. FINANCE DEPARTMENT TABLES
 
-// Award Rates table (SCHADS and other awards)
+// SCHADS Award Rates table - Full compliance with SCHADS Award
+export const schacsAwardRates = pgTable("schacs_award_rates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  level: varchar("level").notNull(), // Level 1.1, 1.2, 1.3, 2.1, 2.2, 3, 4, 5, 6, 7, 8
+  classification: varchar("classification").notNull(), // Support Worker, Senior Support Worker, Team Leader, etc.
+  streamType: varchar("stream_type").notNull(), // social-community-disability, home-care, family-day-care
+  employmentType: varchar("employment_type").notNull(), // full-time, part-time, casual
+  // Base rates
+  baseHourlyRate: decimal("base_hourly_rate", { precision: 8, scale: 2 }).notNull(),
+  baseWeeklyRate: decimal("base_weekly_rate", { precision: 10, scale: 2 }),
+  baseAnnualRate: decimal("base_annual_rate", { precision: 10, scale: 2 }),
+  // Penalty rates - SCHADS compliant
+  saturdayRate: decimal("saturday_rate", { precision: 5, scale: 2 }).default("1.5"), // 150%
+  sundayRate: decimal("sunday_rate", { precision: 5, scale: 2 }).default("2.0"), // 200%
+  publicHolidayRate: decimal("public_holiday_rate", { precision: 5, scale: 2 }).default("2.5"), // 250%
+  eveningRate: decimal("evening_rate", { precision: 5, scale: 2 }).default("1.125"), // 112.5% (6pm-8pm Mon-Fri)
+  nightRate: decimal("night_rate", { precision: 5, scale: 2 }).default("1.15"), // 115% (8pm-6am Mon-Fri)
+  // Overtime rates
+  overtime1Rate: decimal("overtime_1_rate", { precision: 5, scale: 2 }).default("1.5"), // First 2 hours - 150%
+  overtime2Rate: decimal("overtime_2_rate", { precision: 5, scale: 2 }).default("2.0"), // After 2 hours - 200%
+  // Loadings and allowances
+  casualLoading: decimal("casual_loading", { precision: 5, scale: 2 }).default("0.25"), // 25% casual loading
+  brokenShiftAllowance: decimal("broken_shift_allowance", { precision: 8, scale: 2 }),
+  sleeperAllowance: decimal("sleepover_allowance", { precision: 8, scale: 2 }),
+  onCallAllowance: decimal("on_call_allowance", { precision: 8, scale: 2 }),
+  // Travel allowances
+  vehicleAllowancePerKm: decimal("vehicle_allowance_per_km", { precision: 5, scale: 2 }).default("0.95"),
+  transportationAllowance: decimal("transportation_allowance", { precision: 8, scale: 2 }),
+  // Other allowances
+  mealAllowance: decimal("meal_allowance", { precision: 8, scale: 2 }),
+  uniformAllowance: decimal("uniform_allowance", { precision: 8, scale: 2 }),
+  laundryAllowance: decimal("laundry_allowance", { precision: 8, scale: 2 }),
+  // Validity
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  isActive: boolean("is_active").default(true),
+  fairWorkReference: varchar("fair_work_reference"), // Reference to Fair Work determination
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Award Rates table (for other awards beyond SCHADS)
 export const awardRates = pgTable("award_rates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   awardType: awardTypeEnum("award_type").notNull(),
-  level: varchar("level").notNull(), // e.g., Level 1, Level 2, etc.
-  classification: varchar("classification"), // e.g., Support Worker, Team Leader
+  level: varchar("level").notNull(),
+  classification: varchar("classification"),
   baseHourlyRate: decimal("base_hourly_rate", { precision: 8, scale: 2 }).notNull(),
-  casualLoading: decimal("casual_loading", { precision: 5, scale: 2 }).default("0.25"), // 25% casual loading
-  weekendRate: decimal("weekend_rate", { precision: 5, scale: 2 }).default("1.5"), // 150%
-  publicHolidayRate: decimal("public_holiday_rate", { precision: 5, scale: 2 }).default("2.0"), // 200%
-  overnightRate: decimal("overnight_rate", { precision: 5, scale: 2 }).default("1.0"), // 100%
+  casualLoading: decimal("casual_loading", { precision: 5, scale: 2 }).default("0.25"),
+  weekendRate: decimal("weekend_rate", { precision: 5, scale: 2 }).default("1.5"),
+  publicHolidayRate: decimal("public_holiday_rate", { precision: 5, scale: 2 }).default("2.0"),
+  overnightRate: decimal("overnight_rate", { precision: 5, scale: 2 }).default("1.0"),
   effectiveFrom: date("effective_from").notNull(),
   effectiveTo: date("effective_to"),
   isActive: boolean("is_active").default(true),
@@ -1017,6 +1191,49 @@ export const insertServiceAgreementSchema = createInsertSchema(serviceAgreements
   updatedAt: true,
 });
 
+// Recruitment-specific insert schemas
+export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertJobApplicationSchema = createInsertSchema(jobApplications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertInterviewScheduleSchema = createInsertSchema(interviewSchedule).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffOnboardingSchema = createInsertSchema(staffOnboarding).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffLeaveSchema = createInsertSchema(staffLeave).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffTrainingSchema = createInsertSchema(staffTraining).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSchacsAwardRateSchema = createInsertSchema(schacsAwardRates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertStaffQualificationSchema = createInsertSchema(staffQualifications).omit({
   id: true,
   createdAt: true,
@@ -1111,6 +1328,21 @@ export type InsertReferral = z.infer<typeof insertReferralSchema>;
 export type Referral = typeof referrals.$inferSelect;
 export type InsertServiceAgreement = z.infer<typeof insertServiceAgreementSchema>;
 export type ServiceAgreement = typeof serviceAgreements.$inferSelect;
+// Recruitment types
+export type InsertJobPosting = z.infer<typeof insertJobPostingSchema>;
+export type JobPosting = typeof jobPostings.$inferSelect;
+export type InsertJobApplication = z.infer<typeof insertJobApplicationSchema>;
+export type JobApplication = typeof jobApplications.$inferSelect;
+export type InsertInterviewSchedule = z.infer<typeof insertInterviewScheduleSchema>;
+export type InterviewSchedule = typeof interviewSchedule.$inferSelect;
+export type InsertStaffOnboarding = z.infer<typeof insertStaffOnboardingSchema>;
+export type StaffOnboarding = typeof staffOnboarding.$inferSelect;
+export type InsertStaffLeave = z.infer<typeof insertStaffLeaveSchema>;
+export type StaffLeave = typeof staffLeave.$inferSelect;
+export type InsertStaffTraining = z.infer<typeof insertStaffTrainingSchema>;
+export type StaffTraining = typeof staffTraining.$inferSelect;
+export type InsertSchacsAwardRate = z.infer<typeof insertSchacsAwardRateSchema>;
+export type SchacsAwardRate = typeof schacsAwardRates.$inferSelect;
 export type InsertStaffQualification = z.infer<typeof insertStaffQualificationSchema>;
 export type StaffQualification = typeof staffQualifications.$inferSelect;
 export type InsertPerformanceReview = z.infer<typeof insertPerformanceReviewSchema>;
