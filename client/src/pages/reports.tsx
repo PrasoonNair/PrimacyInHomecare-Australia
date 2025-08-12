@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+// Sidebar and Header are provided by AppLayout wrapper
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -102,13 +101,9 @@ export default function Reports() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 overflow-hidden">
-        <Header title="Reports & Analytics" subtitle="Generate NDIS compliance and business intelligence reports" />
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Report Generation Section */}
-          <Card className="mb-8">
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      {/* Report Generation Section */}
+      <Card className="mb-8">
             <CardHeader>
               <CardTitle>Generate Report</CardTitle>
             </CardHeader>
@@ -228,8 +223,6 @@ export default function Reports() {
               </div>
             </CardContent>
           </Card>
-        </main>
-      </div>
     </div>
   );
 }

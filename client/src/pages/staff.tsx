@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+// Sidebar and Header are provided by AppLayout wrapper
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,12 +59,8 @@ export default function StaffManagement() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 overflow-hidden">
-        <Header title="Staff Management" subtitle="Manage staff members and their assignments" />
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="mb-6 flex items-center justify-between">
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <div className="mb-6 flex items-center justify-between">
             <Input
               type="text"
               placeholder="Search staff members..."
@@ -170,8 +165,6 @@ export default function StaffManagement() {
               ))}
             </div>
           )}
-        </main>
-      </div>
     </div>
   );
 }

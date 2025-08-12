@@ -4,8 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+// Sidebar and Header are provided by AppLayout wrapper
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -219,14 +218,10 @@ export default function Participants() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 overflow-hidden">
-        <Header title="Participant Management" subtitle="Comprehensive Participant Lifecycle & Analytics" />
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <KPICards />
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <KPICards />
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-4 w-full max-w-4xl">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
@@ -783,9 +778,7 @@ export default function Participants() {
                 </Card>
               </div>
             </TabsContent>
-          </Tabs>
-        </main>
-      </div>
+      </Tabs>
     </div>
   );
 }

@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/lib/queryClient";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+// Sidebar and Header are provided by AppLayout wrapper
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -263,14 +262,10 @@ export default function ServiceDelivery() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 overflow-hidden">
-        <Header title="Service Delivery Management" subtitle="Advanced Staff Allocation & Operations Control" />
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <KPICards />
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      <KPICards />
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid grid-cols-4 w-full max-w-4xl">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <Activity className="w-4 h-4" />
@@ -743,8 +738,6 @@ export default function ServiceDelivery() {
               </div>
             </TabsContent>
           </Tabs>
-        </main>
-      </div>
     </div>
   );
 }

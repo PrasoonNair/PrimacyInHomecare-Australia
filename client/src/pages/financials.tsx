@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+// Sidebar and Header are provided by AppLayout wrapper
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,13 +84,9 @@ export default function Financials() {
     .reduce((sum: number, invoice: Invoice) => sum + parseFloat(invoice.total || "0"), 0);
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 overflow-hidden">
-        <Header title="Financial Management" subtitle="Track invoices, payments, and financial reports" />
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Financial Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+      {/* Financial Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center">
@@ -249,8 +244,6 @@ export default function Financials() {
               ))}
             </div>
           )}
-        </main>
-      </div>
     </div>
   );
 }
