@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { participants, ndisPlans, participantGoals, goalActions } from "@shared/schema";
+import { participants, ndisplans, participantGoals, goalActions } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
