@@ -1,0 +1,111 @@
+1. Referral Intake & Client Onboarding
+Goal: Efficiently process referrals from multiple sources and prepare for service commencement.
+Sources of Referral:
+•	Completed Referral Form (from email, website submission, or paper scan)
+•	RFS (Request for Service) from NDIS Portal
+•	Other partner referrals (Support Coordinators, hospitals, allied health)
+System Requirements:
+•	Upload & Pre-populate: Ability to upload referral/RFS (PDF, Word, Excel)
+→ Auto-extract key data fields into participant profile using OCR/AI parsing.
+•	Manual Entry Option: For cases where auto-fill is incomplete.
+•	Mandatory Field Checks: Ensure required NDIS data fields are completed before progressing (e.g., NDIS Number, DOB, Plan Dates, Support Categories, Contact Details).
+Workflow:
+1.	Referral received → Upload into system → Auto-population → Staff verifies details.
+2.	Create Participant Profile (Status = "Pending Service Agreement").
+________________________________________
+2. Service Agreement Preparation & Signing
+Goal: Establish a legally binding agreement with participant/representative.
+System Requirements:
+•	Template Management: Multiple NDIS-compliant service agreement templates stored.
+•	Pre-population: Pull participant data directly into template.
+•	E-signature Integration: (e.g., DocuSign, Adobe Sign).
+•	Automated Version Control: Keep signed copy in participant file with timestamp.
+•	Multi-language Support (optional for CALD participants).
+Workflow:
+1.	Staff selects appropriate service template.
+2.	System pre-fills participant details.
+3.	Agreement sent electronically for signature (or printed for manual sign).
+4.	Once signed → Status changes to "Pending Funding Verification".
+________________________________________
+3. Funding Verification
+Goal: Confirm participant has sufficient budget in their NDIS plan to receive requested supports.
+System Requirements:
+•	Budget Input: Enter plan budget by category (Core, Capacity Building, Capital).
+•	Automated Calculation: Deduct estimated cost of requested services from budget.
+•	Alert System: Flag insufficient funds.
+•	Document Evidence: Store budget verification notes.
+Workflow:
+1.	Staff enters NDIS plan budget & support category allocations.
+2.	System checks service costs vs. available funds.
+3.	If sufficient → Status = "Ready for Allocation".
+4.	If insufficient → Alert & manual follow-up before proceeding.
+________________________________________
+4. Allocation to Support Worker
+Goal: Match participant to a qualified and available support worker in their area.
+System Requirements:
+•	Staff Database: Profiles with qualifications, compliance documents, location, availability.
+•	Matching Engine: Search by location, skills, language, gender preference, availability.
+•	Compliance Check: Only allocate to workers with up-to-date clearances & training.
+•	Hold/Confirm Function: Option to reserve a worker before confirmation.
+Workflow:
+1.	Participant marked as "Ready for Allocation".
+2.	Allocation officer searches for matching staff.
+3.	Staff contacted → Confirmation obtained.
+4.	Status changes to "Meet & Greet Scheduled".
+________________________________________
+5. Meet & Greet Process
+Goal: Allow participant and worker to meet before ongoing shifts are confirmed.
+System Requirements:
+•	Calendar Scheduling: Add meet & greet into system with notifications to both parties.
+•	Feedback Form: Capture yes/no decision from both participant and worker.
+•	Conditional Next Step: If match fails → Return to allocation step.
+Workflow:
+1.	Meet & Greet scheduled.
+2.	After meeting → System records decision.
+3.	If both agree → Status = "Service Commenced".
+4.	If not → Loop back to allocation search.
+________________________________________
+6. Ongoing Shift Scheduling & Service Delivery
+Goal: Manage ongoing support shifts throughout plan period.
+System Requirements:
+•	Calendar View: All planned shifts for each participant.
+•	Recurring Bookings: Pre-fill shifts for the plan/service agreement period.
+•	Shift Adjustments: Drag-and-drop reassignments in case of worker absence.
+•	Participant & Worker Notifications: SMS/email reminders.
+•	Compliance Checks: Automatic flag for expired staff clearances.
+•	Mobile App Access: For workers to clock in/out, update shift notes, incident reports.
+Workflow:
+1.	Upon match confirmation, calendar pre-filled for service period.
+2.	Service delivery team manages updates and replacements.
+3.	Workers use mobile app to record attendance and notes.
+4.	Shift data flows into billing/payroll module.
+________________________________________
+7. Recruitment & Staffing Management
+Goal: Ensure workforce meets service demand.
+System Requirements:
+•	Recruitment Requests: From allocation team when no match found.
+•	Candidate Pool: Track potential workers through onboarding pipeline.
+•	Compliance Tracker: Police checks, WWCC, First Aid, NDIS screening expiry dates.
+________________________________________
+8. Compliance & Legal
+Goal: Ensure all processes align with NDIS Practice Standards & Australian law.
+System Requirements:
+•	Automated expiry alerts for worker documents.
+•	NDIS compliance checklists embedded in each workflow.
+•	Privacy & security protocols (data encryption, access control).
+•	Audit log of all actions in the system.
+________________________________________
+9. Reporting & Analytics
+•	Intake volumes by source.
+•	Time from referral to service commencement.
+•	Funding utilisation.
+•	Worker allocation efficiency.
+•	Incident and feedback trends.
+________________________________________
+10. Technical Build Recommendations
+•	Platform Type: Web-based with mobile companion app.
+•	Integrations:
+o	NDIS portal API (if available for RFS data pull).
+o	E-signature API.
+o	SMS/email notifications.
+
