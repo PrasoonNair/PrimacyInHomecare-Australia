@@ -16,13 +16,13 @@ export default function Landing() {
       <div className="relative container mx-auto px-4 py-20">
         <div className="text-center mb-16 animate-fade-in">
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-white/60 backdrop-blur-sm border border-white/20 mb-6">
-            <span className="text-sm font-medium text-blue-700">✨ Modern NDIS Management</span>
+            <span className="text-sm font-medium text-blue-700">✨ Primacy Care Australia</span>
           </div>
           <h1 className="text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-6">
-            NDIS Manager
+            Primacy Care Australia CMS
           </h1>
           <p className="text-xl text-gray-700 mb-10 max-w-3xl mx-auto leading-relaxed">
-            Streamline your NDIS service delivery with our comprehensive case management platform designed for Australian disability service providers
+            Australia's leading NDIS case management system. Streamline your service delivery with our comprehensive platform designed specifically for disability service providers.
           </p>
           <Button 
             size="lg" 

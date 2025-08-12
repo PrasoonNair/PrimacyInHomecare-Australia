@@ -32,7 +32,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header title="NDIS Manager" subtitle="Comprehensive case management system" />
+        <Header title="Primacy Care Australia CMS" subtitle="Comprehensive NDIS case management system" />
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>

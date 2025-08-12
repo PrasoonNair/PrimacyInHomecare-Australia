@@ -121,7 +121,7 @@ export default function Intake() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Intake Department</h1>
           <p className="text-muted-foreground">
-            Manage referrals, participant intake, and service agreements
+            Primacy Care Australia - Manage referrals, participant intake, and service agreements
           </p>
         </div>
 

@@ -76,8 +76,8 @@ export default function Sidebar() {
             <i className="fas fa-shield-alt text-xl"></i>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white" data-testid="text-app-title">Super Admin Portal</h1>
-            <p className="text-blue-100 text-sm">Business Management System</p>
+            <h1 className="text-xl font-bold text-white" data-testid="text-app-title">Primacy Care Australia</h1>
+            <p className="text-blue-100 text-sm">NDIS Case Management</p>
           </div>
         </div>
       </div>

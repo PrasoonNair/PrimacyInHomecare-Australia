@@ -181,7 +181,7 @@ export default function WorkflowManagement() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Workflow Management</h1>
           <p className="text-muted-foreground">
-            Seamless workflow from intake to service delivery with comprehensive audit trails
+            Primacy Care Australia - Seamless workflow from intake to service delivery with comprehensive audit trails
           </p>
         </div>
 
