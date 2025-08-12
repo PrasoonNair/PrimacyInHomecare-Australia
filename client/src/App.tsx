@@ -25,6 +25,7 @@ import Automation from "@/pages/automation";
 import WorkflowManagement from "@/pages/workflow-management";
 import PlanReader from "@/pages/plan-reader";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import TestLogin from "@/pages/test-login";
 // Department pages
 import Intake from "@/pages/intake";
 import HRRecruitment from "@/pages/hr-recruitment";
@@ -72,6 +73,7 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/test-login" component={TestLogin} />
       {isLoading || !isAuthenticated ? (
         <Route path="/" component={Landing} />
       ) : (

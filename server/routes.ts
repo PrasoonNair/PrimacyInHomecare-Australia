@@ -80,9 +80,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // Test login endpoint (development only)
+  if (process.env.NODE_ENV === 'development') {
+    app.post('/api/test-login', async (req, res) => {
+      const { userId, role } = req.body;
+      
+      // Get test user from database
+      const user = await storage.getUser(userId);
+      if (user) {
+        // Set session with test user
+        (req as any).session.testUser = {
+          id: userId,
+          role: role,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName
+        };
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: "Test user not found" });
+      }
+    });
+  }
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
+      // In development, check for test user first
+      if (process.env.NODE_ENV === 'development' && req.session?.testUser) {
+        const testUser = await storage.getUser(req.session.testUser.id);
+        if (testUser) {
+          res.json(testUser);
+          return;
+        }
+      }
+      
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       res.json(user);

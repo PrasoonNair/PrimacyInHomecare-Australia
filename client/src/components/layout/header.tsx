@@ -1,4 +1,5 @@
 import { QuickSearchButton } from "@/components/quick-search";
+import { TestUserSelector } from "@/components/test-user-selector";
 
 interface HeaderProps {
   title: string;
@@ -22,6 +23,7 @@ export default function Header({ title, subtitle }: HeaderProps) {
           )}
         </div>
         <div className="flex items-center space-x-4">
+          {process.env.NODE_ENV === 'development' && <TestUserSelector />}
           <QuickSearchButton />
           <button 
             className="relative p-3 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
