@@ -2134,6 +2134,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // States and Regions API endpoints
+  app.get("/api/states", async (req, res) => {
+    try {
+      const states = await storage.getStates();
+      res.json(states);
+    } catch (error) {
+      console.error("Error fetching states:", error);
+      res.status(500).json({ error: "Failed to fetch states" });
+    }
+  });
+
+  app.get("/api/states/:id", async (req, res) => {
+    try {
+      const state = await storage.getStateById(req.params.id);
+      if (!state) {
+        return res.status(404).json({ error: "State not found" });
+      }
+      res.json(state);
+    } catch (error) {
+      console.error("Error fetching state:", error);
+      res.status(500).json({ error: "Failed to fetch state" });
+    }
+  });
+
+  app.post("/api/states", async (req, res) => {
+    try {
+      const state = await storage.createState(req.body);
+      res.status(201).json(state);
+    } catch (error) {
+      console.error("Error creating state:", error);
+      res.status(500).json({ error: "Failed to create state" });
+    }
+  });
+
+  app.put("/api/states/:id", async (req, res) => {
+    try {
+      const state = await storage.updateState(req.params.id, req.body);
+      res.json(state);
+    } catch (error) {
+      console.error("Error updating state:", error);
+      res.status(500).json({ error: "Failed to update state" });
+    }
+  });
+
+  app.delete("/api/states/:id", async (req, res) => {
+    try {
+      await storage.deleteState(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting state:", error);
+      res.status(500).json({ error: "Failed to delete state" });
+    }
+  });
+
+  app.get("/api/regions", async (req, res) => {
+    try {
+      const stateId = req.query.stateId as string;
+      let regions;
+      if (stateId) {
+        regions = await storage.getRegionsByState(stateId);
+      } else {
+        regions = await storage.getRegions();
+      }
+      res.json(regions);
+    } catch (error) {
+      console.error("Error fetching regions:", error);
+      res.status(500).json({ error: "Failed to fetch regions" });
+    }
+  });
+
+  app.get("/api/regions/:id", async (req, res) => {
+    try {
+      const region = await storage.getRegionById(req.params.id);
+      if (!region) {
+        return res.status(404).json({ error: "Region not found" });
+      }
+      res.json(region);
+    } catch (error) {
+      console.error("Error fetching region:", error);
+      res.status(500).json({ error: "Failed to fetch region" });
+    }
+  });
+
+  app.post("/api/regions", async (req, res) => {
+    try {
+      const region = await storage.createRegion(req.body);
+      res.status(201).json(region);
+    } catch (error) {
+      console.error("Error creating region:", error);
+      res.status(500).json({ error: "Failed to create region" });
+    }
+  });
+
+  app.put("/api/regions/:id", async (req, res) => {
+    try {
+      const region = await storage.updateRegion(req.params.id, req.body);
+      res.json(region);
+    } catch (error) {
+      console.error("Error updating region:", error);
+      res.status(500).json({ error: "Failed to update region" });
+    }
+  });
+
+  app.delete("/api/regions/:id", async (req, res) => {
+    try {
+      await storage.deleteRegion(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting region:", error);
+      res.status(500).json({ error: "Failed to delete region" });
+    }
+  });
+
+  app.get("/api/department-regions", async (req, res) => {
+    try {
+      const regionId = req.query.regionId as string;
+      let departmentRegions;
+      if (regionId) {
+        departmentRegions = await storage.getDepartmentRegionsByRegion(regionId);
+      } else {
+        departmentRegions = await storage.getDepartmentRegions();
+      }
+      res.json(departmentRegions);
+    } catch (error) {
+      console.error("Error fetching department regions:", error);
+      res.status(500).json({ error: "Failed to fetch department regions" });
+    }
+  });
+
+  app.post("/api/department-regions", async (req, res) => {
+    try {
+      const departmentRegion = await storage.createDepartmentRegion(req.body);
+      res.status(201).json(departmentRegion);
+    } catch (error) {
+      console.error("Error creating department region:", error);
+      res.status(500).json({ error: "Failed to create department region" });
+    }
+  });
+
+  app.put("/api/department-regions/:id", async (req, res) => {
+    try {
+      const departmentRegion = await storage.updateDepartmentRegion(req.params.id, req.body);
+      res.json(departmentRegion);
+    } catch (error) {
+      console.error("Error updating department region:", error);
+      res.status(500).json({ error: "Failed to update department region" });
+    }
+  });
+
+  app.delete("/api/department-regions/:id", async (req, res) => {
+    try {
+      await storage.deleteDepartmentRegion(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting department region:", error);
+      res.status(500).json({ error: "Failed to delete department region" });
+    }
+  });
+
   // 404 handler for API routes
   app.use('/api/*', (req, res) => {
     res.status(404).json({ 

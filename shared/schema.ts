@@ -1234,6 +1234,45 @@ export const workflowAuditLog = pgTable("workflow_audit_log", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// STATES AND REGIONS MANAGEMENT
+
+// Australian States and Territories table
+export const states = pgTable("states", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull().unique(),
+  abbreviation: varchar("abbreviation", { length: 3 }).notNull().unique(),
+  type: varchar("type").notNull().default("state"), // state, territory
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Regional divisions within states
+export const regions = pgTable("regions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  stateId: varchar("state_id").references(() => states.id).notNull(),
+  postcodeLow: varchar("postcode_low", { length: 4 }),
+  postcodeHigh: varchar("postcode_high", { length: 4 }),
+  description: text("description"),
+  majorTowns: text("major_towns").array(),
+  coordinates: jsonb("coordinates"), // Lat/lng boundaries for mapping
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Department-Region assignments for operational coverage
+export const departmentRegions = pgTable("department_regions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  departmentName: varchar("department_name").notNull(),
+  regionId: varchar("region_id").references(() => regions.id).notNull(),
+  isActive: boolean("is_active").default(true),
+  operationalPriority: varchar("operational_priority").default("standard"), // high, standard, low
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // XERO INTEGRATION TABLES
 
 // Xero Configuration table
@@ -1582,6 +1621,28 @@ export const agreementCommunicationsRelations = relations(agreementCommunication
   participant: one(participants, {
     fields: [agreementCommunications.participantId],
     references: [participants.id],
+  }),
+}));
+
+// States relations
+export const statesRelations = relations(states, ({ many }) => ({
+  regions: many(regions),
+}));
+
+// Regions relations
+export const regionsRelations = relations(regions, ({ one, many }) => ({
+  state: one(states, {
+    fields: [regions.stateId],
+    references: [states.id],
+  }),
+  departmentRegions: many(departmentRegions),
+}));
+
+// Department Regions relations
+export const departmentRegionsRelations = relations(departmentRegions, ({ one }) => ({
+  region: one(regions, {
+    fields: [departmentRegions.regionId],
+    references: [regions.id],
   }),
 }));
 

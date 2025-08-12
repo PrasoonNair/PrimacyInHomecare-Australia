@@ -37,6 +37,10 @@ import {
   permissions,
   rolePermissions,
   userRoles,
+  // States and Regions tables
+  states,
+  regions,
+  departmentRegions,
   type User,
   type UpsertUser,
   type Participant,
@@ -127,6 +131,13 @@ import {
   type InsertNdisPricing,
   type NdisPlanLineItem,
   type InsertNdisPlanLineItem,
+  // States and Regions types
+  type State,
+  type InsertState,
+  type Region,
+  type InsertRegion,
+  type DepartmentRegion,
+  type InsertDepartmentRegion,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count, or, like, ilike } from "drizzle-orm";
@@ -412,6 +423,26 @@ export interface IStorage {
     categories: NdisSupportCategory[];
     items: (NdisSupportItem & { pricing: NdisPricing[] })[];
   }>;
+
+  // States and Regions management
+  getStates(): Promise<State[]>;
+  getStateById(id: string): Promise<State | undefined>;
+  createState(state: InsertState): Promise<State>;
+  updateState(id: string, updates: Partial<InsertState>): Promise<State>;
+  deleteState(id: string): Promise<void>;
+
+  getRegions(): Promise<Region[]>;
+  getRegionsByState(stateId: string): Promise<Region[]>;
+  getRegionById(id: string): Promise<Region | undefined>;
+  createRegion(region: InsertRegion): Promise<Region>;
+  updateRegion(id: string, updates: Partial<InsertRegion>): Promise<Region>;
+  deleteRegion(id: string): Promise<void>;
+
+  getDepartmentRegions(): Promise<DepartmentRegion[]>;
+  getDepartmentRegionsByRegion(regionId: string): Promise<DepartmentRegion[]>;
+  createDepartmentRegion(departmentRegion: InsertDepartmentRegion): Promise<DepartmentRegion>;
+  updateDepartmentRegion(id: string, updates: Partial<InsertDepartmentRegion>): Promise<DepartmentRegion>;
+  deleteDepartmentRegion(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1944,6 +1975,95 @@ export class DatabaseStorage implements IStorage {
     });
     
     return newDocument;
+  }
+
+  // States and Regions management implementation
+  async getStates(): Promise<State[]> {
+    return await db.select().from(states).where(eq(states.isActive, true)).orderBy(states.name);
+  }
+
+  async getStateById(id: string): Promise<State | undefined> {
+    const [state] = await db.select().from(states).where(eq(states.id, id));
+    return state;
+  }
+
+  async createState(state: InsertState): Promise<State> {
+    const [newState] = await db.insert(states).values(state).returning();
+    return newState;
+  }
+
+  async updateState(id: string, updates: Partial<InsertState>): Promise<State> {
+    const [updated] = await db
+      .update(states)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(states.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteState(id: string): Promise<void> {
+    await db.update(states).set({ isActive: false }).where(eq(states.id, id));
+  }
+
+  async getRegions(): Promise<Region[]> {
+    return await db.select().from(regions).where(eq(regions.isActive, true)).orderBy(regions.name);
+  }
+
+  async getRegionsByState(stateId: string): Promise<Region[]> {
+    return await db.select().from(regions)
+      .where(and(eq(regions.stateId, stateId), eq(regions.isActive, true)))
+      .orderBy(regions.name);
+  }
+
+  async getRegionById(id: string): Promise<Region | undefined> {
+    const [region] = await db.select().from(regions).where(eq(regions.id, id));
+    return region;
+  }
+
+  async createRegion(region: InsertRegion): Promise<Region> {
+    const [newRegion] = await db.insert(regions).values(region).returning();
+    return newRegion;
+  }
+
+  async updateRegion(id: string, updates: Partial<InsertRegion>): Promise<Region> {
+    const [updated] = await db
+      .update(regions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(regions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteRegion(id: string): Promise<void> {
+    await db.update(regions).set({ isActive: false }).where(eq(regions.id, id));
+  }
+
+  async getDepartmentRegions(): Promise<DepartmentRegion[]> {
+    return await db.select().from(departmentRegions).where(eq(departmentRegions.isActive, true)).orderBy(departmentRegions.departmentName);
+  }
+
+  async getDepartmentRegionsByRegion(regionId: string): Promise<DepartmentRegion[]> {
+    return await db.select().from(departmentRegions)
+      .where(and(eq(departmentRegions.regionId, regionId), eq(departmentRegions.isActive, true)))
+      .orderBy(departmentRegions.departmentName);
+  }
+
+  async createDepartmentRegion(departmentRegion: InsertDepartmentRegion): Promise<DepartmentRegion> {
+    const [newDepartmentRegion] = await db.insert(departmentRegions).values(departmentRegion).returning();
+    return newDepartmentRegion;
+  }
+
+  async updateDepartmentRegion(id: string, updates: Partial<InsertDepartmentRegion>): Promise<DepartmentRegion> {
+    const [updated] = await db
+      .update(departmentRegions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(departmentRegions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteDepartmentRegion(id: string): Promise<void> {
+    await db.update(departmentRegions).set({ isActive: false }).where(eq(departmentRegions.id, id));
   }
 }
 
