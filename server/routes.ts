@@ -1518,6 +1518,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Incident Management routes
+  app.get("/api/incidents", isAuthenticated, async (req, res) => {
+    try {
+      const filters = {
+        status: req.query.status as string | undefined,
+        severity: req.query.severity as string | undefined,
+        participantId: req.query.participantId as string | undefined,
+      };
+      const incidents = await storage.getIncidents(filters);
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error fetching incidents:", error);
+      res.status(500).json({ message: "Failed to fetch incidents" });
+    }
+  });
+
+  app.get("/api/incidents/:id", isAuthenticated, async (req, res) => {
+    try {
+      const incident = await storage.getIncident(req.params.id);
+      if (!incident) {
+        return res.status(404).json({ message: "Incident not found" });
+      }
+      res.json(incident);
+    } catch (error) {
+      console.error("Error fetching incident:", error);
+      res.status(500).json({ message: "Failed to fetch incident" });
+    }
+  });
+
+  app.post("/api/incidents", isAuthenticated, async (req, res) => {
+    try {
+      const newIncident = await storage.createIncident(req.body);
+      res.status(201).json(newIncident);
+    } catch (error) {
+      console.error("Error creating incident:", error);
+      res.status(500).json({ message: "Failed to create incident" });
+    }
+  });
+
+  app.patch("/api/incidents/:id", isAuthenticated, async (req, res) => {
+    try {
+      const updatedIncident = await storage.updateIncident(req.params.id, req.body);
+      if (!updatedIncident) {
+        return res.status(404).json({ message: "Incident not found" });
+      }
+      res.json(updatedIncident);
+    } catch (error) {
+      console.error("Error updating incident:", error);
+      res.status(500).json({ message: "Failed to update incident" });
+    }
+  });
+
+  app.get("/api/incidents/:id/approvals", isAuthenticated, async (req, res) => {
+    try {
+      const approvals = await storage.getIncidentApprovals(req.params.id);
+      res.json(approvals);
+    } catch (error) {
+      console.error("Error fetching incident approvals:", error);
+      res.status(500).json({ message: "Failed to fetch approvals" });
+    }
+  });
+
+  app.post("/api/incidents/:id/approvals", isAuthenticated, async (req, res) => {
+    try {
+      const approval = await storage.createIncidentApproval({
+        ...req.body,
+        incidentId: req.params.id,
+      });
+      res.status(201).json(approval);
+    } catch (error) {
+      console.error("Error creating incident approval:", error);
+      res.status(500).json({ message: "Failed to create approval" });
+    }
+  });
+
+  app.get("/api/incidents/:id/timeline", isAuthenticated, async (req, res) => {
+    try {
+      const timeline = await storage.getIncidentTimeline(req.params.id);
+      res.json(timeline);
+    } catch (error) {
+      console.error("Error fetching incident timeline:", error);
+      res.status(500).json({ message: "Failed to fetch timeline" });
+    }
+  });
+
+  app.get("/api/incidents/:id/documents", isAuthenticated, async (req, res) => {
+    try {
+      const documents = await storage.getIncidentDocuments(req.params.id);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching incident documents:", error);
+      res.status(500).json({ message: "Failed to fetch documents" });
+    }
+  });
+
+  app.post("/api/incidents/:id/documents", isAuthenticated, async (req, res) => {
+    try {
+      const document = await storage.addIncidentDocument({
+        ...req.body,
+        incidentId: req.params.id,
+      });
+      res.status(201).json(document);
+    } catch (error) {
+      console.error("Error adding incident document:", error);
+      res.status(500).json({ message: "Failed to add document" });
+    }
+  });
+
   // Public endpoint for viewing and signing agreements
   app.get('/agreements/view/:token', async (req, res) => {
     try {

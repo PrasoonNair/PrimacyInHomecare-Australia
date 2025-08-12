@@ -17,7 +17,12 @@ import {
   shifts,
   staffAvailability,
   audits,
+  // Incident Management tables
   incidents,
+  incidentApprovals,
+  incidentNotifications,
+  incidentTimeline,
+  incidentDocuments,
   // Role and permission tables
   roles,
   permissions,
@@ -58,8 +63,17 @@ import {
   type InsertStaffAvailability,
   type Audit,
   type InsertAudit,
+  // Incident Management types
   type Incident,
   type InsertIncident,
+  type IncidentApproval,
+  type InsertIncidentApproval,
+  type IncidentNotification,
+  type InsertIncidentNotification,
+  type IncidentTimelineEntry,
+  type InsertIncidentTimelineEntry,
+  type IncidentDocument,
+  type InsertIncidentDocument,
   // Role and permission types
   type Role,
   type InsertRole,
@@ -94,6 +108,20 @@ import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count, or, like, ilike } from "drizzle-orm";
 
 export interface IStorage {
+  // Incident Management
+  getIncidents(filters?: { status?: string; severity?: string; participantId?: string }): Promise<Incident[]>;
+  getIncident(id: string): Promise<Incident | undefined>;
+  createIncident(incident: InsertIncident): Promise<Incident>;
+  updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident | undefined>;
+  getIncidentApprovals(incidentId: string): Promise<IncidentApproval[]>;
+  createIncidentApproval(approval: InsertIncidentApproval): Promise<IncidentApproval>;
+  getIncidentNotifications(incidentId: string): Promise<IncidentNotification[]>;
+  createIncidentNotification(notification: InsertIncidentNotification): Promise<IncidentNotification>;
+  getIncidentTimeline(incidentId: string): Promise<IncidentTimelineEntry[]>;
+  addIncidentTimelineEntry(entry: InsertIncidentTimelineEntry): Promise<IncidentTimelineEntry>;
+  getIncidentDocuments(incidentId: string): Promise<IncidentDocument[]>;
+  addIncidentDocument(document: InsertIncidentDocument): Promise<IncidentDocument>;
+  
   // User operations
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
@@ -1407,6 +1435,158 @@ export class DatabaseStorage implements IStorage {
 
   async getAllStaff(): Promise<Staff[]> {
     return await db.select().from(staff);
+  }
+
+  // Incident Management operations
+  async getIncidents(filters?: { status?: string; severity?: string; participantId?: string }): Promise<Incident[]> {
+    let query = db.select().from(incidents);
+    
+    const conditions = [];
+    if (filters?.status) {
+      conditions.push(eq(incidents.status, filters.status));
+    }
+    if (filters?.severity) {
+      conditions.push(eq(incidents.severity, filters.severity));
+    }
+    if (filters?.participantId) {
+      conditions.push(eq(incidents.participantId, filters.participantId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.createdAt));
+    }
+    
+    return await db.select().from(incidents).orderBy(desc(incidents.createdAt));
+  }
+
+  async getIncident(id: string): Promise<Incident | undefined> {
+    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+    return incident;
+  }
+
+  async createIncident(incident: InsertIncident): Promise<Incident> {
+    // Generate incident number
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const incidentNumber = `INC-${year}${month}${day}-${randomNum}`;
+    
+    const [newIncident] = await db.insert(incidents).values({
+      ...incident,
+      incidentNumber,
+    }).returning();
+    
+    // Add initial timeline entry
+    await this.addIncidentTimelineEntry({
+      incidentId: newIncident.id,
+      action: 'incident_reported',
+      description: 'Incident was reported',
+      performedBy: incident.reportedBy,
+      performedByRole: incident.reportedByRole,
+    });
+    
+    // Create initial notification for management
+    await this.createIncidentNotification({
+      incidentId: newIncident.id,
+      recipientEmail: 'management@primacycare.com.au',
+      recipientRole: 'Management',
+      notificationType: 'new_incident',
+      subject: `New ${incident.severity} Incident Reported - ${incidentNumber}`,
+      message: `A new ${incident.severity} incident has been reported for ${incident.participantName}. Please review and take appropriate action.`,
+      priority: incident.severity === 'critical' ? 'urgent' : 'high',
+    });
+    
+    return newIncident;
+  }
+
+  async updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident | undefined> {
+    const [updated] = await db
+      .update(incidents)
+      .set({ ...incident, updatedAt: new Date() })
+      .where(eq(incidents.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getIncidentApprovals(incidentId: string): Promise<IncidentApproval[]> {
+    return await db.select().from(incidentApprovals)
+      .where(eq(incidentApprovals.incidentId, incidentId))
+      .orderBy(desc(incidentApprovals.createdAt));
+  }
+
+  async createIncidentApproval(approval: InsertIncidentApproval): Promise<IncidentApproval> {
+    const [newApproval] = await db.insert(incidentApprovals).values(approval).returning();
+    
+    // Update incident approval level if approved
+    if (approval.action === 'approved') {
+      const incident = await this.getIncident(approval.incidentId);
+      if (incident) {
+        const nextLevel = incident.currentApprovalLevel + 1;
+        await this.updateIncident(approval.incidentId, {
+          currentApprovalLevel: nextLevel,
+          status: nextLevel > 3 ? 'approved' : 'under_review',
+        });
+      }
+    } else if (approval.action === 'escalated') {
+      await this.updateIncident(approval.incidentId, { status: 'escalated' });
+    }
+    
+    // Add timeline entry
+    await this.addIncidentTimelineEntry({
+      incidentId: approval.incidentId,
+      action: `approval_${approval.action}`,
+      description: `${approval.approverRole} ${approval.action} the incident`,
+      performedBy: approval.approverName,
+      performedByRole: approval.approverRole,
+    });
+    
+    return newApproval;
+  }
+
+  async getIncidentNotifications(incidentId: string): Promise<IncidentNotification[]> {
+    return await db.select().from(incidentNotifications)
+      .where(eq(incidentNotifications.incidentId, incidentId))
+      .orderBy(desc(incidentNotifications.createdAt));
+  }
+
+  async createIncidentNotification(notification: InsertIncidentNotification): Promise<IncidentNotification> {
+    const [newNotification] = await db.insert(incidentNotifications).values(notification).returning();
+    // In production, this would trigger actual email/SMS sending
+    return newNotification;
+  }
+
+  async getIncidentTimeline(incidentId: string): Promise<IncidentTimelineEntry[]> {
+    return await db.select().from(incidentTimeline)
+      .where(eq(incidentTimeline.incidentId, incidentId))
+      .orderBy(desc(incidentTimeline.timestamp));
+  }
+
+  async addIncidentTimelineEntry(entry: InsertIncidentTimelineEntry): Promise<IncidentTimelineEntry> {
+    const [newEntry] = await db.insert(incidentTimeline).values(entry).returning();
+    return newEntry;
+  }
+
+  async getIncidentDocuments(incidentId: string): Promise<IncidentDocument[]> {
+    return await db.select().from(incidentDocuments)
+      .where(eq(incidentDocuments.incidentId, incidentId))
+      .orderBy(desc(incidentDocuments.createdAt));
+  }
+
+  async addIncidentDocument(document: InsertIncidentDocument): Promise<IncidentDocument> {
+    const [newDocument] = await db.insert(incidentDocuments).values(document).returning();
+    
+    // Add timeline entry
+    await this.addIncidentTimelineEntry({
+      incidentId: document.incidentId,
+      action: 'document_uploaded',
+      description: `${document.documentType} uploaded: ${document.documentName}`,
+      performedBy: document.uploadedBy,
+      performedByRole: 'Staff',
+    });
+    
+    return newDocument;
   }
 }
 

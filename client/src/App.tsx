@@ -27,6 +27,7 @@ import HRRecruitment from "@/pages/hr-recruitment";
 import FinanceAwards from "@/pages/finance-awards";
 import ServiceDelivery from "@/pages/service-delivery";
 import ComplianceQuality from "@/pages/compliance-quality";
+import Incidents from "@/pages/incidents";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -71,6 +72,7 @@ function Router() {
             <Route path="/finance-awards" component={FinanceAwards} />
             <Route path="/service-delivery" component={ServiceDelivery} />
             <Route path="/compliance-quality" component={ComplianceQuality} />
+            <Route path="/incidents" component={Incidents} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>

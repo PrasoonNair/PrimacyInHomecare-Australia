@@ -450,33 +450,7 @@ export const audits = pgTable("audits", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Incidents table
-export const incidents = pgTable("incidents", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  incidentNumber: varchar("incident_number").unique().notNull(),
-  incidentDate: timestamp("incident_date").notNull(),
-  incidentType: varchar("incident_type").notNull(), // injury, medication_error, behavioral, safeguarding, other
-  severity: varchar("severity").notNull(), // low, medium, high, critical
-  participantId: varchar("participant_id").references(() => participants.id),
-  staffId: varchar("staff_id").references(() => staff.id),
-  location: text("location"),
-  description: text("description").notNull(),
-  immediateActions: text("immediate_actions"),
-  investigation: text("investigation"),
-  rootCause: text("root_cause"),
-  correctiveActions: text("corrective_actions").array(),
-  preventiveActions: text("preventive_actions").array(),
-  reportedBy: varchar("reported_by").references(() => users.id).notNull(),
-  investigatedBy: varchar("investigated_by").references(() => users.id),
-  reportedToAuthorities: boolean("reported_to_authorities").default(false),
-  authorityReference: varchar("authority_reference"),
-  status: varchar("status").default("open"), // open, investigating, closed
-  closedDate: date("closed_date"),
-  followUpRequired: boolean("follow_up_required").default(false),
-  followUpDate: date("follow_up_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// [Old incidents table removed - see comprehensive NDIS incident reporting system below]
 
 
 
@@ -582,6 +556,151 @@ export const agreementCommunications = pgTable("agreement_communications", {
   metadata: jsonb("metadata"), // Provider-specific metadata (SendGrid, Twilio, etc)
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Incident reporting and management system
+export const incidents = pgTable("incidents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentNumber: varchar("incident_number").unique().notNull(),
+  
+  // NDIS Reportable Incident Categories
+  category: varchar("category").notNull(), // death, serious injury, abuse/neglect, unlawful sexual/physical contact, unauthorized restrictive practice
+  subcategory: varchar("subcategory"),
+  severity: varchar("severity").notNull(), // critical, high, medium, low
+  
+  // Participant Information
+  participantId: varchar("participant_id").references(() => participants.id),
+  participantName: varchar("participant_name").notNull(),
+  ndisNumber: varchar("ndis_number"),
+  
+  // Incident Details
+  incidentDate: date("incident_date").notNull(),
+  incidentTime: varchar("incident_time").notNull(),
+  location: varchar("location").notNull(),
+  description: text("description").notNull(),
+  immediateAction: text("immediate_action").notNull(),
+  
+  // People Involved
+  reportedBy: varchar("reported_by").notNull(),
+  reportedByRole: varchar("reported_by_role").notNull(),
+  reportedDate: timestamp("reported_date").defaultNow(),
+  witnessNames: text("witness_names"),
+  staffInvolved: text("staff_involved"),
+  
+  // Injury/Medical Details
+  injuryType: varchar("injury_type"),
+  bodyPartAffected: varchar("body_part_affected"),
+  medicalTreatment: text("medical_treatment"),
+  hospitalAttendance: boolean("hospital_attendance").default(false),
+  
+  // Notification Requirements
+  notificationRequired: boolean("notification_required").default(true),
+  policeNotified: boolean("police_notified").default(false),
+  familyNotified: boolean("family_notified").default(false),
+  ndisNotified: boolean("ndis_notified").default(false),
+  worksafeNotified: boolean("worksafe_notified").default(false),
+  
+  // Sign-off Workflow
+  status: varchar("status").default("pending"), // pending, under_review, escalated, approved, closed
+  currentApprovalLevel: integer("current_approval_level").default(1),
+  
+  // Risk Assessment
+  riskRating: varchar("risk_rating"), // low, medium, high, critical
+  likelihoodRecurrence: varchar("likelihood_recurrence"),
+  
+  // Follow-up Actions
+  correctiveActions: text("corrective_actions"),
+  preventativeMeasures: text("preventative_measures"),
+  reviewDate: date("review_date"),
+  
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const incidentApprovals = pgTable("incident_approvals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").references(() => incidents.id).notNull(),
+  
+  // Approval Level Details
+  approvalLevel: integer("approval_level").notNull(), // 1: Team Leader, 2: Manager, 3: Director, 4: CEO
+  approverRole: varchar("approver_role").notNull(),
+  approverId: varchar("approver_id").references(() => users.id),
+  approverName: varchar("approver_name").notNull(),
+  
+  // Approval Action
+  action: varchar("action").notNull(), // approved, rejected, escalated, request_info
+  comments: text("comments"),
+  signature: text("signature"),
+  
+  // Timestamps
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const incidentNotifications = pgTable("incident_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").references(() => incidents.id).notNull(),
+  
+  // Notification Details
+  recipientId: varchar("recipient_id").references(() => users.id),
+  recipientEmail: varchar("recipient_email").notNull(),
+  recipientRole: varchar("recipient_role").notNull(),
+  notificationType: varchar("notification_type").notNull(), // new_incident, approval_required, escalation, resolution
+  
+  // Delivery Status
+  status: varchar("status").default("pending"), // pending, sent, delivered, failed
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  
+  // Message Content
+  subject: varchar("subject").notNull(),
+  message: text("message").notNull(),
+  priority: varchar("priority").default("normal"), // low, normal, high, urgent
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const incidentDocuments = pgTable("incident_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").references(() => incidents.id).notNull(),
+  
+  // Document Details
+  documentType: varchar("document_type").notNull(), // photo, witness_statement, medical_report, police_report, other
+  documentName: varchar("document_name").notNull(),
+  documentUrl: varchar("document_url").notNull(),
+  uploadedBy: varchar("uploaded_by").notNull(),
+  
+  // Metadata
+  fileSize: integer("file_size"),
+  mimeType: varchar("mime_type"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const incidentTimeline = pgTable("incident_timeline", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  incidentId: varchar("incident_id").references(() => incidents.id).notNull(),
+  
+  // Timeline Entry
+  action: varchar("action").notNull(),
+  description: text("description").notNull(),
+  performedBy: varchar("performed_by").notNull(),
+  performedByRole: varchar("performed_by_role").notNull(),
+  
+  // Timestamps
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// Create types for incidents
+export type Incident = typeof incidents.$inferSelect;
+export type InsertIncident = typeof incidents.$inferInsert;
+export type IncidentApproval = typeof incidentApprovals.$inferSelect;
+export type InsertIncidentApproval = typeof incidentApprovals.$inferInsert;
+export type IncidentNotification = typeof incidentNotifications.$inferSelect;
+export type InsertIncidentNotification = typeof incidentNotifications.$inferInsert;
+export type IncidentDocument = typeof incidentDocuments.$inferSelect;
+export type InsertIncidentDocument = typeof incidentDocuments.$inferInsert;
+export type IncidentTimelineEntry = typeof incidentTimeline.$inferSelect;
+export type InsertIncidentTimelineEntry = typeof incidentTimeline.$inferInsert;
 
 // Define relations
 export const participantsRelations = relations(participants, ({ many }) => ({
