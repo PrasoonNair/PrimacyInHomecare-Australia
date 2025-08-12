@@ -256,6 +256,12 @@ export interface IStorage {
   getRolesWithPermissions(): Promise<(Role & { permissions: Permission[] })[]>;
   getUsersWithRoles(): Promise<(User & { roles: Role[] })[]>;
 
+  // Automation support operations
+  getUpcomingServices(): Promise<Service[]>;
+  assignServiceToStaff(serviceId: string, staffId: string): Promise<void>;
+  getAllNDISPlans(): Promise<NdisPlan[]>;
+  getAllStaff(): Promise<Staff[]>;
+  
   // NDIS Plan Reader operations
   createParticipantGoal(goal: InsertParticipantGoals): Promise<ParticipantGoals>;
   getParticipantGoals(participantId: string): Promise<ParticipantGoals[]>;
@@ -1368,6 +1374,39 @@ export class DatabaseStorage implements IStorage {
         services: [],
       };
     }
+  }
+
+  // Automation support operations
+  async getUpcomingServices(): Promise<Service[]> {
+    const now = new Date();
+    return await db.select()
+      .from(services)
+      .where(and(
+        gte(services.scheduledDate, now.toISOString().split('T')[0]),
+        or(
+          eq(services.status, 'scheduled'),
+          eq(services.status, 'confirmed')
+        )
+      ))
+      .orderBy(services.scheduledDate);
+  }
+
+  async assignServiceToStaff(serviceId: string, staffId: string): Promise<void> {
+    await db.update(services)
+      .set({ 
+        assignedTo: staffId,
+        status: 'confirmed',
+        updatedAt: new Date()
+      })
+      .where(eq(services.id, serviceId));
+  }
+
+  async getAllNDISPlans(): Promise<NdisPlan[]> {
+    return await db.select().from(ndisPlans);
+  }
+
+  async getAllStaff(): Promise<Staff[]> {
+    return await db.select().from(staff);
   }
 }
 

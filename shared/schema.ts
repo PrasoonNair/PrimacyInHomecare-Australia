@@ -370,12 +370,68 @@ export const staffAvailability = pgTable("staff_availability", {
 
 // 5. COMPLIANCE & QUALITY DEPARTMENT TABLES
 
+// Automation History table
+export const automationHistory = pgTable("automation_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  taskName: varchar("task_name").notNull(),
+  taskType: varchar("task_type").notNull(), 
+  executedAt: timestamp("executed_at").defaultNow(),
+  status: varchar("status").notNull(), // success, failed, partial
+  affectedRecords: integer("affected_records"),
+  errorMessage: text("error_message"),
+  executionTime: integer("execution_time"), // in milliseconds
+  details: jsonb("details"),
+  createdBy: varchar("created_by").default("System"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// NDIS Price Guide table
+export const ndisPriceGuide = pgTable("ndis_price_guide", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  itemNumber: varchar("item_number").notNull().unique(),
+  itemName: varchar("item_name").notNull(),
+  supportCategory: varchar("support_category").notNull(),
+  unitOfMeasure: varchar("unit_of_measure").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  description: text("description"),
+  restrictions: text("restrictions"),
+  nonFaceToFace: boolean("non_face_to_face").default(false),
+  travelApplicable: boolean("travel_applicable").default(false),
+  cancellationRules: text("cancellation_rules"),
+  qualificationRequired: text("qualification_required"),
+  registrationGroup: varchar("registration_group"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Service Allocations table  
+export const serviceAllocations = pgTable("service_allocations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  serviceId: varchar("service_id").notNull().references(() => services.id),
+  staffId: varchar("staff_id").notNull().references(() => staff.id),
+  participantId: varchar("participant_id").notNull().references(() => participants.id),
+  allocationDate: date("allocation_date").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  status: varchar("status").notNull().default("allocated"), // allocated, confirmed, completed, cancelled
+  matchScore: integer("match_score"), // AI matching score 0-100
+  matchReason: text("match_reason"),
+  travelTime: integer("travel_time"), // in minutes
+  travelDistance: decimal("travel_distance", { precision: 10, scale: 2 }), // in km
+  notes: text("notes"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Audits table
 export const audits = pgTable("audits", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   auditType: varchar("audit_type").notNull(), // internal, external, spot_check, participant_feedback
   auditDate: date("audit_date").notNull(),
-  auditorName: varchar("auditor_name").notNull(),
+  auditorName: varchar("auditor_name").notNull().default("System"),
   departmentAudited: departmentEnum("department_audited"),
   participantId: varchar("participant_id").references(() => participants.id),
   staffId: varchar("staff_id").references(() => staff.id),

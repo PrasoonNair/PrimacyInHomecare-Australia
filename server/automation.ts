@@ -35,6 +35,11 @@ export interface AutomationService {
 }
 
 export class NDISAutomationService implements AutomationService {
+  private storage: IStorage;
+  
+  constructor() {
+    this.storage = storage;
+  }
   
   /**
    * Intelligent Staff Matching Algorithm
@@ -252,7 +257,7 @@ export class NDISAutomationService implements AutomationService {
   async monitorBudgetThresholds(): Promise<void> {
     const activePlans = await db.execute(sql`
       SELECT p.*, pt.first_name, pt.last_name,
-             COALESCE(SUM(s.actual_cost), 0) as spent_amount
+             COALESCE(SUM(s.total_cost), 0) as spent_amount
       FROM ndis_plans p
       JOIN participants pt ON p.participant_id = pt.id
       LEFT JOIN services s ON p.participant_id = s.participant_id 
@@ -495,6 +500,182 @@ export class NDISAutomationService implements AutomationService {
     }
     
     return recommendations.join('; ');
+  }
+
+  async sendStaffCertificationReminders(): Promise<void> {
+    console.log("Checking staff certifications...");
+    
+    const staffMembers = await this.storage.getAllStaff();
+    const currentDate = new Date();
+    const reminderThreshold = new Date(currentDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+    
+    for (const staff of staffMembers) {
+      // Check certification expiry dates from metadata
+      const metadata = staff.metadata as any;
+      if (metadata?.certifications) {
+        for (const cert of metadata.certifications) {
+          const expiryDate = new Date(cert.expiryDate);
+          if (expiryDate <= reminderThreshold && expiryDate >= currentDate) {
+            console.log(`Reminder: ${staff.firstName} ${staff.lastName}'s ${cert.name} expires on ${cert.expiryDate}`);
+            // In production, this would send an email/notification
+          }
+        }
+      }
+    }
+  }
+
+  async autoScheduleQualityAudits(): Promise<void> {
+    console.log("Auto-scheduling quality audits...");
+    
+    const currentDate = new Date();
+    const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    
+    // Schedule monthly quality audits for each department
+    const departments = ['intake', 'hr_recruitment', 'finance', 'service_delivery', 'compliance_quality'];
+    
+    for (const dept of departments) {
+      await this.storage.createAudit({
+        auditType: 'internal',
+        auditDate: nextMonth.toISOString().split('T')[0],
+        auditorName: 'Quality Assurance Team',
+        departmentAudited: dept as any,
+        status: 'pending' as any,
+        findings: `Scheduled monthly audit for ${dept} department`,
+        followUpRequired: true,
+        nextAuditDate: new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 1).toISOString().split('T')[0],
+      });
+    }
+    
+    console.log(`Scheduled ${departments.length} quality audits for next month`);
+  }
+
+  async sendPlanExpiryReminders(): Promise<void> {
+    console.log("Checking for expiring NDIS plans...");
+    
+    const plans = await this.storage.getAllNDISPlans();
+    const currentDate = new Date();
+    const reminderThreshold = new Date(currentDate.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 days from now
+    
+    let expiringCount = 0;
+    for (const plan of plans) {
+      if (plan.endDate) {
+        const endDate = new Date(plan.endDate);
+        if (endDate <= reminderThreshold && endDate >= currentDate && plan.status === 'active') {
+          expiringCount++;
+          console.log(`Reminder: Plan ${plan.planNumber} expires on ${plan.endDate}`);
+          // In production, this would send notifications to case managers
+        }
+      }
+    }
+    
+    console.log(`Found ${expiringCount} plans expiring within 60 days`);
+  }
+
+  async optimizeStaffAllocation(): Promise<void> {
+    console.log("Optimizing staff allocation for upcoming services...");
+    
+    const upcomingServices = await this.storage.getUpcomingServices();
+    const availableStaff = await this.storage.getAllStaff();
+    
+    let optimizedCount = 0;
+    for (const service of upcomingServices) {
+      if (!service.assignedTo && service.participantId) {
+        // Find best matching staff based on skills, location, and availability
+        const participant = await this.storage.getParticipant(service.participantId);
+        if (participant) {
+          // Simple matching logic - in production this would use more sophisticated algorithms
+          const matchedStaff = availableStaff.find(staff => 
+            staff.department === 'service_delivery' && 
+            staff.isActive
+          );
+          
+          if (matchedStaff) {
+            // Create allocation record
+            await this.storage.assignServiceToStaff(service.id, matchedStaff.id);
+            optimizedCount++;
+            console.log(`Allocated service ${service.id} to ${matchedStaff.firstName} ${matchedStaff.lastName}`);
+          }
+        }
+      }
+    }
+    
+    console.log(`Optimized allocation for ${optimizedCount} services`);
+  }
+
+  async sendBudgetAlerts(): Promise<void> {
+    console.log("Checking budget thresholds for alerts...");
+    
+    const plans = await db.execute(sql`
+      SELECT p.*, 
+             SUM(s.total_cost) as spent,
+             p.total_budget - SUM(s.total_cost) as remaining
+      FROM ndis_plans p
+      LEFT JOIN services s ON s.participant_id = p.participant_id
+      WHERE p.status = 'active' 
+        AND s.status = 'completed'
+      GROUP BY p.id
+      HAVING (SUM(s.total_cost) / p.total_budget) > 0.8
+    `);
+    
+    for (const plan of plans as any[]) {
+      const percentUsed = (plan.spent / plan.total_budget) * 100;
+      console.log(`Alert: Plan ${plan.plan_number} has used ${percentUsed.toFixed(1)}% of budget`);
+      // In production, this would send notifications to case managers
+    }
+  }
+
+  async processNDISPlanDocument(planId: string, documentPath: string): Promise<void> {
+    console.log(`Processing NDIS plan document for plan ${planId}`);
+    
+    // In production, this would:
+    // 1. Read the document from storage
+    // 2. Extract text using OCR or PDF parsing
+    // 3. Parse goals and budget information
+    // 4. Update the plan record with extracted data
+    
+    // For now, we'll simulate the processing
+    const extractedGoals = await this.extractGoalsFromPlan("Sample plan content");
+    
+    for (const goal of extractedGoals) {
+      await storage.createParticipantGoal({
+        participantId: planId, // Would get from plan record
+        planId: planId,
+        title: goal.title,
+        description: goal.description,
+        category: goal.category,
+        goalType: goal.type,
+        targetDate: goal.targetDate,
+        priority: goal.priority,
+        status: 'not_started'
+      });
+    }
+    
+    console.log(`Processed plan document and extracted ${extractedGoals.length} goals`);
+  }
+
+  async extractGoalsFromPlan(planContent: string): Promise<any[]> {
+    console.log("Extracting goals from NDIS plan content...");
+    
+    // In production, this would use NLP or pattern matching to extract goals
+    // For now, return sample goals
+    return [
+      {
+        title: "Improve Daily Living Skills",
+        description: "Support to develop independent living skills including cooking, cleaning, and personal care",
+        category: "daily_living",
+        type: "short_term",
+        targetDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        priority: "high"
+      },
+      {
+        title: "Community Participation",
+        description: "Increase social engagement through community activities and group programs",
+        category: "social_participation",
+        type: "long_term",
+        targetDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        priority: "medium"
+      }
+    ];
   }
 }
 
