@@ -371,6 +371,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NDIS Plans endpoint
+  app.get("/api/ndis-plans", isAuthenticated, async (req, res) => {
+    try {
+      const plans = await storage.getAllNDISPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching NDIS plans:", error);
+      res.status(500).json({ message: "Failed to fetch NDIS plans" });
+    }
+  });
+
   // Progress Notes routes
   app.get("/api/progress-notes", isAuthenticated, async (req, res) => {
     try {

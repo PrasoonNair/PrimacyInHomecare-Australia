@@ -7,12 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import StaffForm from "@/components/forms/staff-form";
 import type { Staff } from "@shared/schema";
 
 export default function StaffManagement() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -69,10 +73,28 @@ export default function StaffManagement() {
               className="w-80"
               data-testid="input-search-staff"
             />
-            <Button className="bg-primary hover:bg-blue-700" data-testid="button-add-staff">
-              <i className="fas fa-user-plus mr-2"></i>
-              Add Staff Member
-            </Button>
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-primary hover:bg-blue-700" data-testid="button-add-staff">
+                  <i className="fas fa-user-plus mr-2"></i>
+                  Add Staff Member
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
+                  </DialogTitle>
+                </DialogHeader>
+                <StaffForm 
+                  staff={editingStaff} 
+                  onClose={() => {
+                    setIsFormOpen(false);
+                    setEditingStaff(null);
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
           </div>
 
           {staffLoading ? (
@@ -96,10 +118,26 @@ export default function StaffManagement() {
                   {searchTerm ? "No staff members match your search criteria." : "Get started by adding your first staff member."}
                 </p>
                 {!searchTerm && (
-                  <Button className="bg-primary hover:bg-blue-700" data-testid="button-add-first-staff">
-                    <i className="fas fa-user-plus mr-2"></i>
-                    Add First Staff Member
-                  </Button>
+                  <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-primary hover:bg-blue-700" data-testid="button-add-first-staff">
+                        <i className="fas fa-user-plus mr-2"></i>
+                        Add First Staff Member
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Add New Staff Member</DialogTitle>
+                      </DialogHeader>
+                      <StaffForm 
+                        staff={null} 
+                        onClose={() => {
+                          setIsFormOpen(false);
+                          setEditingStaff(null);
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 )}
               </CardContent>
             </Card>
