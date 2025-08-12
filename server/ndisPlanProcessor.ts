@@ -95,89 +95,124 @@ export async function extractDataFromNdisPlan(fileBuffer: Buffer, fileName: stri
   return mockData;
 }
 
-export async function saveExtractedPlanData(data: ExtractedPlanData, userId: string) {
+export async function saveExtractedPlanData(data: any, userId: string) {
   // Check if participant already exists
   let participantId: string;
-  const existingParticipant = await db.select().from(participants)
-    .where(eq(participants.ndisNumber, data.participant.ndisNumber))
-    .limit(1);
   
-  if (existingParticipant.length > 0) {
-    participantId = existingParticipant[0].id;
-    // Update participant information
-    await db.update(participants)
-      .set({
-        firstName: data.participant.firstName,
-        lastName: data.participant.lastName,
-        dateOfBirth: data.participant.dateOfBirth,
-        phone: data.participant.phone,
-        email: data.participant.email,
-        address: data.participant.address,
-        primaryDisability: data.participant.primaryDisability,
-        communicationNeeds: data.participant.communicationNeeds,
-        updatedAt: new Date()
-      })
-      .where(eq(participants.id, participantId));
-  } else {
-    // Create new participant
+  // Handle different data structures
+  const participantInfo = data.participantInfo || data.participant;
+  const ndisNumber = participantInfo?.ndisNumber;
+  
+  if (!ndisNumber) {
+    // If no NDIS number, create a placeholder participant
     const newParticipant = await db.insert(participants)
       .values({
         id: randomUUID(),
-        ...data.participant,
-        isActive: true,
-        preferredLanguage: "English"
+        firstName: participantInfo?.firstName || "Unknown",
+        lastName: participantInfo?.lastName || "Participant",
+        dateOfBirth: participantInfo?.dateOfBirth || new Date().toISOString().split('T')[0],
+        ndisNumber: `TEMP-${Date.now()}`,
+        primaryDisability: participantInfo?.primaryDisability || "Not specified",
+        address: "",
+        phone: "",
+        email: "",
+        emergencyContact: "",
+        emergencyPhone: "",
+        culturalBackground: null,
+        preferredLanguage: "English",
+        communicationNeeds: null,
+        isActive: true
       })
       .returning();
     participantId = newParticipant[0].id;
+  } else {
+    const existingParticipant = await db.select().from(participants)
+      .where(eq(participants.ndisNumber, ndisNumber))
+      .limit(1);
+  
+    if (existingParticipant.length > 0) {
+      participantId = existingParticipant[0].id;
+      // Update participant information
+      await db.update(participants)
+        .set({
+          firstName: participantInfo.firstName || existingParticipant[0].firstName,
+          lastName: participantInfo.lastName || existingParticipant[0].lastName,
+          dateOfBirth: participantInfo.dateOfBirth || existingParticipant[0].dateOfBirth,
+          primaryDisability: participantInfo.primaryDisability || existingParticipant[0].primaryDisability,
+          updatedAt: new Date()
+        })
+        .where(eq(participants.id, participantId));
+    } else {
+      // Create new participant
+      const newParticipant = await db.insert(participants)
+        .values({
+          id: randomUUID(),
+          firstName: participantInfo.firstName || "Unknown",
+          lastName: participantInfo.lastName || "Participant",
+          dateOfBirth: participantInfo.dateOfBirth || new Date().toISOString().split('T')[0],
+          ndisNumber: ndisNumber,
+          primaryDisability: participantInfo.primaryDisability || "Not specified",
+          address: "",
+          phone: "",
+          email: "",
+          emergencyContact: "",
+          emergencyPhone: "",
+          culturalBackground: null,
+          preferredLanguage: "English",
+          communicationNeeds: null,
+          isActive: true
+        })
+        .returning();
+      participantId = newParticipant[0].id;
+    }
   }
 
   // Create NDIS plan
   const planId = randomUUID();
-  await db.insert(ndisPlans)
+  
+  // Handle different data structures for plan details
+  const planDetails = data.planDetails || {};
+  const budgetBreakdown = data.budgetBreakdown || {};
+  const goals = data.goals || [];
+  
+  const totalBudget = (budgetBreakdown.coreSupports || 0) + 
+                     (budgetBreakdown.capacityBuilding || 0) + 
+                     (budgetBreakdown.capitalSupports || 0);
+  
+  await db.insert(ndisplans)
     .values({
       id: planId,
-      participantId: participantId,
-      planNumber: data.plan.planNumber,
-      startDate: data.plan.startDate,
-      endDate: data.plan.endDate,
-      totalBudget: data.plan.totalBudget,
-      coreSupportsbudget: data.fundingBreakdown.coreSupports,
-      capacityBuildingBudget: data.fundingBreakdown.capacityBuilding,
-      capitalSupportsBudget: data.fundingBreakdown.capitalSupports,
+      participantId,
+      planNumber: planDetails.planNumber || `PLAN-${Date.now()}`,
+      planVersion: "1.0",
+      startDate: planDetails.startDate || new Date().toISOString().split('T')[0],
+      endDate: planDetails.endDate || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: "active",
+      totalBudget: totalBudget,
+      coreSupportsbudget: budgetBreakdown.coreSupports || 0,
+      capacityBuildingBudget: budgetBreakdown.capacityBuilding || 0,
+      capitalSupportsBudget: budgetBreakdown.capitalSupports || 0,
+      planManagerName: "",
+      planManagerContact: "",
+      supportCoordinator: "",
+      goals: JSON.stringify(goals)
     });
 
   // Create participant goals
-  for (const goal of data.goals) {
-    const goalId = randomUUID();
-    await db.insert(participantGoals)
-      .values({
-        participantId: participantId,
-        planId: planId,
-        goalType: "long_term",
-        category: goal.category,
-        title: goal.description.substring(0, 100),
-        description: goal.description,
-        priority: goal.priority === "High" ? "high" : goal.priority === "Medium" ? "medium" : "low",
-        targetDate: goal.targetDate,
-        status: "active",
-      });
-
-    // Create default actions for each goal
-    const defaultActions = [
-      { title: "Initial assessment and planning", hours: "2" },
-      { title: "Weekly support sessions", hours: "1.5" },
-      { title: "Progress review meeting", hours: "1" }
-    ];
-
-    for (const action of defaultActions) {
-      await db.insert(goalActions)
+  if (goals && goals.length > 0) {
+    for (const goal of goals) {
+      const goalId = randomUUID();
+      await db.insert(participantGoals)
         .values({
-          goalId: goalId,
-          actionTitle: action.title,
-          actionDescription: `${action.title} for goal: ${goal.description.substring(0, 50)}`,
-          hoursEstimated: action.hours,
-          status: "pending",
+          id: goalId,
+          participantId: participantId,
+          category: goal.category || "General",
+          description: goal.description || "Goal description",
+          priority: goal.priority || "Medium",
+          targetDate: goal.targetDate ? new Date(goal.targetDate) : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+          status: "Active",
+          estimatedCost: goal.estimatedCost || 0,
+          assignedStaffId: null
         });
     }
   }
