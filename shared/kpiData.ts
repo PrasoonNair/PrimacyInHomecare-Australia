@@ -16,77 +16,226 @@ export interface KPIMetric {
 export const roleKPIs: Record<string, KPIMetric[]> = {
   "Intake Coordinator": [
     {
-      id: "intake_avg_time",
-      title: "Average Time from Enquiry to Completed Intake",
-      value: 36,
-      target: 48,
+      id: "referral_to_profile_time",
+      title: "Avg Time from Referral to Profile Creation",
+      value: 18,
+      target: 24,
       unit: "hours",
       trend: "down",
-      trendValue: "-12%",
+      trendValue: "-25%",
       status: "good",
-      description: "Time from initial enquiry to completed intake process",
+      description: "Average time from referral receipt to profile creation",
       category: "time"
     },
     {
-      id: "intake_sla_compliance",
-      title: "Intakes Completed Within SLA (48 hrs)",
-      value: 87,
+      id: "referrals_24hr",
+      title: "Referrals Processed Within 24 Hours",
+      value: 92,
       target: 90,
       unit: "%",
       trend: "up",
       trendValue: "+5%",
-      status: "warning",
-      description: "Percentage of intakes completed within 48-hour SLA",
-      category: "compliance"
-    },
-    {
-      id: "documentation_upload",
-      title: "Documentation Uploaded Before Service Start",
-      value: 92,
-      target: 95,
-      unit: "%",
-      trend: "stable",
-      status: "warning",
-      description: "Participant documentation uploaded before service commencement",
-      category: "compliance"
-    },
-    {
-      id: "ndis_plan_processing",
-      title: "NDIS Plans Processed Successfully",
-      value: 98,
-      target: 100,
-      unit: "%",
-      trend: "up",
-      trendValue: "+3%",
       status: "good",
-      description: "Successfully processed NDIS plan uploads with data extraction",
+      description: "Percentage of referrals processed within 24 hours",
+      category: "compliance"
+    },
+    {
+      id: "duplicate_entry_rate",
+      title: "Duplicate Entry Rate",
+      value: 2,
+      target: 3,
+      unit: "%",
+      trend: "down",
+      trendValue: "-1%",
+      status: "good",
+      description: "Percentage of duplicate participant entries detected",
       category: "quality"
     },
     {
-      id: "referral_conversion",
-      title: "Referral to Service Conversion Rate",
-      value: 78,
+      id: "agreement_turnaround",
+      title: "Avg Turnaround to Signed Agreement",
+      value: 5.2,
+      target: 7,
+      unit: "days",
+      trend: "down",
+      trendValue: "-15%",
+      status: "good",
+      description: "Average turnaround from profile creation to signed agreement",
+      category: "time"
+    },
+    {
+      id: "agreements_7days",
+      title: "Agreements Signed Within 7 Days",
+      value: 88,
       target: 85,
       unit: "%",
       trend: "up",
       trendValue: "+8%",
-      status: "warning",
-      description: "Percentage of referrals converted to active services",
-      category: "participants"
+      status: "good",
+      description: "Percentage of agreements signed within 7 days",
+      category: "compliance"
+    },
+    {
+      id: "agreement_error_rate",
+      title: "Agreement Error Rate",
+      value: 3,
+      target: 5,
+      unit: "%",
+      trend: "down",
+      trendValue: "-2%",
+      status: "good",
+      description: "Percentage of agreements with errors requiring correction",
+      category: "quality"
     }
   ],
 
-  "Service Coordinator": [
+  "Finance Officer - Billing": [
     {
-      id: "service_planning_time",
-      title: "Average Service Planning Time",
-      value: 4.2,
-      target: 5.0,
+      id: "funding_verification_time",
+      title: "Avg Time for Funding Verification",
+      value: 2.5,
+      target: 4,
       unit: "hours",
       trend: "down",
-      trendValue: "-15%",
+      trendValue: "-38%",
       status: "good",
-      description: "Time to complete comprehensive service planning",
+      description: "Average time for funding verification",
+      category: "time"
+    },
+    {
+      id: "funding_delays",
+      title: "Cases Delayed Due to Funding",
+      value: 8,
+      target: 10,
+      unit: "%",
+      trend: "down",
+      trendValue: "-20%",
+      status: "good",
+      description: "Percentage of cases delayed due to funding issues",
+      category: "financial"
+    },
+    {
+      id: "budget_projection_accuracy",
+      title: "Accuracy of Budget Projections",
+      value: 94,
+      target: 90,
+      unit: "%",
+      trend: "up",
+      trendValue: "+4%",
+      status: "good",
+      description: "Accuracy of budget projections vs actual",
+      category: "financial"
+    },
+    {
+      id: "invoice_processing_time",
+      title: "Invoice Processing Time",
+      value: 1.8,
+      target: 3,
+      unit: "days",
+      trend: "down",
+      trendValue: "-40%",
+      status: "good",
+      description: "Average time to process invoices",
+      category: "time"
+    },
+    {
+      id: "payment_accuracy",
+      title: "Payment Accuracy Rate",
+      value: 99.2,
+      target: 99,
+      unit: "%",
+      trend: "stable",
+      status: "good",
+      description: "Accuracy of payments processed",
+      category: "quality"
+    }
+  ],
+
+  "Service Delivery Allocation Officer": [
+    {
+      id: "allocation_time",
+      title: "Avg Allocation Time from Ready Status",
+      value: 3.2,
+      target: 4,
+      unit: "hours",
+      trend: "down",
+      trendValue: "-20%",
+      status: "good",
+      description: "Average allocation time from ready status",
+      category: "time"
+    },
+    {
+      id: "first_attempt_acceptance",
+      title: "Allocations Accepted on First Attempt",
+      value: 82,
+      target: 80,
+      unit: "%",
+      trend: "up",
+      trendValue: "+7%",
+      status: "good",
+      description: "Percentage of allocations accepted on first attempt",
+      category: "quality"
+    },
+    {
+      id: "allocation_accuracy",
+      title: "Allocation Accuracy (Match Success)",
+      value: 91,
+      target: 85,
+      unit: "%",
+      trend: "up",
+      trendValue: "+6%",
+      status: "good",
+      description: "Match success rate after Meet & Greet",
+      category: "quality"
+    },
+    {
+      id: "staff_utilization",
+      title: "Staff Utilization Rate",
+      value: 87,
+      target: 85,
+      unit: "%",
+      trend: "stable",
+      status: "good",
+      description: "Percentage of available staff hours utilized",
+      category: "participants"
+    },
+    {
+      id: "geographic_coverage",
+      title: "Geographic Coverage Efficiency",
+      value: 93,
+      target: 90,
+      unit: "%",
+      trend: "up",
+      trendValue: "+3%",
+      status: "good",
+      description: "Efficiency of geographic allocation",
+      category: "quality"
+    }
+  ],
+
+  "Service Delivery Coordinator": [
+    {
+      id: "meet_greet_success",
+      title: "Meet & Greets Leading to Service",
+      value: 88,
+      target: 85,
+      unit: "%",
+      trend: "up",
+      trendValue: "+5%",
+      status: "good",
+      description: "Percentage of Meet & Greets leading to ongoing service",
+      category: "quality"
+    },
+    {
+      id: "meet_greet_time",
+      title: "Avg Time from Allocation to Meet & Greet",
+      value: 3.5,
+      target: 5,
+      unit: "days",
+      trend: "down",
+      trendValue: "-30%",
+      status: "good",
+      description: "Average time from allocation to Meet & Greet",
       category: "time"
     },
     {
@@ -102,39 +251,39 @@ export const roleKPIs: Record<string, KPIMetric[]> = {
       category: "quality"
     },
     {
-      id: "goal_achievement",
-      title: "Goal Achievement Rate",
-      value: 73,
-      target: 80,
-      unit: "%",
-      trend: "up",
-      trendValue: "+12%",
-      status: "warning",
-      description: "Percentage of participant goals achieved on time",
-      category: "targets"
-    },
-    {
-      id: "service_utilization",
-      title: "Service Utilization Rate",
-      value: 89,
-      target: 85,
-      unit: "%",
-      trend: "up",
-      trendValue: "+7%",
-      status: "good",
-      description: "Percentage of allocated service hours utilized",
-      category: "participants"
-    },
-    {
-      id: "plan_review_timeliness",
-      title: "Plan Reviews Completed On Time",
-      value: 82,
-      target: 90,
+      id: "shift_completion_rate",
+      title: "Shift Completion Rate",
+      value: 94,
+      target: 95,
       unit: "%",
       trend: "stable",
       status: "warning",
-      description: "Plan reviews completed within required timeframes",
+      description: "Percentage of scheduled shifts completed",
       category: "compliance"
+    },
+    {
+      id: "last_minute_cancellations",
+      title: "Last-Minute Cancellations",
+      value: 6,
+      target: 5,
+      unit: "%",
+      trend: "down",
+      trendValue: "-2%",
+      status: "warning",
+      description: "Percentage of last-minute shift cancellations",
+      category: "quality"
+    },
+    {
+      id: "open_shift_fill_time",
+      title: "Avg Time to Fill Open Shifts",
+      value: 2.8,
+      target: 3,
+      unit: "hours",
+      trend: "down",
+      trendValue: "-15%",
+      status: "good",
+      description: "Average time to fill open shifts",
+      category: "time"
     }
   ],
 
@@ -324,68 +473,164 @@ export const roleKPIs: Record<string, KPIMetric[]> = {
 
   "HR Manager": [
     {
-      id: "recruitment_time",
-      title: "Average Recruitment Time",
+      id: "recruitment_to_onboarding",
+      title: "Time from Request to Onboarding",
       value: 21,
       target: 30,
       unit: "days",
       trend: "down",
-      trendValue: "-9 days",
+      trendValue: "-30%",
       status: "good",
-      description: "Time from job posting to offer acceptance",
+      description: "Time from recruitment request to onboarding",
       category: "time"
     },
     {
-      id: "onboarding_completion",
-      title: "Onboarding Completion Rate",
-      value: 94,
+      id: "compliance_documentation",
+      title: "Workers with Full Compliance Docs",
+      value: 96,
       target: 100,
       unit: "%",
       trend: "up",
-      trendValue: "+6%",
+      trendValue: "+4%",
       status: "warning",
-      description: "New staff completing full onboarding process",
+      description: "Percentage of workers with full compliance documentation",
       category: "compliance"
     },
     {
-      id: "staff_satisfaction",
-      title: "Staff Satisfaction Score",
-      value: 4.2,
-      target: 4.5,
+      id: "compliance_lapse_prevention",
+      title: "Compliance Lapses Avoided",
+      value: 98,
+      target: 100,
+      unit: "%",
+      trend: "stable",
+      status: "good",
+      description: "Percentage of compliance lapses avoided through proactive management",
+      category: "compliance"
+    },
+    {
+      id: "staff_retention",
+      title: "Annual Staff Retention Rate",
+      value: 87,
+      target: 85,
+      unit: "%",
+      trend: "up",
+      trendValue: "+5%",
+      status: "good",
+      description: "Annual staff retention percentage",
+      category: "participants"
+    },
+    {
+      id: "onboarding_satisfaction",
+      title: "Onboarding Satisfaction Score",
+      value: 4.4,
+      target: 4.0,
       unit: "/5",
       trend: "up",
-      trendValue: "+0.3",
+      trendValue: "+0.2",
+      status: "good",
+      description: "New employee onboarding satisfaction",
+      category: "quality"
+    }
+  ],
+
+  "Quality Manager": [
+    {
+      id: "compliance_percentage",
+      title: "Workers & Participants Fully Compliant",
+      value: 93,
+      target: 100,
+      unit: "%",
+      trend: "up",
+      trendValue: "+5%",
       status: "warning",
-      description: "Annual staff satisfaction survey results",
+      description: "Percentage of workers and participants fully compliant",
+      category: "compliance"
+    },
+    {
+      id: "compliance_resolution_time",
+      title: "Avg Time to Resolve Compliance Issues",
+      value: 18,
+      target: 24,
+      unit: "hours",
+      trend: "down",
+      trendValue: "-25%",
+      status: "good",
+      description: "Average time to resolve compliance issues",
+      category: "time"
+    },
+    {
+      id: "audit_pass_rate",
+      title: "Audit Pass Rate",
+      value: 96,
+      target: 100,
+      unit: "%",
+      trend: "up",
+      trendValue: "+8%",
+      status: "warning",
+      description: "Percentage of audits passed successfully",
+      category: "compliance"
+    },
+    {
+      id: "quality_incidents",
+      title: "Quality Incidents per Month",
+      value: 3,
+      target: 5,
+      unit: "count",
+      trend: "down",
+      trendValue: "-40%",
+      status: "good",
+      description: "Number of quality incidents reported per month",
       category: "quality"
     },
     {
-      id: "compliance_training",
-      title: "Compliance Training Completion",
-      value: 91,
+      id: "practice_standards_compliance",
+      title: "NDIS Practice Standards Compliance",
+      value: 98,
       target: 100,
       unit: "%",
-      trend: "up",
-      trendValue: "+15%",
-      status: "warning",
-      description: "Mandatory compliance training completion rate",
-      category: "compliance"
-    },
-    {
-      id: "performance_reviews",
-      title: "Performance Reviews On Time",
-      value: 87,
-      target: 100,
-      unit: "%",
-      trend: "up",
-      trendValue: "+12%",
-      status: "warning",
-      description: "Annual performance reviews completed on schedule",
+      trend: "stable",
+      status: "good",
+      description: "Compliance with NDIS practice standards",
       category: "compliance"
     }
   ],
 
   "CEO": [
+    {
+      id: "weekly_kpi_review",
+      title: "Weekly KPI Review Completion",
+      value: 100,
+      target: 100,
+      unit: "%",
+      trend: "stable",
+      status: "good",
+      description: "Completion rate of weekly KPI reviews",
+      category: "operational"
+    },
+    {
+      id: "overdue_corrective_actions",
+      title: "Overdue Corrective Actions",
+      value: 2,
+      target: 0,
+      unit: "count",
+      trend: "down",
+      trendValue: "-3",
+      status: "warning",
+      description: "Number of overdue corrective actions",
+      category: "compliance"
+    },
+    {
+      id: "departmental_performance",
+      title: "Departmental Performance vs Targets",
+      value: 89,
+      target: 90,
+      unit: "%",
+      trend: "up",
+      trendValue: "+7%",
+      status: "warning",
+      description: "Average departmental performance against targets",
+      category: "operational"
+    },
     {
       id: "revenue_growth",
       title: "Revenue Growth",
@@ -411,17 +656,19 @@ export const roleKPIs: Record<string, KPIMetric[]> = {
       category: "participants"
     },
     {
-      id: "market_share",
-      title: "Market Share",
-      value: 12.8,
-      target: 15.0,
+      id: "regulatory_compliance",
+      title: "Regulatory Compliance Score",
+      value: 96,
+      target: 100,
       unit: "%",
-      trend: "up",
-      trendValue: "+2.3%",
-      status: "warning",
-      description: "Market share in regional NDIS services",
-      category: "targets"
-    },
+      trend: "stable",
+      status: "good",
+      description: "Overall regulatory compliance rating",
+      category: "compliance"
+    }
+  ],
+
+  "General Manager": [
     {
       id: "operational_efficiency",
       title: "Operational Efficiency Ratio",
@@ -435,14 +682,50 @@ export const roleKPIs: Record<string, KPIMetric[]> = {
       category: "quality"
     },
     {
-      id: "regulatory_compliance",
-      title: "Regulatory Compliance Score",
-      value: 96,
-      target: 100,
+      id: "departmental_kpi_achievement",
+      title: "Departmental KPI Achievement",
+      value: 91,
+      target: 95,
+      unit: "%",
+      trend: "up",
+      trendValue: "+8%",
+      status: "warning",
+      description: "Average KPI achievement across all departments",
+      category: "operational"
+    },
+    {
+      id: "staff_productivity",
+      title: "Staff Productivity Index",
+      value: 4.2,
+      target: 4.5,
+      unit: "/5",
+      trend: "up",
+      trendValue: "+0.3",
+      status: "warning",
+      description: "Overall staff productivity rating",
+      category: "quality"
+    },
+    {
+      id: "service_quality_score",
+      title: "Service Quality Score",
+      value: 93,
+      target: 95,
       unit: "%",
       trend: "stable",
-      status: "good",
-      description: "Overall regulatory compliance rating",
+      status: "warning",
+      description: "Overall service quality rating",
+      category: "quality"
+    },
+    {
+      id: "compliance_dashboard_status",
+      title: "Compliance Dashboard Status",
+      value: 95,
+      target: 100,
+      unit: "%",
+      trend: "up",
+      trendValue: "+5%",
+      status: "warning",
+      description: "Percentage of compliance metrics in green status",
       category: "compliance"
     }
   ],

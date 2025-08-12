@@ -58,6 +58,30 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState("7d");
   const [refreshing, setRefreshing] = useState(false);
 
+  // Determine user's role for KPI display
+  const getUserRole = () => {
+    if (!user) return "General";
+    
+    // Map user roles to KPI roles
+    const roleMapping: Record<string, string> = {
+      'Intake Coordinator': 'Intake Coordinator',
+      'Finance Officer': 'Finance Officer - Billing',
+      'Service Delivery Coordinator': 'Service Delivery Coordinator',
+      'Service Delivery Allocation Officer': 'Service Delivery Allocation Officer',
+      'HR Manager': 'HR Manager',
+      'HR Recruiter': 'HR Manager',
+      'Quality Manager': 'Quality Manager',
+      'General Manager': 'General Manager',
+      'CEO': 'CEO',
+      'Compliance Officer': 'Compliance Officer',
+      'Support Worker': 'Support Worker',
+      'Team Leader': 'Team Leader',
+      'Finance Manager': 'Finance Manager'
+    };
+    
+    return roleMapping[user.role] || user.role || "General";
+  };
+
   // Fetch dashboard stats
   const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ["/api/dashboard/stats"],
@@ -326,6 +350,19 @@ export default function Dashboard() {
             </div>
 
             <KPICards />
+
+            {/* Role-Specific KPI Dashboard */}
+            <div className="mt-8">
+              <Card>
+                <CardContent className="pt-6">
+                  <KPIDashboard 
+                    role={getUserRole()} 
+                    title={`${getUserRole()} Performance Metrics`}
+                    description="Your personalized key performance indicators based on your role"
+                  />
+                </CardContent>
+              </Card>
+            </div>
 
             {/* Enhanced Tabs with Icons and Better Styling */}
             <div className="mt-8">

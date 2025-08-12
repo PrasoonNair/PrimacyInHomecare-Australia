@@ -19,19 +19,7 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
-
-export interface KPIMetric {
-  id: string;
-  title: string;
-  value: string | number;
-  target?: string | number;
-  unit?: string;
-  trend?: "up" | "down" | "stable";
-  trendValue?: string;
-  status?: "good" | "warning" | "critical";
-  description?: string;
-  category: string;
-}
+import { getKPIsForRole, getRoleKPIStatus, type KPIMetric } from "@shared/kpiData";
 
 interface KPIDashboardProps {
   role: string;
@@ -39,6 +27,16 @@ interface KPIDashboardProps {
   title?: string;
   description?: string;
   refreshInterval?: number;
+}
+
+interface DashboardAPIResponse {
+  kpis?: KPIMetric[];
+  summary?: {
+    total: number;
+    good: number;
+    warning: number;
+    critical: number;
+  };
 }
 
 export function KPIDashboard({ 
@@ -51,18 +49,32 @@ export function KPIDashboard({
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState("all");
 
-  // Fetch KPI data from API
-  const { data: dashboardData, refetch, isLoading, error } = useQuery({
+  // Fetch KPI data from API or use role-specific KPIs from static data
+  const { data: dashboardData, refetch, isLoading, error } = useQuery<DashboardAPIResponse>({
     queryKey: [`/api/dashboard/kpis/${role}`],
     refetchInterval: refreshInterval,
     retry: 2,
   });
 
-  const metrics = dashboardData?.kpis || propMetrics;
-  const summary = dashboardData?.summary || { total: 0, good: 0, warning: 0, critical: 0 };
+  // Use role-specific KPIs from kpiData.ts if no API data
+  const roleKPIs = getKPIsForRole(role);
+  const metrics = dashboardData?.kpis || propMetrics.length > 0 ? propMetrics : roleKPIs;
+  
+  // Calculate summary from metrics
+  const calculateSummary = (metricsArray: KPIMetric[]) => {
+    const statusCounts = getRoleKPIStatus(role);
+    return {
+      total: metricsArray.length,
+      good: statusCounts.good,
+      warning: statusCounts.warning,
+      critical: statusCounts.critical,
+    };
+  };
+  
+  const summary = dashboardData?.summary || calculateSummary(metrics);
 
   // Get unique categories from metrics
-  const categories = [...new Set(metrics.map((m: KPIMetric) => m.category))];
+  const categories = Array.from(new Set(metrics.map((m: KPIMetric) => m.category)));
 
   // Filter metrics by category
   const filteredMetrics = activeCategory === "all" 
