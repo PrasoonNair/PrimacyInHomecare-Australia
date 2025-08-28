@@ -1,0 +1,182 @@
+Awesome—here’s a developer-ready brief for a Recruitment & Onboarding Module for your CMS (target: Replit-hosted web app). It’s written so engineers can start building immediately while staying compliant with your NDIS/HR context.
+1) Scope & Objectives
+* Centralise the full lifecycle: Job Requisition → Advertising → Applications → Shortlisting → Interviews → Reference Checks → Offer & e-Sign → Onboarding → Induction → “Ready for Allocation.”
+* Automate repetitive actions (screening, emails/SMS, bookings, reminders).
+* Ensure auditability, compliance (AUS Fair Work/SCHADS/NDIS), and role-based access.
+2) Roles & Permissions (RBAC)
+* HR Recruiter: create jobs, manage ads, shortlist, schedule interviews, offers, onboarding.
+* HR Manager: approve requisitions/offers, configure screening rules, view reports.
+* Service Delivery Manager: read-only candidate pipeline, request hires by location/skill.
+* Compliance/Quality Manager: verify screening docs, induction completion, sign-off “Ready.”
+* Finance (Read-only): see FTE/cost allocations.
+* Candidate (external portal): apply, upload docs, sign contract, complete induction.
+3) End-to-End Workflow (states & automations)
+1. Job Requisition (JR-DRAFT → JR-APPROVAL)
+    * Fields: role title, award level, location(s), shift type, FT/PT/Casual, budgeted rate range, headcount, essential criteria, desirable criteria, checks required (WWCC, Police, NDIS WS, First Aid, CPR), close date, hiring team.
+    * Action: HR Manager approval → creates JOB-OPEN.
+2. Advertising (JOB-OPEN)
+    * Publish to: CMS Careers page + Seek/Indeed (via plugin/API or export feed).
+    * Auto-UTM tracking, source tagging.
+    * Auto-close on date or headcount filled.
+3. Application Intake (APP-RECEIVED)
+    * Candidate portal form + file uploads (PDF/DOC).
+    * Auto-parse CV (OCR/LLM) → fields: years experience, quals, AHPRA (if applicable), suburb/postcode, licence/car, languages, availability, NDIS experience.
+    * Duplicate detection by email/phone & fuzzy name.
+4. Rule-Based Shortlisting (APP-SCREEN)
+    * Condition builder (no-code): IF essential_criteria = true AND distance_km ≤ X AND availability overlaps ≥ Y THEN “Auto-Shortlist”; else “Auto-Reject (reason)”; else “Needs Review”.
+    * Examples:
+        * Must have NDIS Worker Screening (or willingness & lead time).
+        * Within 25 km of participant clusters.
+        * Min 6 months community care experience.
+    * Batch actions & tags: “High-fit”, “Kerala pilot”, “After-hours”.
+5. Interview Scheduling (INT-SCHED → INT-DONE)
+    * Candidate self-booking link (sync to Google/Microsoft calendar via ICS).
+    * Modes: Phone/Video (Teams/Meet)/In-person.
+    * Automated SMS/Email reminders (24h, 2h before).
+    * Interview kit: structured notes template + scorecards mapped to criteria.
+6. Reference Checks (REF-REQ → REF-DONE)
+    * Collect referees during application or post-interview.
+    * One-click email/SMS to referee survey form + option for phone notes.
+    * Fraud guard (domain checks, OTP verification for mobile, IP logging).
+7. Offer & Contract (OFFER-DRAFT → OFFER-SENT → SIGNED)
+    * Offer builder: award level (SCHADS), base rate, loadings/penalties, allowances, location, probation, start date, documents required by Day-1.
+    * e-Signature (Adobe Sign/Docusign/HelloSign or built-in): PDF contract + annexures (PD, policy acks).
+    * Conditional clauses (e.g., offer contingent on verified WWCC).
+8. Onboarding & Induction (ONB-OPEN → ONB-COMPLETE)
+    * Smart checklist (see §7): ID check, TFN, Super, Bank, Right-to-work, WWCC, Police, NDIS WS, First Aid/CPR, Manual Handling, Infection Control, Driver Licence/Insurance, Vaccinations, Profile photo, Uniform size.
+    * Induction modules (SCORM/xAPI or built-in lessons + quiz).
+    * Auto-reminders for missing items; escalation to HR Manager at T+7 days.
+    * Compliance sign-off: Quality Manager verifies evidence.
+9. Ready for Allocation (READY)
+    * Only becomes READY when: contract signed + mandatory checks verified + induction passed + availability set.
+    * Sync user into Service Allocation module with tags (skills, languages, suburbs, shift limits).
+4) Integrations & Plugins
+* Job boards: Seek/Indeed (API/feed). If API isn’t available, support XML/JSON feed + apply-redirect with tracking.
+* Email: SMTP or SendGrid/SES; template library + DKIM/SPF.
+* SMS: Twilio/MessageMedia; two-way threads saved to candidate timeline.
+* e-Sign: Docusign/Adobe/HelloSign (webhook for signed status & PDF).
+* Storage: S3-compatible (Backblaze/MinIO); virus scan on upload.
+* Calendar: ICS links; optional Google/Microsoft OAuth.
+* Maps: Distance matrix for postcode/drive-time screening.
+* Payroll/HRIS (future): export CSV/API for hired staff.
+5) Data Model (core tables)
+* job_requisitions: id, title, department, locations[], award_level, shift_type, headcount, budget_min/max, criteria_json, status, approver_id, created_by, dates.
+* job_posts: id, job_id, channel(enum: careers/seek/indeed), external_id, status, publish_at, close_at, analytics_json.
+* candidates: id, name, email, mobile (verified), address, postcode, right_to_work, licence, vehicle, languages[], quals[], tags[], source, status.
+* applications: id, candidate_id, job_id, answers_json, score (rule engine), state, rejected_reason, reviewer_id.
+* documents: id, owner_type(enum:candidate/referee), owner_id, type(enum:CV,WWCC,Police,NDIS_WS,FirstAid,CPR,Licence,Insurance,Vax,Contract), file_uri, verified_by, verified_at, expiry_at, is_valid.
+* interviews: id, application_id, type, time, location/link, panel[], notes_json, scores_json, outcome.
+* referees: id, application_id, name, email, phone, relationship, survey_json, verified.
+* offers: id, application_id, payload_json, contract_pdf_uri, esign_envelope_id, status, signed_at.
+* onboarding_tasks: id, candidate_id, task_type, required(bool), due_at, completed_at, evidence_doc_id, verifier_id.
+* induction_modules: id, title, content_uri/scorm_id, pass_mark.
+* induction_attempts: id, candidate_id, module_id, score, passed, attempts, completed_at.
+* audit_log: id, actor_id, action, entity, entity_id, meta_json, ip, ts.
+* messages: id, thread_key, to, from, channel(email/sms), template_id, body, status, ts.
+6) Screening Rule Engine (no-code config)
+* UI to build conditions:
+    * Attributes: distance_km, availability_overlap, required_docs_present, experience_years, has_NDIS_WS, has_FirstAid, language_contains(“Malayalam”), licence = true, vehicle = true, right_to_work = verified.
+    * Operators: =, !=, ≥, ≤, contains, in, all_of.
+    * Outcomes: Auto-Shortlist, Auto-Reject (reason), Flag-for-Review, Tag.
+* Preview: run rule on sample candidate set, show effect.
+7) Onboarding Checklist (default template)
+* Identity (Passport/License), Right-to-Work check, TFN, Bank, Super choice.
+* NDIS Worker Screening, WWCC, National Police Check, First Aid & CPR, Manual Handling, Infection Control training, Vaccination proof.
+* Driver Licence + Comprehensive Car Insurance (if community shifts).
+* Acknowledgements: Code of Conduct (NDIS), Privacy, Incident Reporting, Lone Worker Safety, Manual handling policy.
+* Technology: CMS login, mobile app install, timesheet/how-to.
+* Induction modules: NDIS Code, Participant Dignity & Choice, Incident/Restrictive Practice basics, Reportable Incident vs Non-reportable, Duty of Care & Notes, Cultural Safety.
+* Gate condition: all required tasks completed + docs valid and unexpired.
+8) Messaging & Templates
+* Email/SMS templates with variables: {{first_name}}, {{job_title}}, {{link}}, {{date_time}}.
+    * Application received, Auto-reject (with reason code), Interview booking, Interview reminder, Reference request, Offer sent, Contract reminder, Onboarding start, Missing docs reminder, Induction assigned, “Ready for shifts”.
+* Two-way SMS: store thread in messages, show in candidate timeline.
+9) Dashboards & KPIs
+* Recruiter pipeline: counts by stage, avg days in stage, offer acceptance %, source performance (Seek vs Indeed vs direct), DEI metrics (optional).
+* Time-to-hire, Cost-per-hire, Hire-by-location/skill, Document expiry radar.
+* Compliance gauge: % candidates READY, outstanding onboarding tasks, induction pass rates.
+* SLA alerts: app review < 48h, referee response < 72h, offer turnaround < 72h.
+10) Security, Privacy, Compliance
+* RBAC; field-level permission on sensitive docs.
+* PII at rest encryption; signed URLs for file access; virus scan; retention policy.
+* Audit trail on every read/write (who/when/where).
+* Australian context: SCHADS, NDIS Code, Fair Work record-keeping; keep contracts & screening evidence.
+* GDPR-style rights: export/delete on request (subject to legal holds).
+11) Replit-First Architecture Notes
+* Stack:
+    * Backend: Node (NestJS/Express) or Python (FastAPI) in Replit; REST + Webhooks.
+    * Frontend: React (Vite) or Next.js (Node server in Replit).
+    * DB: Replit DB isn’t enough → use Postgres (Neon/Supabase); set DATABASE_URL env.
+    * Files: Backblaze/S3; set S3_BUCKET, S3_KEY, S3_SECRET.
+* Background jobs: simple queue (BullMQ / RQ) for parsing CVs, sending emails/SMS, webhook handling.
+* Cron: daily job to check document expiries + send reminders.
+* Env Vars (examples): EMAIL_API_KEY, SMS_API_KEY, ESIGN_API_KEY, BASE_URL, JWT_SECRET, GOOGLE_CAL_CLIENT_ID/SECRET, MAPS_API_KEY.
+* Webhooks endpoints:
+    * /webhooks/esign/status
+    * /webhooks/jobboard/apply
+    * /webhooks/sms/inbound
+* Testing: seed script with fake jobs/candidates; feature flags for integrations (mock mode).
+12) API Endpoints (sample)
+* Jobs
+    * POST /api/jobs (create + approval flow)
+    * POST /api/jobs/:id/publish (seek/indeed/careers)
+    * POST /api/jobs/:id/close
+* Applications & Candidates
+    * POST /api/jobs/:id/applications (apply)
+    * GET /api/applications?state=APP-SCREEN
+    * POST /api/applications/:id/decision { outcome, reason }
+    * POST /api/applications/:id/interview { slot }
+* Rules
+    * GET/POST /api/rulesets (screening rules)
+* References
+    * POST /api/applications/:id/referees
+    * POST /api/referees/:id/request
+* Offers & Contracts
+    * POST /api/applications/:id/offer
+    * POST /api/offers/:id/send
+    * POST /api/offers/:id/cancel
+* Onboarding
+    * GET /api/candidates/:id/onboarding
+    * POST /api/candidates/:id/onboarding/tasks/:taskId/complete
+    * POST /api/candidates/:id/ready (server validates all gates)
+* Files
+    * POST /api/upload (signed URL)
+    * POST /api/documents/:id/verify
+* Messages
+    * POST /api/messages/send (email/sms)
+    * GET /api/messages/thread/:key
+13) UI/UX Requirements
+* Job Builder Wizard (stepper): Requisition → Criteria → Channels → Publish.
+* Kanban Pipeline columns: Applied, Needs Review, Shortlisted, Interview, Ref-Check, Offer, Onboarding, Ready.
+* Candidate Profile left panel (contact + status) / main tabs:
+    * Overview | CV & Docs | Interview | References | Offer | Onboarding | Messages | Audit.
+* Rule Builder: visual IF/THEN blocks; test panel.
+* Offer Builder: form → preview PDF → send for e-Sign.
+* Onboarding Checklist: progress bar, required vs optional, due dates.
+* Compliance Banner when any critical doc is missing/expired.
+14) Acceptance Criteria (must-pass)
+* Can publish a job to at least 2 channels and receive tracked applications.
+* Rule engine auto-shortlists & auto-rejects with logged reasons.
+* Candidate can self-book interviews; reminders fire.
+* At least 2 references can be requested; responses attached and verified.
+* Contract generated as PDF, e-signed, returned webhook updates offer to SIGNED.
+* Onboarding gates prevent READY until all required tasks are complete & verified.
+* Full audit trail exists for every state change; downloadable ZIP of candidate record.
+15) QA Test Plan (high level)
+* Unit: rules evaluation, document expiry, duplicate detection, template merge.
+* Integration: job board webhook, e-sign webhook, SMS replies, ICS calendar.
+* E2E flows:
+    1. Create & approve job → post → apply → rule-shortlist → interview → ref-check → offer → sign → onboarding → ready.
+    2. Auto-reject path with templated message.
+    3. Expired WWCC blocks READY.
+    4. Candidate reschedules interview twice; reminders adjust correctly.
+* Security: RBAC, direct object reference checks, signed URL expiry, virus scan.
+16) Prebuilt Templates (ready to load)
+* Interview scorecard: Problem solving, NDIS knowledge, Safety mindset, Availability, Culture add (1–5 each, comments).
+* Reference questionnaire: Role, dates, reliability, escalation behaviour, independence, rehire-yes/no.
+* Offer templates: Support Worker Casual (SCHADS L2), PRC/SC templates.
+* Onboarding packs: Support Worker (community), Office roles (Finance/HR).
+17) Reporting & Exports
+* CSV/Excel export of pipeline, hires by source, time-to-hire, compliance checklist status.
+* Scheduled weekly email to HR Manager: open roles, aged applications, compliance risks.
+

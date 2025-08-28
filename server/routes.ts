@@ -1215,6 +1215,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // COMPREHENSIVE RECRUITMENT & ONBOARDING ROUTES
+  app.post("/api/recruitment/job-requisitions", isAuthenticated, async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      // Process date field properly
+      const processedData = {
+        ...req.body,
+        closeDate: new Date(req.body.closeDate)
+      };
+      
+      const requisition = await recruitmentService.createJobRequisition(processedData, userId);
+      res.json(requisition);
+    } catch (error) {
+      console.error("Error creating job requisition:", error);
+      res.status(500).json({ error: "Failed to create job requisition" });
+    }
+  });
+
+  app.get("/api/recruitment/job-requisitions", isAuthenticated, async (req, res) => {
+    try {
+      const requisitions = await storage.getJobPostings(); // Temporary - will implement proper method
+      res.json(requisitions);
+    } catch (error) {
+      console.error("Error fetching job requisitions:", error);
+      res.status(500).json({ error: "Failed to fetch job requisitions" });
+    }
+  });
+
+  app.post("/api/recruitment/job-requisitions/:id/approve", isAuthenticated, async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      const approverId = req.user?.claims?.sub || req.user?.id;
+      
+      const result = await recruitmentService.approveJobRequisition(req.params.id, approverId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error approving job requisition:", error);
+      res.status(500).json({ error: "Failed to approve job requisition" });
+    }
+  });
+
+  app.post("/api/recruitment/applications", async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      
+      const result = await recruitmentService.submitJobApplication(req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Error submitting job application:", error);
+      res.status(500).json({ error: "Failed to submit application" });
+    }
+  });
+
+  app.get("/api/recruitment/pipeline", isAuthenticated, async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      
+      const pipeline = await recruitmentService.getRecruitmentPipeline(req.query.jobId as string);
+      res.json(pipeline);
+    } catch (error) {
+      console.error("Error fetching recruitment pipeline:", error);
+      res.status(500).json({ error: "Failed to fetch pipeline" });
+    }
+  });
+
+  app.patch("/api/recruitment/applications/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      const reviewerId = req.user?.claims?.sub || req.user?.id;
+      
+      const { state, reason } = req.body;
+      const result = await recruitmentService.updateApplicationStatus(
+        req.params.id, 
+        state, 
+        reason, 
+        reviewerId
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      res.status(500).json({ error: "Failed to update status" });
+    }
+  });
+
+  app.get("/api/recruitment/kpis", isAuthenticated, async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      
+      const kpis = await recruitmentService.getRecruitmentKPIs();
+      res.json(kpis);
+    } catch (error) {
+      console.error("Error fetching recruitment KPIs:", error);
+      res.status(500).json({ error: "Failed to fetch KPIs" });
+    }
+  });
+
+  app.post("/api/recruitment/candidates/:id/hire", isAuthenticated, async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      
+      const { applicationId, contractDetails } = req.body;
+      const result = await recruitmentService.convertCandidateToStaff(
+        req.params.id, 
+        applicationId, 
+        contractDetails
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error hiring candidate:", error);
+      res.status(500).json({ error: "Failed to hire candidate" });
+    }
+  });
+
+  app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
+    try {
+      const { RecruitmentService } = await import("./recruitmentService");
+      const recruitmentService = new RecruitmentService();
+      
+      const { search, ...filters } = req.query;
+      const candidates = await recruitmentService.searchCandidates(search as string, filters);
+      
+      res.json(candidates);
+    } catch (error) {
+      console.error("Error searching candidates:", error);
+      res.status(500).json({ error: "Failed to search candidates" });
+    }
+  });
+
   // Department routes - Intake
   app.get("/api/referrals", isAuthenticated, async (req, res) => {
     try {

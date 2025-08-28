@@ -365,6 +365,94 @@ export const serviceAgreements = pgTable("service_agreements", {
 // 2. HR & RECRUITMENT DEPARTMENT TABLES
 
 // Job Postings table for recruitment
+// COMPREHENSIVE RECRUITMENT & ONBOARDING MODULE - NDIS Compliant
+
+// Job Requisitions - Initial hiring requests
+export const jobRequisitions = pgTable("job_requisitions", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title", { length: 255 }).notNull(),
+  department: varchar("department", { length: 100 }).notNull(),
+  locations: text("locations").array().default(sql`'{}'::text[]`),
+  awardLevel: varchar("award_level", { length: 50 }).notNull(), // SCHADS Level 2, 3, 4
+  shiftType: varchar("shift_type", { length: 50 }).notNull(),
+  employmentType: varchar("employment_type", { length: 50 }).notNull(),
+  headcount: integer("headcount").default(1),
+  budgetMin: decimal("budget_min", { precision: 10, scale: 2 }),
+  budgetMax: decimal("budget_max", { precision: 10, scale: 2 }),
+  essentialCriteria: text("essential_criteria").array(),
+  desirableCriteria: text("desirable_criteria").array(),
+  requiredChecks: text("required_checks").array(), // WWCC, Police, NDIS_WS, FirstAid, CPR
+  closeDate: timestamp("close_date").notNull(),
+  hiringTeam: text("hiring_team").array(),
+  status: varchar("status", { length: 50 }).default("draft"),
+  approvedBy: varchar("approved_by", { length: 255 }),
+  approvedAt: timestamp("approved_at"),
+  createdBy: varchar("created_by", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`)
+});
+
+// Job Posts - Published advertisements  
+export const jobPosts = pgTable("job_posts", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  jobRequisitionId: varchar("job_requisition_id", { length: 255 }).references(() => jobRequisitions.id).notNull(),
+  channel: varchar("channel", { length: 50 }).notNull(), // careers, seek, indeed
+  externalId: varchar("external_id", { length: 255 }),
+  status: varchar("status", { length: 50 }).default("draft"),
+  publishedAt: timestamp("published_at"),
+  closedAt: timestamp("closed_at"),
+  analytics: jsonb("analytics"),
+  utmTracking: jsonb("utm_tracking"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`)
+});
+
+// Recruitment Candidates
+export const recruitmentCandidates = pgTable("recruitment_candidates", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  firstName: varchar("first_name", { length: 100 }).notNull(),
+  lastName: varchar("last_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  mobile: varchar("mobile", { length: 20 }),
+  mobileVerified: boolean("mobile_verified").default(false),
+  address: text("address"),
+  postcode: varchar("postcode", { length: 10 }),
+  rightToWork: boolean("right_to_work").default(false),
+  hasLicense: boolean("has_license").default(false),
+  hasVehicle: boolean("has_vehicle").default(false),
+  languages: text("languages").array().default(sql`'{}'::text[]`),
+  qualifications: text("qualifications").array().default(sql`'{}'::text[]`),
+  tags: text("tags").array().default(sql`'{}'::text[]`),
+  source: varchar("source", { length: 100 }),
+  status: varchar("status", { length: 50 }).default("active"),
+  experienceYears: integer("experience_years").default(0),
+  ndisExperience: boolean("ndis_experience").default(false),
+  availability: jsonb("availability"),
+  profileNotes: text("profile_notes"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`)
+});
+
+// Recruitment Applications - Enhanced
+export const recruitmentApplications = pgTable("recruitment_applications", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  candidateId: varchar("candidate_id", { length: 255 }).references(() => recruitmentCandidates.id).notNull(),
+  jobRequisitionId: varchar("job_requisition_id", { length: 255 }).references(() => jobRequisitions.id).notNull(),
+  jobPostId: varchar("job_post_id", { length: 255 }).references(() => jobPosts.id),
+  answers: jsonb("answers"),
+  coverLetter: text("cover_letter"),
+  score: decimal("score", { precision: 5, scale: 2 }),
+  state: varchar("state", { length: 50 }).default("received"),
+  rejectedReason: text("rejected_reason"),
+  reviewerId: varchar("reviewer_id", { length: 255 }),
+  reviewedAt: timestamp("reviewed_at"),
+  autoScreeningResult: varchar("auto_screening_result", { length: 50 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`)
+});
+
+// Legacy job postings (keep for backward compatibility)
 export const jobPostings = pgTable("job_postings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: varchar("title").notNull(),

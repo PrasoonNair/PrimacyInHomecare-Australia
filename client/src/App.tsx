@@ -23,6 +23,7 @@ import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 import Automation from "@/pages/automation";
 import WorkflowManagement from "@/pages/workflow-management";
+import Recruitment from "@/pages/recruitment";
 import PlanReader from "@/pages/plan-reader";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TestLogin from "@/pages/test-login";
@@ -95,6 +96,7 @@ function Router() {
             <Route path="/price-guide" component={PriceGuide} />
             <Route path="/automation" component={Automation} />
             <Route path="/workflow-management" component={WorkflowManagement} />
+            <Route path="/recruitment" component={Recruitment} />
             {/* Department Routes */}
             <Route path="/intake" component={Intake} />
             <Route path="/hr-recruitment" component={HRRecruitment} />
