@@ -216,6 +216,13 @@ export const invoices = pgTable("invoices", {
   paidDate: date("paid_date"),
   notes: text("notes"),
   
+  // Finance module enhancements
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }),
+  gstAmount: decimal("gst_amount", { precision: 10, scale: 2 }).default('0'),
+  ndisClaimReference: varchar("ndis_claim_reference", { length: 100 }),
+  paymentReceivedDate: timestamp("payment_received_date"),
+  paymentAmount: decimal("payment_amount", { precision: 10, scale: 2 }),
+  
   // Xero Integration fields
   xeroSyncId: varchar("xero_sync_id"),
   xeroInvoiceId: varchar("xero_invoice_id"),
@@ -700,6 +707,55 @@ export const payroll = pgTable("payroll", {
   awardRateId: varchar("award_rate_id").references(() => awardRates.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// FINANCE MODULE TABLES - Critical for Revenue Generation
+// Note: invoices table already exists above with basic structure
+
+export const invoiceItems = pgTable("invoice_items", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  invoiceId: varchar("invoice_id", { length: 255 }).references(() => invoices.id).notNull(),
+  serviceId: varchar("service_id", { length: 255 }).references(() => services.id),
+  description: text("description").notNull(),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  ndisItemNumber: varchar("ndis_item_number", { length: 20 }),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const payRuns = pgTable("pay_runs", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  payDate: timestamp("pay_date").notNull(),
+  status: varchar("status", { length: 50 }).default('draft'), // draft, approved, processing, completed
+  totalGross: decimal("total_gross", { precision: 12, scale: 2 }).notNull(),
+  totalTax: decimal("total_tax", { precision: 12, scale: 2 }).notNull(),
+  totalSuper: decimal("total_super", { precision: 12, scale: 2 }).notNull(),
+  totalNet: decimal("total_net", { precision: 12, scale: 2 }).notNull(),
+  stpSubmissionId: varchar("stp_submission_id", { length: 100 }),
+  approvedBy: varchar("approved_by", { length: 255 }),
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const paySlips = pgTable("pay_slips", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  payRunId: varchar("pay_run_id", { length: 255 }).references(() => payRuns.id).notNull(),
+  staffId: varchar("staff_id", { length: 255 }).references(() => staff.id).notNull(),
+  grossPay: decimal("gross_pay", { precision: 10, scale: 2 }).notNull(),
+  taxWithheld: decimal("tax_withheld", { precision: 10, scale: 2 }).notNull(),
+  superContribution: decimal("super_contribution", { precision: 10, scale: 2 }).notNull(),
+  netPay: decimal("net_pay", { precision: 10, scale: 2 }).notNull(),
+  ordinaryHours: decimal("ordinary_hours", { precision: 10, scale: 2 }),
+  overtimeHours: decimal("overtime_hours", { precision: 10, scale: 2 }),
+  leaveHours: decimal("leave_hours", { precision: 10, scale: 2 }),
+  ytdGross: decimal("ytd_gross", { precision: 12, scale: 2 }),
+  ytdTax: decimal("ytd_tax", { precision: 12, scale: 2 }),
+  ytdSuper: decimal("ytd_super", { precision: 12, scale: 2 }),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
 // 4. SERVICE DELIVERY DEPARTMENT TABLES
