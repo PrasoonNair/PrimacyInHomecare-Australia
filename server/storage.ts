@@ -1263,7 +1263,22 @@ export class DatabaseStorage implements IStorage {
     await db.delete(audits).where(eq(audits.id, id));
   }
 
-  async getIncidents(): Promise<Incident[]> {
+  async getIncidents(filters?: { status?: string; severity?: string; participantId?: string }): Promise<Incident[]> {
+    const conditions = [];
+    if (filters?.status) {
+      conditions.push(eq(incidents.status, filters.status));
+    }
+    if (filters?.severity) {
+      conditions.push(eq(incidents.severity, filters.severity));
+    }
+    if (filters?.participantId) {
+      conditions.push(eq(incidents.participantId, filters.participantId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.createdAt));
+    }
+    
     return await db.select().from(incidents).orderBy(desc(incidents.createdAt));
   }
 
@@ -1823,10 +1838,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Service agreement methods
-  async getServiceAgreements(): Promise<ServiceAgreement[]> {
-    return await db.select().from(serviceAgreements);
-  }
-
   async getServiceAgreementsByParticipant(participantId: string): Promise<ServiceAgreement[]> {
     return await db
       .select()
@@ -1840,33 +1851,6 @@ export class DatabaseStorage implements IStorage {
 
   async getAllStaff(): Promise<Staff[]> {
     return await db.select().from(staff);
-  }
-
-  // Incident Management operations
-  async getIncidents(filters?: { status?: string; severity?: string; participantId?: string }): Promise<Incident[]> {
-    let query = db.select().from(incidents);
-    
-    const conditions = [];
-    if (filters?.status) {
-      conditions.push(eq(incidents.status, filters.status));
-    }
-    if (filters?.severity) {
-      conditions.push(eq(incidents.severity, filters.severity));
-    }
-    if (filters?.participantId) {
-      conditions.push(eq(incidents.participantId, filters.participantId));
-    }
-    
-    if (conditions.length > 0) {
-      return await db.select().from(incidents).where(and(...conditions)).orderBy(desc(incidents.createdAt));
-    }
-    
-    return await db.select().from(incidents).orderBy(desc(incidents.createdAt));
-  }
-
-  async getIncident(id: string): Promise<Incident | undefined> {
-    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
-    return incident;
   }
 
   async createIncident(incident: InsertIncident): Promise<Incident> {

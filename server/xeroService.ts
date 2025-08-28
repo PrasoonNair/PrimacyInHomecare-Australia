@@ -160,7 +160,7 @@ export class XeroService {
         dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         reference: invoice.invoiceNumber,
         status: 'AUTHORISED' as any,
-        currencyCode: 'AUD'
+        currencyCode: 'AUD' as any
       };
 
       // Get active tenant
