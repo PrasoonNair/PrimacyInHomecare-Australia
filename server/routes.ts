@@ -2969,6 +2969,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // SERVICE DELIVERY MODULE ROUTES
+  app.get("/api/service-delivery/dashboard", isAuthenticated, async (req, res) => {
+    try {
+      const { ServiceDeliveryService } = await import("./serviceDeliveryService");
+      const service = new ServiceDeliveryService();
+      const dashboard = await service.getAllocationDashboard();
+      res.json(dashboard);
+    } catch (error) {
+      console.error("Error fetching allocation dashboard:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard data" });
+    }
+  });
+
+  app.post("/api/service-delivery/shifts/:id/allocate", isAuthenticated, async (req, res) => {
+    try {
+      const { ServiceDeliveryService } = await import("./serviceDeliveryService");
+      const service = new ServiceDeliveryService();
+      const result = await service.allocateStaff(req.params.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error allocating staff:", error);
+      res.status(500).json({ error: "Failed to allocate staff" });
+    }
+  });
+
+  app.get("/api/service-delivery/allocation-scores/:shiftId", isAuthenticated, async (req, res) => {
+    try {
+      const scores = await db
+        .select()
+        .from(staffAllocationScores)
+        .where(eq(staffAllocationScores.shiftId, req.params.shiftId))
+        .orderBy(asc(staffAllocationScores.rank));
+      res.json(scores);
+    } catch (error) {
+      console.error("Error fetching allocation scores:", error);
+      res.status(500).json({ error: "Failed to fetch scores" });
+    }
+  });
+
+  app.post("/api/service-delivery/clock-in", isAuthenticated, async (req, res) => {
+    try {
+      const { ServiceDeliveryService } = await import("./serviceDeliveryService");
+      const service = new ServiceDeliveryService();
+      const { shiftId, staffId, location } = req.body;
+      const result = await service.clockIn(shiftId, staffId, location);
+      res.json(result);
+    } catch (error) {
+      console.error("Error clocking in:", error);
+      res.status(500).json({ error: "Failed to clock in" });
+    }
+  });
+
+  app.post("/api/service-delivery/clock-out", isAuthenticated, async (req, res) => {
+    try {
+      const { ServiceDeliveryService } = await import("./serviceDeliveryService");
+      const service = new ServiceDeliveryService();
+      const { shiftId, staffId, location, notes } = req.body;
+      const result = await service.clockOut(shiftId, staffId, location, notes);
+      res.json(result);
+    } catch (error) {
+      console.error("Error clocking out:", error);
+      res.status(500).json({ error: "Failed to clock out" });
+    }
+  });
+
+  app.post("/api/service-delivery/shift-offers/:id/respond", isAuthenticated, async (req, res) => {
+    try {
+      const { ServiceDeliveryService } = await import("./serviceDeliveryService");
+      const service = new ServiceDeliveryService();
+      const { response, reason } = req.body;
+      const result = await service.respondToOffer(req.params.id, response, reason);
+      res.json(result);
+    } catch (error) {
+      console.error("Error responding to offer:", error);
+      res.status(500).json({ error: "Failed to respond to offer" });
+    }
+  });
+
+  app.post("/api/service-delivery/unavailability", isAuthenticated, async (req, res) => {
+    try {
+      const { ServiceDeliveryService } = await import("./serviceDeliveryService");
+      const service = new ServiceDeliveryService();
+      const { staffId, periods } = req.body;
+      const result = await service.submitUnavailability(staffId, periods);
+      res.json(result);
+    } catch (error) {
+      console.error("Error submitting unavailability:", error);
+      res.status(500).json({ error: "Failed to submit unavailability" });
+    }
+  });
+
+  app.post("/api/service-delivery/billing-line/:shiftId", isAuthenticated, async (req, res) => {
+    try {
+      const { ServiceDeliveryService } = await import("./serviceDeliveryService");
+      const service = new ServiceDeliveryService();
+      const result = await service.createBillingLine(req.params.shiftId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating billing line:", error);
+      res.status(500).json({ error: "Failed to create billing line" });
+    }
+  });
+
   // XERO INTEGRATION ENDPOINTS
   
   // Initialize Xero OAuth2 flow

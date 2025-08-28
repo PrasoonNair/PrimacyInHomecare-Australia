@@ -760,6 +760,155 @@ export const paySlips = pgTable("pay_slips", {
 
 // 4. SERVICE DELIVERY DEPARTMENT TABLES
 
+// Shift Offers table for managing shift offers to staff
+export const shiftOffers = pgTable("shift_offers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shiftId: varchar("shift_id").references(() => shifts.id).notNull(),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  offerRank: integer("offer_rank").notNull(), // 1 = first choice, 2 = second, etc.
+  offeredAt: timestamp("offered_at").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  responseStatus: varchar("response_status").default("pending"), // pending, accepted, declined, expired
+  respondedAt: timestamp("responded_at"),
+  declineReason: text("decline_reason"),
+  autoDeclined: boolean("auto_declined").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Unavailability table for fortnightly submissions
+export const staffUnavailability = pgTable("staff_unavailability", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  dateFrom: date("date_from").notNull(),
+  dateTo: date("date_to").notNull(),
+  submissionPeriod: varchar("submission_period").notNull(), // e.g., "2025-W05-W06"
+  reason: text("reason"),
+  isRecurring: boolean("is_recurring").default(false),
+  recurringPattern: varchar("recurring_pattern"), // weekly, fortnightly
+  allDay: boolean("all_day").default(true),
+  startTime: varchar("start_time"), // For partial day unavailability
+  endTime: varchar("end_time"),
+  submittedAt: timestamp("submitted_at").notNull(),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  status: varchar("status").default("pending"), // pending, approved, rejected
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Shift Attendance table for clock-in/out tracking
+export const shiftAttendance = pgTable("shift_attendance", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shiftId: varchar("shift_id").references(() => shifts.id).notNull(),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  
+  // Clock-in details
+  clockInTime: timestamp("clock_in_time"),
+  clockInLocation: text("clock_in_location"),
+  clockInLat: decimal("clock_in_lat", { precision: 10, scale: 8 }),
+  clockInLng: decimal("clock_in_lng", { precision: 11, scale: 8 }),
+  clockInMethod: varchar("clock_in_method"), // app, manual, phone
+  
+  // Clock-out details
+  clockOutTime: timestamp("clock_out_time"),
+  clockOutLocation: text("clock_out_location"),
+  clockOutLat: decimal("clock_out_lat", { precision: 10, scale: 8 }),
+  clockOutLng: decimal("clock_out_lng", { precision: 11, scale: 8 }),
+  clockOutMethod: varchar("clock_out_method"),
+  
+  // Duration tracking
+  actualDuration: integer("actual_duration"), // in minutes
+  travelTime: integer("travel_time"), // in minutes
+  breakTime: integer("break_time"), // in minutes
+  
+  // Geo-fence compliance
+  geoFenceViolations: integer("geo_fence_violations").default(0),
+  geoFenceOverride: boolean("geo_fence_override").default(false),
+  overrideReason: text("override_reason"),
+  overrideBy: varchar("override_by").references(() => users.id),
+  
+  // Additional tracking
+  tasks: jsonb("tasks"), // Checklist of completed tasks
+  progressNotes: text("progress_notes"),
+  incidents: jsonb("incidents"), // Any incidents during shift
+  photos: text("photos").array(), // Photo URLs for verification
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Allocation Scores table for ranking
+export const staffAllocationScores = pgTable("staff_allocation_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shiftId: varchar("shift_id").references(() => shifts.id).notNull(),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  
+  // Individual scores (0-100)
+  distanceScore: integer("distance_score"),
+  distanceKm: decimal("distance_km", { precision: 5, scale: 2 }),
+  travelTimeMinutes: integer("travel_time_minutes"),
+  
+  skillsScore: integer("skills_score"),
+  matchedSkills: text("matched_skills").array(),
+  missingSkills: text("missing_skills").array(),
+  
+  preferenceScore: integer("preference_score"),
+  isPreferredStaff: boolean("is_preferred_staff").default(false),
+  
+  continuityScore: integer("continuity_score"),
+  previousShiftsCount: integer("previous_shifts_count").default(0),
+  
+  reliabilityScore: integer("reliability_score"),
+  attendanceRate: decimal("attendance_rate", { precision: 5, scale: 2 }),
+  
+  costScore: integer("cost_score"),
+  hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }),
+  
+  // Total and ranking
+  totalScore: integer("total_score").notNull(),
+  rank: integer("rank"),
+  isEligible: boolean("is_eligible").default(true),
+  ineligibleReason: text("ineligible_reason"),
+  
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Billing Lines table for NDIS billing
+export const billingLines = pgTable("billing_lines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shiftId: varchar("shift_id").references(() => shifts.id),
+  timesheetId: varchar("timesheet_id"),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  invoiceId: varchar("invoice_id").references(() => invoices.id),
+  
+  // NDIS billing details
+  ndisItemNumber: varchar("ndis_item_number").notNull(),
+  ndisItemName: text("ndis_item_name"),
+  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
+  unitPrice: decimal("unit_price", { precision: 8, scale: 2 }).notNull(),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  gstAmount: decimal("gst_amount", { precision: 8, scale: 2 }).default('0'),
+  
+  // Claim details
+  claimReference: varchar("claim_reference"),
+  claimType: varchar("claim_type"), // portal, plan_manager, self_managed
+  claimStatus: varchar("claim_status").default("pending"), // pending, submitted, accepted, rejected
+  claimSubmittedAt: timestamp("claim_submitted_at"),
+  claimResponseAt: timestamp("claim_response_at"),
+  rejectionReason: text("rejection_reason"),
+  
+  // Travel and cancellation
+  includesTravel: boolean("includes_travel").default(false),
+  travelAmount: decimal("travel_amount", { precision: 8, scale: 2 }),
+  isCancellation: boolean("is_cancellation").default(false),
+  cancellationReason: text("cancellation_reason"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Shifts table for staff allocation and shift management
 export const shifts = pgTable("shifts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
