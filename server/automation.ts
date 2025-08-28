@@ -102,7 +102,7 @@ export class NDISAutomationService implements AutomationService {
               participantId,
               staffId: suitableStaff[0], // Best match
               serviceType: goal.goalCategory,
-              scheduledDate: scheduleDate.toISOString(),
+              scheduledDate: scheduleDate.toISOString().split('T')[0], // YYYY-MM-DD format
               duration: 60, // Default 1 hour
               location: 'participant_home',
               status: 'scheduled',
@@ -269,7 +269,10 @@ export class NDISAutomationService implements AutomationService {
       GROUP BY p.id, pt.first_name, pt.last_name
     `);
 
-    for (const plan of activePlans) {
+    // Handle the result array properly - db.execute returns { rows: [] } format
+    const plansArray = activePlans.rows || [];
+    
+    for (const plan of plansArray) {
       const budgetUsed = (plan.spent_amount / plan.total_budget) * 100;
       
       // Send alerts at different thresholds
