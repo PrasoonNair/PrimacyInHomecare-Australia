@@ -24,6 +24,7 @@ export default function Sidebar() {
   const departmentNavigation = [
     { name: "Intake", href: "/intake", icon: "fas fa-user-plus", badge: "3", description: "Referrals & onboarding", status: "active" },
     { name: "HR & Recruitment", href: "/hr-recruitment", icon: "fas fa-user-friends", badge: "5", description: "Staff management", status: "active" },
+    { name: "Recruitment Pipeline", href: "/recruitment", icon: "fas fa-briefcase", badge: "New", description: "Hiring workflow", status: "excellent" },
     { name: "Finance & Awards", href: "/finance-awards", icon: "fas fa-coins", badge: "Alert", description: "SCHADS compliance", status: "warning" },
     { name: "Service Delivery", href: "/service-delivery", icon: "fas fa-truck", badge: "89%", description: "Operations & allocation", status: "active" },
     { name: "Compliance & Quality", href: "/compliance-quality", icon: "fas fa-shield-alt", badge: "96%", description: "Quality assurance", status: "excellent" },
