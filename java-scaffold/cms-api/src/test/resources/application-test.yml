@@ -1,0 +1,47 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16:///primacy_cms?TC_INITSCRIPT=db/migration/V001__baseline_schema.sql
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    
+  flyway:
+    enabled: true
+    
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/test-realm
+          
+  cache:
+    type: none
+
+app:
+  cors:
+    allowed-origins: http://localhost:3000
+    
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.testcontainers: INFO
+
+# Test data configuration
+test:
+  users:
+    admin:
+      id: test-admin-123
+      email: admin@test.com
+      roles: [admin]
+    case-manager:
+      id: test-cm-456
+      email: casemanager@test.com
+      roles: [case_manager]
+    participant:
+      id: test-part-789
+      email: participant@test.com
+      roles: [participant]

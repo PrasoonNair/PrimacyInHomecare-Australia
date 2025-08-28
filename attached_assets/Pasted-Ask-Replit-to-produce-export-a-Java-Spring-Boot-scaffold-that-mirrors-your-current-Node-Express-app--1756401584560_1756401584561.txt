@@ -1,0 +1,32 @@
+Ask Replit to produce/export a Java/Spring Boot scaffold that mirrors your current Node/Express app one-to-one. Be precise:
+A) Code scaffolding (must-haves)
+Spring Boot 3 / Java 21 monorepo with modules:
+auth, users, staff, clients, referrals, careplans, visits, allocation, finance, hr, widgets, files, analytics.
+Controllers that match your Express routes exactly (paths, verbs, JSON shapes, status codes).
+DTOs + MapStruct mappers generated from your existing TypeScript types/interfaces.
+Service interfaces (empty or minimal impls) with TODOs pointing to your current business logic files.
+Validation via Jakarta Validation annotations inferred from Zod schemas (min/max/regex/required).
+B) Data & migrations
+JPA entities for every table (your doc lists ~50–76 tables).
+Flyway baseline (V000__baseline.sql) generated from your current Postgres schema, not guesses.
+Follow-on migrations to capture any diffs Replit detects (naming, indexes, FKs, enums).
+Testcontainers setup for Postgres so migrations run in CI automatically.
+C) Auth & security
+Spring Security (Resource Server) configured for Keycloak (OIDC, RS256).
+Role mapping that preserves your 8–15 roles; @PreAuthorize guards added to controllers from your RBAC rules.
+Audit logging interceptor (read/write of sensitive entities) with correlation IDs.
+D) API contract & docs
+OpenAPI 3.1 spec generated from controllers (paths, schemas, examples).
+Include contract tests (REST Assured) that assert parity with your current responses.
+E) Build, packaging & ops
+Gradle build with reproducible builds, versioning, and BOMs.
+Dockerfiles (distroless or alpine) + docker-compose for app, Postgres, MinIO, RabbitMQ, Keycloak, Nginx.
+CI/CD samples (GitHub Actions or GitLab):
+Lint → Build → Test → Testcontainers → Build image → Push → Deploy to staging.
+Prometheus metrics starter, health/liveness/readiness probes, and structured logging (JSON).
+F) Frontend wiring
+OIDC front-channel example for your React app (PKCE), replacing Replit login, with silent token refresh.
+CORS presets and example .env for local/staging/prod.
+G) Seed & fixtures
+Seed scripts to recreate your test accounts, districts, and sample data.
+Data generator (Faker) for load testing.
