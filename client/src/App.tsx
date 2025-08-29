@@ -48,8 +48,11 @@ import QualityManagerDashboard from "@/pages/role-dashboards/quality-manager-das
 import SupportWorkerDashboard from "@/pages/role-dashboards/support-worker-dashboard";
 import { ParticipantPortal } from "@/pages/participant-portal";
 import { WidgetEmbedPage } from "@/pages/widget-embed-page";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
+  // Enable keyboard shortcuts throughout the app
+  useKeyboardShortcuts();
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
