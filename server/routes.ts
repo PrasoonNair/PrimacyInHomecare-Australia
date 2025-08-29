@@ -176,13 +176,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentType
       );
       
-      await logAudit(
-        AuditAction.CREATE,
-        "referral_document",
-        req.params.id,
-        (req as any).user?.claims?.sub,
-        { documentType }
-      );
+      await auditLogger.log({
+        action: AuditAction.REFERRAL_CREATED,
+        entityType: "referral",
+        entityId: req.params.id,
+        userId: (req as any).user?.id || (req as any).user?.claims?.sub,
+        details: { documentType }
+      });
       
       res.json(result);
     } catch (error) {
@@ -199,13 +199,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await workflowService.advanceWorkflow(req.params.id, currentStatus);
       
-      await logAudit(
-        AuditAction.UPDATE,
-        "referral_workflow",
-        req.params.id,
-        (req as any).user?.claims?.sub,
-        { newStatus: result }
-      );
+      await auditLogger.log({
+        action: AuditAction.REFERRAL_ACCEPTED,
+        entityType: "referral",
+        entityId: req.params.id,
+        userId: (req as any).user?.id || (req as any).user?.claims?.sub,
+        details: { newStatus: result }
+      });
       
       res.json(result);
     } catch (error) {
@@ -235,13 +235,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await workflowService.allocateStaff(req.params.id, staffId);
       
-      await logAudit(
-        AuditAction.UPDATE,
-        "staff_allocation",
-        req.params.id,
-        (req as any).user?.claims?.sub,
-        { staffId }
-      );
+      await auditLogger.log({
+        action: AuditAction.SERVICE_ALLOCATED,
+        entityType: "service",
+        entityId: req.params.id,
+        userId: (req as any).user?.id || (req as any).user?.claims?.sub,
+        details: { staffId }
+      });
       
       res.json(result);
     } catch (error) {
@@ -264,13 +264,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         staffFeedback
       );
       
-      await logAudit(
-        AuditAction.UPDATE,
-        "meet_greet_outcome",
-        req.params.id,
-        (req as any).user?.claims?.sub,
-        { outcome: result.outcome }
-      );
+      await auditLogger.log({
+        action: AuditAction.PARTICIPANT_UPDATED,
+        entityType: "participant",
+        entityId: req.params.id,
+        userId: (req as any).user?.id || (req as any).user?.claims?.sub,
+        details: { outcome: result?.outcome }
+      });
       
       res.json(result);
     } catch (error) {
@@ -287,13 +287,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const result = await workflowService.verifyFunding(participantId, serviceCategory, amount);
       
-      await logAudit(
-        AuditAction.VIEW,
-        "funding_verification",
-        participantId,
-        (req as any).user?.claims?.sub,
-        { result }
-      );
+      await auditLogger.log({
+        action: AuditAction.PLAN_UPDATED,
+        entityType: "plan",
+        entityId: participantId,
+        userId: (req as any).user?.id || (req as any).user?.claims?.sub,
+        details: { result }
+      });
       
       res.json(result);
     } catch (error) {
@@ -338,13 +338,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const templateId = await workflowService.upsertServiceAgreementTemplate(req.body);
       
-      await logAudit(
-        AuditAction.CREATE,
-        "service_agreement_template",
-        templateId,
-        (req as any).user?.claims?.sub,
-        { templateName: req.body.name }
-      );
+      await auditLogger.log({
+        action: AuditAction.AGREEMENT_CREATED,
+        entityType: "agreement",
+        entityId: templateId,
+        userId: (req as any).user?.id || (req as any).user?.claims?.sub,
+        details: { templateName: req.body.name }
+      });
       
       res.json({ success: true, templateId });
     } catch (error) {

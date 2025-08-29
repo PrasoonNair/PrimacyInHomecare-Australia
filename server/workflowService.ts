@@ -567,6 +567,261 @@ Phone: 1300 PRIMACY
       console.error("Error logging workflow action:", error);
     }
   }
+
+  /**
+   * Process referral document upload and extract data
+   */
+  async processReferralUpload(referralId: string, documentUrl: string): Promise<any> {
+    try {
+      // Update referral with document URL
+      await db.update(referrals)
+        .set({
+          documentUrl,
+          extractionStatus: 'processing',
+          updatedAt: new Date()
+        })
+        .where(eq(referrals.id, referralId));
+
+      // Simulate OCR/AI extraction (in production, would use actual OCR service)
+      const extractedData = {
+        participantName: 'Extracted Name',
+        ndisNumber: 'Extracted NDIS Number',
+        planDates: { start: new Date(), end: new Date() },
+        supportCategories: ['Core', 'Capacity Building']
+      };
+
+      // Update with extracted data
+      await db.update(referrals)
+        .set({
+          autoExtractedData: extractedData,
+          extractionStatus: 'completed',
+          updatedAt: new Date()
+        })
+        .where(eq(referrals.id, referralId));
+
+      return extractedData;
+    } catch (error) {
+      console.error('Error processing referral upload:', error);
+      await db.update(referrals)
+        .set({
+          extractionStatus: 'failed',
+          updatedAt: new Date()
+        })
+        .where(eq(referrals.id, referralId));
+      throw error;
+    }
+  }
+
+  /**
+   * Find matching staff for participant
+   */
+  async findMatchingStaff(participantId: string, criteria?: any): Promise<any[]> {
+    try {
+      // Get participant details
+      const [participant] = await db.select()
+        .from(participants)
+        .where(eq(participants.id, participantId));
+
+      if (!participant) {
+        throw new Error('Participant not found');
+      }
+
+      // Get all active staff
+      const staffMembers = await db.select()
+        .from(staff)
+        .where(eq(staff.status, 'active'));
+
+      // Score and rank staff based on matching criteria
+      const scoredStaff = staffMembers.map(member => {
+        let score = 0;
+        
+        // Location matching
+        if (member.location === participant.suburb) score += 30;
+        if (member.region === participant.region) score += 20;
+        
+        // Availability matching
+        if (member.availability?.includes('flexible')) score += 10;
+        
+        // Experience with disability type
+        if (member.specializations?.includes(participant.primaryDisability)) score += 25;
+        
+        // Qualification matching
+        if (criteria?.requiredQualifications) {
+          const hasQualification = criteria.requiredQualifications.some(
+            (q: string) => member.qualifications?.includes(q)
+          );
+          if (hasQualification) score += 15;
+        }
+
+        return { ...member, matchScore: score };
+      });
+
+      // Sort by score and return top matches
+      return scoredStaff
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 10);
+    } catch (error) {
+      console.error('Error finding matching staff:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Record meet & greet outcome
+   */
+  async recordMeetGreetOutcome(meetGreetId: string, outcome: any): Promise<void> {
+    try {
+      const { meetGreets } = await import("@shared/schema");
+      await db.update(meetGreets)
+        .set({
+          status: 'completed',
+          outcome: outcome.decision,
+          participantAttended: outcome.participantAttended,
+          staffAttended: outcome.staffAttended,
+          participantDecision: outcome.participantDecision,
+          staffDecision: outcome.staffDecision,
+          participantFeedback: outcome.participantFeedback,
+          staffFeedback: outcome.staffFeedback,
+          nextSteps: outcome.nextSteps,
+          updatedAt: new Date()
+        })
+        .where(eq(meetGreets.id, meetGreetId));
+
+      console.log(`Meet & greet outcome recorded: ${meetGreetId}`);
+    } catch (error) {
+      console.error('Error recording meet & greet outcome:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify participant funding
+   */
+  async verifyFunding(participantId: string): Promise<any> {
+    try {
+      // Get participant's active NDIS plan
+      const [plan] = await db.select()
+        .from(ndisPlans)
+        .where(
+          and(
+            eq(ndisPlans.participantId, participantId),
+            eq(ndisPlans.status, 'active')
+          )
+        );
+
+      if (!plan) {
+        return {
+          verified: false,
+          reason: 'No active NDIS plan found'
+        };
+      }
+
+      // Check if plan is within valid dates
+      const now = new Date();
+      const startDate = new Date(plan.startDate);
+      const endDate = new Date(plan.endDate);
+      
+      if (now < startDate || now > endDate) {
+        return {
+          verified: false,
+          reason: 'NDIS plan is not within valid dates'
+        };
+      }
+
+      // Check budget availability (simplified)
+      const totalBudget = parseFloat(plan.totalBudget || '0');
+      if (totalBudget <= 0) {
+        return {
+          verified: false,
+          reason: 'No budget allocated in NDIS plan'
+        };
+      }
+
+      return {
+        verified: true,
+        planId: plan.id,
+        totalBudget,
+        startDate,
+        endDate,
+        categories: plan.supportCategories
+      };
+    } catch (error) {
+      console.error('Error verifying funding:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get workflow history for an entity
+   */
+  async getWorkflowHistory(entityType: string, entityId: string): Promise<any[]> {
+    try {
+      const history = await db.select()
+        .from(workflowAuditLog)
+        .orderBy(desc(workflowAuditLog.createdAt));
+
+      // Filter by notes containing entityId since no direct entityId field
+      return history.filter(h => h.notes?.includes(entityId));
+    } catch (error) {
+      console.error('Error fetching workflow history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get service agreement templates
+   */
+  async getServiceAgreementTemplates(): Promise<any[]> {
+    try {
+      const { serviceAgreementTemplates } = await import("@shared/schema");
+      const templates = await db.select()
+        .from(serviceAgreementTemplates)
+        .where(eq(serviceAgreementTemplates.isActive, true))
+        .orderBy(asc(serviceAgreementTemplates.name));
+
+      return templates;
+    } catch (error) {
+      console.error('Error fetching service agreement templates:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create or update service agreement template
+   */
+  async upsertServiceAgreementTemplate(data: any): Promise<any> {
+    try {
+      const { serviceAgreementTemplates } = await import("@shared/schema");
+      const templateId = data.id || randomUUID();
+      
+      if (data.id) {
+        // Update existing template
+        await db.update(serviceAgreementTemplates)
+          .set({
+            ...data,
+            updatedAt: new Date()
+          })
+          .where(eq(serviceAgreementTemplates.id, data.id));
+      } else {
+        // Create new template
+        await db.insert(serviceAgreementTemplates).values({
+          id: templateId,
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
+
+      const [template] = await db.select()
+        .from(serviceAgreementTemplates)
+        .where(eq(serviceAgreementTemplates.id, templateId));
+
+      return template;
+    } catch (error) {
+      console.error('Error upserting service agreement template:', error);
+      throw error;
+    }
+  }
 }
 
 export const workflowService = new WorkflowService();

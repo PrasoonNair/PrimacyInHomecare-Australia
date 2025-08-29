@@ -177,7 +177,8 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
               <FormLabel>Goal Progress</FormLabel>
               <FormControl>
                 <Textarea 
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                   rows={4} 
                   placeholder="Describe the participant's progress towards their goals..."
                   data-testid="textarea-goal-progress"
@@ -196,7 +197,8 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
               <FormLabel>Activities Undertaken</FormLabel>
               <FormControl>
                 <Textarea 
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                   rows={4} 
                   placeholder="Detail the activities that took place during this session..."
                   data-testid="textarea-activities"
@@ -215,7 +217,8 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
               <FormLabel>Outcomes Achieved</FormLabel>
               <FormControl>
                 <Textarea 
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                   rows={3} 
                   placeholder="Describe the outcomes and achievements from this session..."
                   data-testid="textarea-outcomes"
@@ -234,7 +237,8 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
               <FormLabel>Concerns or Issues</FormLabel>
               <FormControl>
                 <Textarea 
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                   rows={3} 
                   placeholder="Note any concerns or issues that arose..."
                   data-testid="textarea-concerns"
@@ -253,7 +257,8 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
               <FormLabel>Next Steps</FormLabel>
               <FormControl>
                 <Textarea 
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                   rows={3} 
                   placeholder="Outline the next steps and future planning..."
                   data-testid="textarea-next-steps"
@@ -272,7 +277,8 @@ export default function ProgressNoteForm({ onClose }: ProgressNoteFormProps) {
               <FormLabel>Participant Feedback</FormLabel>
               <FormControl>
                 <Textarea 
-                  {...field} 
+                  {...field}
+                  value={field.value || ''}
                   rows={3} 
                   placeholder="Record any feedback provided by the participant..."
                   data-testid="textarea-participant-feedback"
