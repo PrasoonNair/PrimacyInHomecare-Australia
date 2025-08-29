@@ -97,6 +97,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // Health check endpoint
+  app.get('/api/health', async (req, res) => {
+    try {
+      // Check database connection with a simple query
+      const participants = await storage.getParticipants();
+      res.json({ 
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.0.0',
+        environment: process.env.NODE_ENV || 'development',
+        database: 'connected'
+      });
+    } catch (error) {
+      console.error('Health check failed:', error);
+      res.status(503).json({ 
+        status: 'unhealthy',
+        error: 'Database connection failed',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -119,6 +141,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Workflow Management API endpoints
+  app.get("/api/workflow/stages", isAuthenticated, async (req, res) => {
+    try {
+      const stages = [
+        { key: 'referral_received', label: 'Referral Received', order: 1 },
+        { key: 'data_verified', label: 'Data Verified', order: 2 },
+        { key: 'service_agreement_prepared', label: 'Service Agreement Prepared', order: 3 },
+        { key: 'agreement_sent', label: 'Agreement Sent', order: 4 },
+        { key: 'agreement_signed', label: 'Agreement Signed', order: 5 },
+        { key: 'funding_verification', label: 'Funding Verification', order: 6 },
+        { key: 'funding_verified', label: 'Funding Verified', order: 7 },
+        { key: 'staff_allocation', label: 'Staff Allocation', order: 8 },
+        { key: 'worker_allocated', label: 'Worker Allocated', order: 9 },
+        { key: 'meet_greet_scheduled', label: 'Meet & Greet Scheduled', order: 10 },
+        { key: 'meet_greet_completed', label: 'Meet & Greet Completed', order: 11 },
+        { key: 'service_commenced', label: 'Service Commenced', order: 12 }
+      ];
+      res.json(stages);
+    } catch (error) {
+      console.error("Error fetching workflow stages:", error);
+      res.status(500).json({ message: "Failed to fetch workflow stages" });
+    }
+  });
+
   app.post("/api/workflow/referral/:id/upload", isAuthenticated, async (req, res) => {
     try {
       const { WorkflowService } = await import("./workflowService");
@@ -1358,7 +1403,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/referrals", isAuthenticated, async (req, res) => {
     try {
       const referrals = await storage.getReferrals();
-      res.json(referrals);
+      // Map workflow_status to currentStage for API compatibility
+      const mappedReferrals = referrals.map(referral => ({
+        ...referral,
+        currentStage: referral.workflowStatus || 'referral_received'
+      }));
+      res.json(mappedReferrals);
     } catch (error) {
       console.error("Error fetching referrals:", error);
       res.status(500).json({ message: "Failed to fetch referrals" });
