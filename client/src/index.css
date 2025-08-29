@@ -50,25 +50,29 @@
 }
 
 :root {
+  /* NDIS Purple Theme with Australian Colors */
   --background: hsl(0 0% 100%);
-  --foreground: hsl(210 25% 7.8431%);
-  --card: hsl(180 6.6667% 97.0588%);
-  --card-foreground: hsl(210 25% 7.8431%);
+  --foreground: hsl(270 25% 15%);
+  --card: hsl(270 10% 98%);
+  --card-foreground: hsl(270 25% 15%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(210 25% 7.8431%);
-  --primary: hsl(210 100% 50%);
+  --popover-foreground: hsl(270 25% 15%);
+  /* NDIS Purple #5B2C91 */
+  --primary: hsl(270 52% 37%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(140 50% 40%);
+  /* Australian Green #00843D */
+  --secondary: hsl(147 100% 26%);
   --secondary-foreground: hsl(0 0% 100%);
-  --muted: hsl(220 8% 95%);
-  --muted-foreground: hsl(220 8% 45%);
-  --accent: hsl(30 100% 55%);
-  --accent-foreground: hsl(0 0% 100%);
+  --muted: hsl(270 10% 96%);
+  --muted-foreground: hsl(270 15% 45%);
+  /* Australian Gold #FFD700 */
+  --accent: hsl(51 100% 50%);
+  --accent-foreground: hsl(270 25% 15%);
   --destructive: hsl(0 85% 60%);
   --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(220 13% 91%);
-  --input: hsl(220 13% 97%);
-  --ring: hsl(210 100% 50%);
+  --border: hsl(270 20% 88%);
+  --input: hsl(270 10% 96%);
+  --ring: hsl(270 52% 37%);
   --chart-1: hsl(203.8863 88.2845% 53.1373%);
   --chart-2: hsl(159.7826 100% 36.0784%);
   --chart-3: hsl(42.0290 92.8251% 56.2745%);
