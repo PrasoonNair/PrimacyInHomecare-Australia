@@ -3218,6 +3218,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize scheduled tasks after server starts
   setTimeout(initializeScheduledTasks, 5000);
 
+  // Setup public widget routes for external websites
+  const { setupPublicWidgetRoutes } = await import("./publicWidgetRoutes");
+  setupPublicWidgetRoutes(app);
+
   const httpServer = createServer(app);
   return httpServer;
 }
