@@ -46,6 +46,7 @@ import HRManagerDashboard from "@/pages/role-dashboards/hr-manager-dashboard";
 import ServiceDeliveryManagerDashboard from "@/pages/role-dashboards/service-delivery-manager-dashboard";
 import QualityManagerDashboard from "@/pages/role-dashboards/quality-manager-dashboard";
 import SupportWorkerDashboard from "@/pages/role-dashboards/support-worker-dashboard";
+import { ParticipantPortal } from "@/pages/participant-portal";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -106,6 +107,7 @@ function Router() {
           <Route path="/calendar-shifts" component={CalendarShifts} />
             <Route path="/compliance-quality" component={ComplianceQuality} />
             <Route path="/incidents" component={Incidents} />
+            <Route path="/participant-portal" component={ParticipantPortal} />
             {/* Role-specific Dashboard Routes */}
             <Route path="/role-dashboards/super-admin" component={SuperAdminDashboard} />
             <Route path="/role-dashboards/ceo" component={CEODashboard} />
