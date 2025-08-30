@@ -67,7 +67,7 @@ router.get('/efficiency', isAuthenticated, async (req, res) => {
     };
 
     if (role && role !== 'all') {
-      const roleKey = role.toLowerCase().replace(/[\s-]/g, '-');
+      const roleKey = String(role).toLowerCase().replace(/[\s-]/g, '-');
       res.json({
         role: roleKey,
         metrics: efficiencyMetrics[roleKey as keyof typeof efficiencyMetrics] || {},

@@ -323,7 +323,6 @@ export function WorkflowAutomationBuilder() {
                   </Button>
                   <Switch 
                     checked={workflow.status === 'active'}
-                    size="sm"
                   />
                 </div>
               </div>
