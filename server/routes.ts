@@ -3226,6 +3226,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const bulkOperationsRoutes = (await import('./routes/bulk-operations')).default;
   app.use('/api/bulk-operations', bulkOperationsRoutes);
 
+  // Import and setup operations efficiency routes
+  const operationsEfficiencyRoutes = (await import('./routes/operations-efficiency')).default;
+  app.use('/api/operations', operationsEfficiencyRoutes);
+
   const httpServer = createServer(app);
   return httpServer;
 }

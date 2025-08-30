@@ -55,6 +55,17 @@ export function InlineWorkflowActions({ itemId, itemType, context, itemData }: I
         badge: data.upcomingShifts ? `${data.upcomingShifts}` : undefined
       });
     }
+
+    // Efficiency optimization action
+    actions.push({
+      id: 'efficiency-tools',
+      label: 'Efficiency',
+      icon: <Clock className="h-4 w-4" />,
+      href: `/operations-efficiency?role=${data.role}`,
+      priority: 'medium',
+      actionType: 'navigate',
+      color: 'text-purple-600 hover:text-purple-700'
+    });
     
     if (data.currentParticipants > 0) {
       actions.push({
@@ -154,6 +165,17 @@ export function InlineWorkflowActions({ itemId, itemType, context, itemData }: I
         color: 'text-blue-600 hover:text-blue-700'
       });
     }
+
+    // Service efficiency optimization
+    actions.push({
+      id: 'service-efficiency',
+      label: 'Optimize',
+      icon: <CheckCircle className="h-4 w-4" />,
+      href: `/operations-efficiency?focus=participant&id=${itemId}`,
+      priority: 'low',
+      actionType: 'navigate',
+      color: 'text-green-600 hover:text-green-700'
+    });
     
     // Contact action (always available)
     if (data.phone) {
