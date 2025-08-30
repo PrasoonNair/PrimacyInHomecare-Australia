@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -92,7 +93,7 @@ function Router() {
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/participants" component={Participants} />
             <Route path="/participant-directory" component={() => <ParticipantDirectoryPage />} />
-            <Route path="/participants/:id" component={React.lazy(() => import('./pages/participants/[id]/index'))} />
+            <Route path="/participants/:id" component={React.lazy(() => import('./pages/participants/[id]/index.lazy'))} />
             <Route path="/plans/new" component={PlanNew} />
             <Route path="/plans" component={Plans} />
             <Route path="/plan-reader" component={PlanReader} />
@@ -101,14 +102,14 @@ function Router() {
             <Route path="/financials" component={Financials} />
             <Route path="/staff" component={Staff} />
             <Route path="/staff-directory" component={() => <StaffDirectoryPage />} />
-            <Route path="/staff/:id" component={React.lazy(() => import('./pages/staff/[id]/index'))} />
+            <Route path="/staff/:id" component={React.lazy(() => import('./pages/staff/[id]/index.lazy'))} />
             <Route path="/reports" component={Reports} />
             <Route path="/role-management" component={RoleManagement} />
             <Route path="/price-guide" component={PriceGuide} />
             <Route path="/automation" component={Automation} />
             <Route path="/workflow-management" component={WorkflowManagement} />
             <Route path="/recruitment" component={Recruitment} />
-            <Route path="/operations-efficiency" component={() => import('./pages/operations-efficiency').then(m => m.default)} />
+            <Route path="/operations-efficiency" component={React.lazy(() => import('./pages/operations-efficiency'))} />
             {/* Department Routes */}
             <Route path="/intake" component={Intake} />
             <Route path="/hr-recruitment" component={HRRecruitment} />
@@ -145,15 +146,19 @@ function Router() {
   );
 }
 
-function App() {
+export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div className="min-h-screen bg-gray-50">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Suspense fallback={<div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>}>
+            <Router />
+          </Suspense>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </div>
   );
 }
-
-export default App;

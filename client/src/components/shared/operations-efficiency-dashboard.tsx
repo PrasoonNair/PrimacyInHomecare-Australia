@@ -46,6 +46,7 @@ export function OperationsEfficiencyDashboard() {
     queryKey: ['/api/operations/efficiency', selectedRole],
     queryFn: async () => {
       const response = await fetch(`/api/operations/efficiency?role=${selectedRole}`);
+      if (!response.ok) throw new Error('Failed to fetch efficiency data');
       return response.json();
     }
   });
