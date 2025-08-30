@@ -186,4 +186,84 @@ router.get('/performance-insights/:role', isAuthenticated, async (req, res) => {
   }
 });
 
+// Get predictive analytics insights
+router.get('/predictive-analytics', isAuthenticated, async (req, res) => {
+  try {
+    // Mock predictive analytics - in production, this would use ML models
+    const predictions = {
+      demandForecast: {
+        nextWeek: { increase: 23, confidence: 89 },
+        nextMonth: { increase: 15, confidence: 82 }
+      },
+      churnRisk: {
+        highRisk: 8,
+        mediumRisk: 12,
+        totalParticipants: 107
+      },
+      staffBurnout: {
+        atRisk: 5,
+        indicators: ['workload', 'satisfaction', 'absenteeism']
+      },
+      budgetOptimization: {
+        potentialSavings: 24000,
+        areas: ['travel', 'admin', 'supplies']
+      }
+    };
+
+    res.json(predictions);
+  } catch (error) {
+    console.error('Error fetching predictive analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch predictive analytics' });
+  }
+});
+
+// Get real-time system metrics
+router.get('/real-time-metrics', isAuthenticated, async (req, res) => {
+  try {
+    // Mock real-time metrics - in production, this would fetch from monitoring systems
+    const metrics = {
+      timestamp: new Date().toISOString(),
+      systemHealth: {
+        cpu: Math.floor(Math.random() * 30) + 40, // 40-70%
+        memory: Math.floor(Math.random() * 25) + 50, // 50-75%
+        disk: Math.floor(Math.random() * 20) + 30, // 30-50%
+        network: Math.floor(Math.random() * 15) + 85 // 85-100%
+      },
+      activeUsers: Math.floor(Math.random() * 30) + 70, // 70-100
+      responseTime: Math.floor(Math.random() * 100) + 200, // 200-300ms
+      errorRate: Math.random() * 0.5, // 0-0.5%
+      throughput: Math.floor(Math.random() * 500) + 1000 // 1000-1500 req/min
+    };
+
+    res.json(metrics);
+  } catch (error) {
+    console.error('Error fetching real-time metrics:', error);
+    res.status(500).json({ error: 'Failed to fetch real-time metrics' });
+  }
+});
+
+// Get workflow automation status
+router.get('/automation-workflows', isAuthenticated, async (req, res) => {
+  try {
+    // Mock automation workflow data
+    const workflows = {
+      active: 12,
+      totalExecutions: 2847,
+      successRate: 96.4,
+      timeSaved: 47, // hours per week
+      categories: {
+        participant: 5,
+        staff: 3,
+        finance: 2,
+        compliance: 2
+      }
+    };
+
+    res.json(workflows);
+  } catch (error) {
+    console.error('Error fetching automation workflows:', error);
+    res.status(500).json({ error: 'Failed to fetch automation workflows' });
+  }
+});
+
 export default router;
