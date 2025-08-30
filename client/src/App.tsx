@@ -49,6 +49,8 @@ import SupportWorkerDashboard from "@/pages/role-dashboards/support-worker-dashb
 import { ParticipantPortal } from "@/pages/participant-portal";
 import { WidgetEmbedPage } from "@/pages/widget-embed-page";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import ParticipantDirectoryPage from "@/pages/participant-directory";
+import StaffDirectoryPage from "@/pages/staff-directory";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   // Enable keyboard shortcuts throughout the app
@@ -89,6 +91,7 @@ function Router() {
             <Route path="/" component={Dashboard} />
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/participants" component={Participants} />
+            <Route path="/participant-directory" component={() => <ParticipantDirectoryPage />} />
             <Route path="/plans/new" component={PlanNew} />
             <Route path="/plans" component={Plans} />
             <Route path="/plan-reader" component={PlanReader} />
@@ -96,6 +99,7 @@ function Router() {
             <Route path="/progress-notes" component={ProgressNotes} />
             <Route path="/financials" component={Financials} />
             <Route path="/staff" component={Staff} />
+            <Route path="/staff-directory" component={() => <StaffDirectoryPage />} />
             <Route path="/reports" component={Reports} />
             <Route path="/role-management" component={RoleManagement} />
             <Route path="/price-guide" component={PriceGuide} />
