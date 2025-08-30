@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, Grid, List, Users, MoreVertical, Phone, Mail, Calendar, MapPin, FileText, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Search, Filter, Grid, List, Users, MoreVertical, Phone, Mail, Calendar, MapPin, FileText, AlertCircle, CheckCircle, Clock, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BulkOperations } from '@/components/shared/bulk-operations';
+import { WorkflowIntegration } from '@/components/shared/workflow-integration';
+import { ExportService } from '@/components/shared/export-service';
 
 interface Participant {
   id: string;
@@ -48,6 +52,7 @@ export function ParticipantListView() {
   const [riskLevelFilter, setRiskLevelFilter] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const { data: participants = [], isLoading } = useQuery({
     queryKey: ['/api/participants'],
@@ -167,10 +172,62 @@ export function ParticipantListView() {
     return (participant.usedBudget / participant.totalBudget) * 100;
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedItems(filteredAndSortedParticipants.map((participant: Participant) => participant.id));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedItems(prev => [...prev, id]);
+    } else {
+      setSelectedItems(prev => prev.filter(item => item !== id));
+    }
+  };
+
+  const handleBulkAction = async (action: string, data?: any) => {
+    switch (action) {
+      case 'export':
+        await ExportService.exportData({
+          format: data.format,
+          items: data.items,
+          itemType: 'participants',
+          data: participants
+        });
+        break;
+      case 'email':
+        await ExportService.bulkEmail(data.items, data.subject, data.message, 'participants');
+        break;
+      case 'updateStatus':
+        await ExportService.bulkStatusUpdate(data.items, data.status, 'participants');
+        break;
+      case 'delete':
+        await ExportService.bulkDelete(data.items, 'participants');
+        break;
+      default:
+        console.log('Unknown bulk action:', action);
+    }
+  };
+
+  const handleWorkflowAction = async (action: string, data: any) => {
+    // Implementation for workflow actions
+    console.log('Workflow action:', action, data);
+  };
+
   const renderListView = () => (
     <div className="bg-white rounded-lg border overflow-hidden">
       <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-700">
-        <div className="col-span-3">Participant</div>
+        <div className="col-span-3 flex items-center space-x-2">
+          <Checkbox
+            checked={selectedItems.length === filteredAndSortedParticipants.length && filteredAndSortedParticipants.length > 0}
+            onCheckedChange={handleSelectAll}
+            data-testid="checkbox-select-all"
+          />
+          <span>Participant</span>
+        </div>
         <div className="col-span-2">NDIS Number</div>
         <div className="col-span-1">Status</div>
         <div className="col-span-1">Plan</div>
@@ -183,6 +240,11 @@ export function ParticipantListView() {
       {filteredAndSortedParticipants.map((participant: Participant) => (
         <div key={participant.id} className="grid grid-cols-12 gap-4 p-4 border-b hover:bg-gray-50 transition-colors">
           <div className="col-span-3 flex items-center space-x-3">
+            <Checkbox
+              checked={selectedItems.includes(participant.id)}
+              onCheckedChange={(checked) => handleSelectItem(participant.id, !!checked)}
+              data-testid={`checkbox-participant-${participant.id}`}
+            />
             <Avatar className="h-10 w-10">
               <AvatarFallback className="bg-purple-100 text-purple-700">
                 {participant.name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -540,6 +602,13 @@ export function ParticipantListView() {
         </div>
         
         <div className="flex items-center space-x-2">
+          {selectedItems.length > 0 && (
+            <WorkflowIntegration
+              selectedItems={selectedItems}
+              itemType="participants"
+              onWorkflowAction={handleWorkflowAction}
+            />
+          )}
           <Button 
             variant={viewMode === 'list' ? 'default' : 'outline'} 
             size="sm"
@@ -659,6 +728,14 @@ export function ParticipantListView() {
           </p>
         </div>
       )}
+
+      {/* Bulk Operations */}
+      <BulkOperations
+        selectedItems={selectedItems}
+        onClearSelection={() => setSelectedItems([])}
+        itemType="participants"
+        onBulkAction={handleBulkAction}
+      />
     </div>
   );
 }

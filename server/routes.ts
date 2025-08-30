@@ -3222,6 +3222,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { setupPublicWidgetRoutes } = await import("./publicWidgetRoutes");
   setupPublicWidgetRoutes(app);
 
+  // Import and setup bulk operations routes
+  const bulkOperationsRoutes = (await import('./routes/bulk-operations')).default;
+  app.use('/api/bulk-operations', bulkOperationsRoutes);
+
   const httpServer = createServer(app);
   return httpServer;
 }

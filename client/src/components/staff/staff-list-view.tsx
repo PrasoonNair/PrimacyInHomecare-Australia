@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, Grid, List, Users, MoreVertical, Phone, Mail, Calendar, MapPin, Star, UserCheck, Clock } from 'lucide-react';
+import { Search, Filter, Grid, List, Users, MoreVertical, Phone, Mail, Calendar, MapPin, Star, UserCheck, Clock, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +9,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
+import { BulkOperations } from '@/components/shared/bulk-operations';
+import { WorkflowIntegration } from '@/components/shared/workflow-integration';
+import { ExportService } from '@/components/shared/export-service';
 
 interface Staff {
   id: string;
@@ -40,6 +44,7 @@ export function StaffListView() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ['/api/staff'],
@@ -120,10 +125,62 @@ export function StaffListView() {
     ).join(' ');
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedItems(filteredAndSortedStaff.map((member: Staff) => member.id));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectedItems(prev => [...prev, id]);
+    } else {
+      setSelectedItems(prev => prev.filter(item => item !== id));
+    }
+  };
+
+  const handleBulkAction = async (action: string, data?: any) => {
+    switch (action) {
+      case 'export':
+        await ExportService.exportData({
+          format: data.format,
+          items: data.items,
+          itemType: 'staff',
+          data: staff
+        });
+        break;
+      case 'email':
+        await ExportService.bulkEmail(data.items, data.subject, data.message, 'staff');
+        break;
+      case 'updateStatus':
+        await ExportService.bulkStatusUpdate(data.items, data.status, 'staff');
+        break;
+      case 'delete':
+        await ExportService.bulkDelete(data.items, 'staff');
+        break;
+      default:
+        console.log('Unknown bulk action:', action);
+    }
+  };
+
+  const handleWorkflowAction = async (action: string, data: any) => {
+    // Implementation for workflow actions
+    console.log('Workflow action:', action, data);
+  };
+
   const renderListView = () => (
     <div className="bg-white rounded-lg border overflow-hidden">
       <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-sm text-gray-700">
-        <div className="col-span-3">Staff Member</div>
+        <div className="col-span-3 flex items-center space-x-2">
+          <Checkbox
+            checked={selectedItems.length === filteredAndSortedStaff.length && filteredAndSortedStaff.length > 0}
+            onCheckedChange={handleSelectAll}
+            data-testid="checkbox-select-all"
+          />
+          <span>Staff Member</span>
+        </div>
         <div className="col-span-2">Role</div>
         <div className="col-span-2">Department</div>
         <div className="col-span-1">Status</div>
@@ -135,6 +192,11 @@ export function StaffListView() {
       {filteredAndSortedStaff.map((member: Staff) => (
         <div key={member.id} className="grid grid-cols-12 gap-4 p-4 border-b hover:bg-gray-50 transition-colors">
           <div className="col-span-3 flex items-center space-x-3">
+            <Checkbox
+              checked={selectedItems.includes(member.id)}
+              onCheckedChange={(checked) => handleSelectItem(member.id, !!checked)}
+              data-testid={`checkbox-staff-${member.id}`}
+            />
             <Avatar className="h-10 w-10">
               <AvatarImage src={member.avatarUrl} alt={member.name} />
               <AvatarFallback className="bg-blue-100 text-blue-700">
@@ -448,6 +510,13 @@ export function StaffListView() {
         </div>
         
         <div className="flex items-center space-x-2">
+          {selectedItems.length > 0 && (
+            <WorkflowIntegration
+              selectedItems={selectedItems}
+              itemType="staff"
+              onWorkflowAction={handleWorkflowAction}
+            />
+          )}
           <Button 
             variant={viewMode === 'list' ? 'default' : 'outline'} 
             size="sm"
@@ -564,6 +633,14 @@ export function StaffListView() {
           </p>
         </div>
       )}
+
+      {/* Bulk Operations */}
+      <BulkOperations
+        selectedItems={selectedItems}
+        onClearSelection={() => setSelectedItems([])}
+        itemType="staff"
+        onBulkAction={handleBulkAction}
+      />
     </div>
   );
 }
