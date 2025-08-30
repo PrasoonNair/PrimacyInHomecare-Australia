@@ -92,6 +92,7 @@ function Router() {
             <Route path="/dashboard" component={Dashboard} />
             <Route path="/participants" component={Participants} />
             <Route path="/participant-directory" component={() => <ParticipantDirectoryPage />} />
+            <Route path="/participants/:id" component={() => import('./pages/participants/[id]/index').then(m => m.default)} />
             <Route path="/plans/new" component={PlanNew} />
             <Route path="/plans" component={Plans} />
             <Route path="/plan-reader" component={PlanReader} />
@@ -100,6 +101,7 @@ function Router() {
             <Route path="/financials" component={Financials} />
             <Route path="/staff" component={Staff} />
             <Route path="/staff-directory" component={() => <StaffDirectoryPage />} />
+            <Route path="/staff/:id" component={() => import('./pages/staff/[id]/index').then(m => m.default)} />
             <Route path="/reports" component={Reports} />
             <Route path="/role-management" component={RoleManagement} />
             <Route path="/price-guide" component={PriceGuide} />

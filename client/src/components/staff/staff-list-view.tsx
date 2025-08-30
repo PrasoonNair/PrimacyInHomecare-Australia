@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { BulkOperations } from '@/components/shared/bulk-operations';
 import { WorkflowIntegration } from '@/components/shared/workflow-integration';
 import { ExportService } from '@/components/shared/export-service';
+import { InlineWorkflowActions } from '@/components/shared/inline-workflow-actions';
 
 interface Staff {
   id: string;
@@ -266,7 +267,13 @@ export function StaffListView() {
             )}
           </div>
           
-          <div className="col-span-1 flex items-center">
+          <div className="col-span-1 flex items-center justify-between">
+            <InlineWorkflowActions
+              itemId={member.id}
+              itemType="staff"
+              context="list"
+              itemData={member}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" data-testid={`button-actions-${member.id}`}>
@@ -338,16 +345,12 @@ export function StaffListView() {
             </div>
             
             <div className="flex justify-between items-center mt-4 pt-4 border-t">
-              <div className="flex space-x-1">
-                <Button variant="ghost" size="sm">
-                  <Mail className="h-4 w-4" />
-                </Button>
-                {member.phone && (
-                  <Button variant="ghost" size="sm">
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              <InlineWorkflowActions
+                itemId={member.id}
+                itemType="staff"
+                context="grid"
+                itemData={member}
+              />
               <Button variant="outline" size="sm">View Profile</Button>
             </div>
           </CardContent>
@@ -463,21 +466,26 @@ export function StaffListView() {
               </div>
             )}
             
-            <div className="flex justify-between items-center mt-6 pt-4 border-t">
-              <div className="flex space-x-2">
-                <Button variant="ghost" size="sm">
-                  <Mail className="h-4 w-4 mr-1" />
-                  Email
-                </Button>
-                {member.phone && (
+            <div className="mt-6 pt-4 border-t">
+              <InlineWorkflowActions
+                itemId={member.id}
+                itemType="staff"
+                context="card"
+                itemData={member}
+              />
+              <div className="flex justify-between items-center mt-3">
+                <div className="flex space-x-2">
                   <Button variant="ghost" size="sm">
-                    <Phone className="h-4 w-4 mr-1" />
-                    Call
+                    <Mail className="h-4 w-4 mr-1" />
+                    Email
                   </Button>
-                )}
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm">View Schedule</Button>
+                  {member.phone && (
+                    <Button variant="ghost" size="sm">
+                      <Phone className="h-4 w-4 mr-1" />
+                      Call
+                    </Button>
+                  )}
+                </div>
                 <Button size="sm">View Profile</Button>
               </div>
             </div>
