@@ -34,7 +34,7 @@ interface SmartSuggestion {
 }
 
 export function SmartSuggestions({ contextType = 'dashboard' }: { contextType?: 'dashboard' | 'participant' | 'staff' | 'workflow' }) {
-  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
 
   const { data: suggestions, isLoading } = useQuery({
     queryKey: ['/api/suggestions/smart', contextType],
@@ -150,11 +150,11 @@ export function SmartSuggestions({ contextType = 'dashboard' }: { contextType?: 
   ];
 
   const activeSuggestions = (suggestions || mockSuggestions).filter(
-    suggestion => !dismissedSuggestions.has(suggestion.id)
+    (suggestion: SmartSuggestion) => !dismissedSuggestions.includes(suggestion.id)
   );
 
   const dismissSuggestion = (suggestionId: string) => {
-    setDismissedSuggestions(prev => new Set([...prev, suggestionId]));
+    setDismissedSuggestions(prev => [...prev, suggestionId]);
   };
 
   const getImpactColor = (impact: string) => {
@@ -223,7 +223,7 @@ export function SmartSuggestions({ contextType = 'dashboard' }: { contextType?: 
       </div>
 
       <div className="space-y-4">
-        {activeSuggestions.slice(0, 5).map((suggestion) => (
+        {activeSuggestions.slice(0, 5).map((suggestion: SmartSuggestion) => (
           <Card key={suggestion.id} className="relative overflow-hidden border-l-4 border-l-yellow-400">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
@@ -284,7 +284,7 @@ export function SmartSuggestions({ contextType = 'dashboard' }: { contextType?: 
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Implementation Steps:</h4>
                     <div className="space-y-1">
-                      {suggestion.steps.slice(0, 3).map((step, index) => (
+                      {suggestion.steps.slice(0, 3).map((step: string, index: number) => (
                         <div key={index} className="flex items-start space-x-2 text-xs text-gray-600">
                           <span className="flex-shrink-0 w-4 h-4 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-xs font-medium">
                             {index + 1}
@@ -316,7 +316,7 @@ export function SmartSuggestions({ contextType = 'dashboard' }: { contextType?: 
                 <div className="mt-3 pt-3 border-t">
                   <div className="text-xs text-gray-500 mb-1">Related to:</div>
                   <div className="flex flex-wrap gap-1">
-                    {suggestion.relatedEntities.slice(0, 3).map((entity, index) => (
+                    {suggestion.relatedEntities.slice(0, 3).map((entity: string, index: number) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {entity}
                       </Badge>

@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatePicker } from '@/components/ui/date-picker';
+// import { DatePicker } from '@/components/ui/date-picker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface SearchFilter {
@@ -287,9 +287,11 @@ export function AdvancedSearch() {
                         </SelectContent>
                       </Select>
                     ) : filter.type === 'date' ? (
-                      <DatePicker
-                        date={filter.value}
-                        onDateChange={(date) => updateFilter(filter.id, date)}
+                      <Input
+                        type="date"
+                        value={filter.value}
+                        onChange={(e) => updateFilter(filter.id, e.target.value)}
+                        className="w-32 h-7"
                       />
                     ) : (
                       <Input
@@ -339,7 +341,7 @@ export function AdvancedSearch() {
                   <div
                     key={result.id}
                     className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => window.location.href = result.href}
+                    onClick={() => (window.location.href = result.href)}
                   >
                     <div className="flex items-start space-x-3">
                       <div className={`p-2 rounded-lg ${getTypeColor(result.type)}`}>
@@ -359,7 +361,7 @@ export function AdvancedSearch() {
                         
                         {/* Metadata */}
                         <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                          {Object.entries(result.metadata).slice(0, 3).map(([key, value]) => (
+                          {Object.entries(result.metadata).slice(0, 3).map(([key, value]: [string, string]) => (
                             <span key={key} className="bg-gray-100 px-2 py-1 rounded">
                               {key}: {value}
                             </span>

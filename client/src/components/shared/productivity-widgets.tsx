@@ -154,7 +154,7 @@ export function ProductivityWidgets({ layout = 'grid' }: { layout?: 'grid' | 'ho
       </div>
 
       <div className={layout === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'flex space-x-4 overflow-x-auto pb-2'}>
-        {widgets.map((widget) => (
+        {widgets.map((widget: ProductivityWidget) => (
           <Card 
             key={widget.id} 
             className={`hover:shadow-md transition-shadow ${layout === 'horizontal' ? 'min-w-[200px]' : ''}`}
