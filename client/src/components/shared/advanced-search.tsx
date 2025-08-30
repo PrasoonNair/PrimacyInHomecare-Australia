@@ -361,9 +361,9 @@ export function AdvancedSearch() {
                         
                         {/* Metadata */}
                         <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-                          {Object.entries(result.metadata).slice(0, 3).map(([key, value]: [string, string]) => (
+                          {Object.entries(result.metadata).slice(0, 3).map(([key, value]) => (
                             <span key={key} className="bg-gray-100 px-2 py-1 rounded">
-                              {key}: {value}
+                              {key}: {String(value)}
                             </span>
                           ))}
                           {result.lastModified && (
