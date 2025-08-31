@@ -28,6 +28,8 @@ import { ContractGenerator } from '@/components/hr/contract-generator';
 import { ContractNotifications, DepartmentNotificationSummary } from '@/components/hr/contract-notifications';
 import { ContractSigningDemo } from '@/components/hr/contract-signing-demo';
 import { ApplicantInvitationManager } from '@/components/hr/applicant-invitation-manager';
+import { DocumentVerificationSystem } from '@/components/verification/document-verification-system';
+import { DiscrepancyAlertDashboard } from '@/components/alerts/discrepancy-alert-dashboard';
 import { format } from "date-fns";
 
 // Form schemas
@@ -1335,6 +1337,10 @@ export default function HRRecruitment() {
           <ContractNotifications department="HR" />
           
           <ApplicantInvitationManager />
+          
+          <DocumentVerificationSystem />
+          
+          <DiscrepancyAlertDashboard />
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-4">

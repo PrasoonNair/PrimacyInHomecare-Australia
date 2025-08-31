@@ -2461,6 +2461,323 @@ export class DatabaseStorage implements IStorage {
     // Mock implementation - in production this would update database
     console.log(`Staff ${staffId} completed training module ${moduleId} with score ${score || 'N/A'}`);
   }
+
+  // Document Verification Methods
+  async getVerificationResults() {
+    // Mock implementation - in production this would query database
+    return [
+      {
+        id: 'VER001',
+        documentId: 'DOC001',
+        documentType: 'drivers_license',
+        applicantName: 'Sarah Johnson',
+        uploadedAt: '2025-01-03T10:00:00.000Z',
+        verificationStatus: 'discrepancy_found',
+        ocrConfidence: 92,
+        extractedData: {
+          full_name: 'Sarah M Johnson',
+          date_of_birth: '1990-05-15',
+          license_number: 'NSW123456789',
+          address: '123 Main St, Sydney NSW 2000',
+          expiry_date: '2027-05-15'
+        },
+        crossReferenceResults: [
+          {
+            department: 'HR',
+            field: 'full_name',
+            documentValue: 'Sarah M Johnson',
+            systemValue: 'Sarah Johnson',
+            match: false,
+            confidence: 85
+          },
+          {
+            department: 'HR',
+            field: 'date_of_birth',
+            documentValue: '1990-05-15',
+            systemValue: '1990-05-15',
+            match: true,
+            confidence: 100
+          },
+          {
+            department: 'Compliance',
+            field: 'license_number',
+            documentValue: 'NSW123456789',
+            systemValue: 'NSW123456790',
+            match: false,
+            confidence: 95
+          }
+        ],
+        discrepancies: [
+          {
+            field: 'full_name',
+            documentValue: 'Sarah M Johnson',
+            systemValue: 'Sarah Johnson',
+            severity: 'medium',
+            department: 'HR'
+          },
+          {
+            field: 'license_number',
+            documentValue: 'NSW123456789',
+            systemValue: 'NSW123456790',
+            severity: 'high',
+            department: 'Compliance'
+          }
+        ],
+        alertsGenerated: true
+      },
+      {
+        id: 'VER002',
+        documentId: 'DOC002',
+        documentType: 'ndis_screening',
+        applicantName: 'Michael Chen',
+        uploadedAt: '2025-01-03T11:30:00.000Z',
+        verificationStatus: 'verified',
+        ocrConfidence: 96,
+        extractedData: {
+          full_name: 'Michael Chen',
+          clearance_number: 'NDIS2024001234',
+          expiry_date: '2026-12-31',
+          status: 'Current'
+        },
+        crossReferenceResults: [
+          {
+            department: 'Compliance',
+            field: 'full_name',
+            documentValue: 'Michael Chen',
+            systemValue: 'Michael Chen',
+            match: true,
+            confidence: 100
+          },
+          {
+            department: 'Compliance',
+            field: 'clearance_number',
+            documentValue: 'NDIS2024001234',
+            systemValue: 'NDIS2024001234',
+            match: true,
+            confidence: 100
+          }
+        ],
+        discrepancies: [],
+        alertsGenerated: false
+      },
+      {
+        id: 'VER003',
+        documentId: 'DOC003',
+        documentType: 'qualification',
+        applicantName: 'Emma Davis',
+        uploadedAt: '2025-01-03T14:15:00.000Z',
+        verificationStatus: 'processing',
+        ocrConfidence: 88,
+        extractedData: {
+          qualification_name: 'Certificate IV in Disability Support',
+          institution: 'TAFE NSW',
+          completion_date: '2023-11-30',
+          student_name: 'Emma Davis'
+        },
+        crossReferenceResults: [],
+        discrepancies: [],
+        alertsGenerated: false
+      }
+    ];
+  }
+
+  async getRecentUploads() {
+    // Mock implementation - in production this would query database
+    return [
+      {
+        id: 'DOC001',
+        fileName: 'sarah_license.pdf',
+        fileType: 'application/pdf',
+        uploadedBy: 'HR Team',
+        uploadedAt: '2025-01-03T10:00:00.000Z',
+        size: 2048576,
+        verificationStatus: 'discrepancy_found'
+      },
+      {
+        id: 'DOC002',
+        fileName: 'michael_ndis_screening.pdf',
+        fileType: 'application/pdf',
+        uploadedBy: 'Compliance Team',
+        uploadedAt: '2025-01-03T11:30:00.000Z',
+        size: 1536000,
+        verificationStatus: 'verified'
+      },
+      {
+        id: 'DOC003',
+        fileName: 'emma_certificate.jpg',
+        fileType: 'image/jpeg',
+        uploadedBy: 'HR Team',
+        uploadedAt: '2025-01-03T14:15:00.000Z',
+        size: 3072000,
+        verificationStatus: 'processing'
+      }
+    ];
+  }
+
+  async processDocumentVerification(documentType: string) {
+    // Mock implementation - in production this would:
+    // 1. Upload file to secure storage
+    // 2. Process with OCR service (Google Vision, AWS Textract, etc.)
+    // 3. Extract structured data
+    // 4. Cross-reference with department databases
+    // 5. Generate alerts for discrepancies
+    
+    const verificationId = `VER${Date.now()}`;
+    console.log(`Processing document verification for type: ${documentType}, ID: ${verificationId}`);
+    
+    // Simulate processing time and generate mock result
+    setTimeout(() => {
+      console.log(`Verification ${verificationId} completed with OCR and cross-reference`);
+    }, 5000);
+    
+    return {
+      id: verificationId,
+      status: 'processing',
+      estimatedCompletion: new Date(Date.now() + 30000).toISOString()
+    };
+  }
+
+  async reprocessVerification(verificationId: string) {
+    // Mock implementation - in production this would restart the verification process
+    console.log(`Reprocessing verification ${verificationId}`);
+  }
+
+  async getDiscrepancyAlerts() {
+    // Mock implementation - in production this would query alerts database
+    return [
+      {
+        id: 'ALERT001',
+        verificationId: 'VER001',
+        applicantName: 'Sarah Johnson',
+        documentType: 'drivers_license',
+        department: 'Compliance',
+        severity: 'critical',
+        field: 'license_number',
+        documentValue: 'NSW123456789',
+        systemValue: 'NSW123456790',
+        message: 'Critical: Driver license number mismatch detected - may indicate document fraud',
+        createdAt: '2025-01-03T10:05:00.000Z',
+        resolved: false,
+        assignedTo: 'Compliance Manager',
+        autoGenerated: true
+      },
+      {
+        id: 'ALERT002',
+        verificationId: 'VER001',
+        applicantName: 'Sarah Johnson',
+        documentType: 'drivers_license',
+        department: 'HR',
+        severity: 'medium',
+        field: 'full_name',
+        documentValue: 'Sarah M Johnson',
+        systemValue: 'Sarah Johnson',
+        message: 'Name variation detected - middle initial present in document but not in system',
+        createdAt: '2025-01-03T10:05:00.000Z',
+        resolved: false,
+        assignedTo: 'HR Coordinator',
+        autoGenerated: true
+      },
+      {
+        id: 'ALERT003',
+        verificationId: 'VER004',
+        applicantName: 'James Wilson',
+        documentType: 'qualification',
+        department: 'HR',
+        severity: 'high',
+        field: 'qualification_level',
+        documentValue: 'Certificate III in Individual Support',
+        systemValue: 'Certificate IV in Disability Support',
+        message: 'Qualification level mismatch - lower level than required for position',
+        createdAt: '2025-01-03T15:20:00.000Z',
+        resolved: false,
+        assignedTo: 'HR Manager',
+        autoGenerated: true
+      },
+      {
+        id: 'ALERT004',
+        verificationId: 'VER005',
+        applicantName: 'Lisa Anderson',
+        documentType: 'ndis_screening',
+        department: 'Compliance',
+        severity: 'critical',
+        field: 'expiry_date',
+        documentValue: '2024-12-31',
+        systemValue: '2026-12-31',
+        message: 'CRITICAL: NDIS screening check has expired - immediate action required',
+        createdAt: '2025-01-03T16:45:00.000Z',
+        resolved: false,
+        assignedTo: 'Compliance Officer',
+        autoGenerated: true
+      },
+      {
+        id: 'ALERT005',
+        verificationId: 'VER002',
+        applicantName: 'Michael Chen',
+        documentType: 'ndis_screening',
+        department: 'Compliance',
+        severity: 'low',
+        field: 'address',
+        documentValue: '456 George St, Sydney NSW 2000',
+        systemValue: '456 George Street, Sydney NSW 2000',
+        message: 'Minor address format difference detected',
+        createdAt: '2025-01-02T11:35:00.000Z',
+        resolved: true,
+        assignedTo: 'Compliance Officer',
+        resolvedBy: 'Compliance Officer',
+        resolvedAt: '2025-01-02T14:20:00.000Z',
+        resolutionNotes: 'Verified as same address, just different formatting. Updated system record to match.',
+        autoGenerated: true
+      }
+    ];
+  }
+
+  async getDepartmentSummaries() {
+    // Mock implementation - in production this would calculate from alerts database
+    return [
+      {
+        department: 'HR',
+        totalAlerts: 15,
+        highPriority: 2,
+        unresolved: 8,
+        averageResolutionTime: 4.5,
+        lastActivity: '2025-01-03T15:20:00.000Z'
+      },
+      {
+        department: 'Compliance',
+        totalAlerts: 12,
+        highPriority: 3,
+        unresolved: 6,
+        averageResolutionTime: 2.8,
+        lastActivity: '2025-01-03T16:45:00.000Z'
+      },
+      {
+        department: 'Finance',
+        totalAlerts: 8,
+        highPriority: 1,
+        unresolved: 3,
+        averageResolutionTime: 6.2,
+        lastActivity: '2025-01-03T09:15:00.000Z'
+      },
+      {
+        department: 'Service Delivery',
+        totalAlerts: 5,
+        highPriority: 0,
+        unresolved: 2,
+        averageResolutionTime: 3.1,
+        lastActivity: '2025-01-03T11:30:00.000Z'
+      }
+    ];
+  }
+
+  async resolveDiscrepancyAlert(alertId: string, resolutionNotes: string) {
+    // Mock implementation - in production this would update alerts database
+    console.log(`Alert ${alertId} resolved with notes: ${resolutionNotes}`);
+  }
+
+  async assignDiscrepancyAlert(alertId: string, assignedTo: string) {
+    // Mock implementation - in production this would update alerts database
+    console.log(`Alert ${alertId} assigned to: ${assignedTo}`);
+  }
 }
 
 export const storage = new DatabaseStorage();

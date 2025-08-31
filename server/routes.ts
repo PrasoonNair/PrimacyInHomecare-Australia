@@ -1661,6 +1661,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Document Verification Endpoints
+  app.get("/api/verification/results", isAuthenticated, async (req, res) => {
+    try {
+      const results = await storage.getVerificationResults();
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching verification results:", error);
+      res.status(500).json({ error: "Failed to fetch verification results" });
+    }
+  });
+
+  app.get("/api/verification/uploads", isAuthenticated, async (req, res) => {
+    try {
+      const uploads = await storage.getRecentUploads();
+      res.json(uploads);
+    } catch (error) {
+      console.error("Error fetching uploads:", error);
+      res.status(500).json({ error: "Failed to fetch uploads" });
+    }
+  });
+
+  app.post("/api/verification/upload-document", isAuthenticated, async (req, res) => {
+    try {
+      // In production, this would handle file upload, OCR processing, and cross-referencing
+      const { documentType } = req.body;
+      
+      // Simulate document processing
+      const verificationResult = await storage.processDocumentVerification(documentType);
+      
+      res.json({ 
+        success: true, 
+        message: "Document uploaded and verification started",
+        verificationId: verificationResult.id
+      });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ error: "Failed to upload document" });
+    }
+  });
+
+  app.post("/api/verification/reprocess/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.reprocessVerification(req.params.id);
+      res.json({ success: true, message: "Verification reprocessing started" });
+    } catch (error) {
+      console.error("Error reprocessing verification:", error);
+      res.status(500).json({ error: "Failed to reprocess verification" });
+    }
+  });
+
+  // Department discrepancy alerts
+  app.get("/api/verification/discrepancy-alerts", isAuthenticated, async (req, res) => {
+    try {
+      const alerts = await storage.getDiscrepancyAlerts();
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching discrepancy alerts:", error);
+      res.status(500).json({ error: "Failed to fetch discrepancy alerts" });
+    }
+  });
+
+  app.get("/api/verification/department-summaries", isAuthenticated, async (req, res) => {
+    try {
+      const summaries = await storage.getDepartmentSummaries();
+      res.json(summaries);
+    } catch (error) {
+      console.error("Error fetching department summaries:", error);
+      res.status(500).json({ error: "Failed to fetch department summaries" });
+    }
+  });
+
+  app.post("/api/verification/resolve-alert/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { resolutionNotes } = req.body;
+      await storage.resolveDiscrepancyAlert(req.params.id, resolutionNotes);
+      res.json({ success: true, message: "Alert resolved successfully" });
+    } catch (error) {
+      console.error("Error resolving alert:", error);
+      res.status(500).json({ error: "Failed to resolve alert" });
+    }
+  });
+
+  app.post("/api/verification/assign-alert/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { assignedTo } = req.body;
+      await storage.assignDiscrepancyAlert(req.params.id, assignedTo);
+      res.json({ success: true, message: "Alert assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning alert:", error);
+      res.status(500).json({ error: "Failed to assign alert" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");
