@@ -19,6 +19,7 @@ import { NdisPlanUpload } from "@/components/ndis-plan-upload";
 import { KPIDashboard } from "@/components/kpi-dashboard";
 import ParticipantForm from "@/components/forms/participant-form";
 import { WorkflowTracker } from "@/components/workflow-tracker";
+import { ApplicationAutoImport } from '@/components/intake/application-auto-import';
 import { format } from "date-fns";
 
 export default function Intake() {
@@ -135,11 +136,12 @@ export default function Intake() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="kpis" data-testid="tab-kpis">
               <BarChart3 className="mr-2 h-4 w-4" />
               KPI Dashboard
             </TabsTrigger>
+            <TabsTrigger value="auto-import" data-testid="tab-auto-import">Website Import</TabsTrigger>
             <TabsTrigger value="plan-upload" data-testid="tab-plan-upload">NDIS Plan Upload</TabsTrigger>
             <TabsTrigger value="referrals" data-testid="tab-referrals">Referrals</TabsTrigger>
             <TabsTrigger value="agreements" data-testid="tab-agreements">Service Agreements</TabsTrigger>
@@ -167,6 +169,10 @@ export default function Intake() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="auto-import" className="space-y-6">
+            <ApplicationAutoImport />
           </TabsContent>
 
           <TabsContent value="plan-upload" className="space-y-6">

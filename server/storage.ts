@@ -2778,6 +2778,174 @@ export class DatabaseStorage implements IStorage {
     // Mock implementation - in production this would update alerts database
     console.log(`Alert ${alertId} assigned to: ${assignedTo}`);
   }
+
+  // Website Application Auto-Import Methods
+  async getWebsiteApplications() {
+    // Mock implementation - in production this would query applications database
+    return [
+      {
+        id: 'WEB001',
+        websiteSource: 'company-website.com.au',
+        applicantName: 'Emma Thompson',
+        email: 'emma.thompson@email.com',
+        phone: '+61 4 1234 5678',
+        position: 'Support Worker Level 2',
+        submittedAt: '2025-01-03T16:30:00.000Z',
+        status: 'pending_import',
+        documents: [
+          { name: 'resume.pdf', type: 'application/pdf', url: '/uploads/resume.pdf', size: 2048576 },
+          { name: 'cover_letter.pdf', type: 'application/pdf', url: '/uploads/cover.pdf', size: 1024768 }
+        ],
+        applicationData: {
+          experience: '2 years in disability support',
+          availability: 'Full-time',
+          transport: 'Own vehicle',
+          certifications: ['First Aid', 'Certificate III in Individual Support']
+        },
+        autoImported: false,
+        screeningStarted: false
+      },
+      {
+        id: 'WEB002',
+        websiteSource: 'seek.com.au',
+        applicantName: 'David Park',
+        email: 'david.park@email.com',
+        phone: '+61 4 2345 6789',
+        position: 'Team Coordinator',
+        submittedAt: '2025-01-03T14:45:00.000Z',
+        status: 'screening',
+        documents: [
+          { name: 'david_resume.pdf', type: 'application/pdf', url: '/uploads/david_resume.pdf', size: 3072000 },
+          { name: 'qualification.jpg', type: 'image/jpeg', url: '/uploads/qual.jpg', size: 1536000 },
+          { name: 'reference_letter.pdf', type: 'application/pdf', url: '/uploads/ref.pdf', size: 896000 }
+        ],
+        applicationData: {
+          experience: '5 years team leadership',
+          availability: 'Full-time',
+          transport: 'Own vehicle + public transport',
+          certifications: ['Certificate IV in Disability Support', 'Leadership Course']
+        },
+        autoImported: true,
+        screeningStarted: true
+      },
+      {
+        id: 'WEB003',
+        websiteSource: 'company-website.com.au',
+        applicantName: 'Sophie Martinez',
+        email: 'sophie.martinez@email.com',
+        phone: '+61 4 3456 7890',
+        position: 'Community Access Coordinator',
+        submittedAt: '2025-01-03T12:15:00.000Z',
+        status: 'processed',
+        documents: [
+          { name: 'sophie_cv.pdf', type: 'application/pdf', url: '/uploads/sophie_cv.pdf', size: 2560000 },
+          { name: 'community_work_portfolio.pdf', type: 'application/pdf', url: '/uploads/portfolio.pdf', size: 4096000 }
+        ],
+        applicationData: {
+          experience: '3 years community support',
+          availability: 'Part-time (20 hours)',
+          transport: 'Own vehicle',
+          certifications: ['Certificate IV in Community Services', 'Mental Health First Aid']
+        },
+        autoImported: true,
+        screeningStarted: true
+      },
+      {
+        id: 'WEB004',
+        websiteSource: 'linkedin.com',
+        applicantName: 'Mark Johnson',
+        email: 'mark.johnson@email.com',
+        phone: '+61 4 4567 8901',
+        position: 'Support Worker Level 1',
+        submittedAt: '2025-01-03T17:00:00.000Z',
+        status: 'pending_import',
+        documents: [
+          { name: 'mark_resume.docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', url: '/uploads/mark_resume.docx', size: 1792000 }
+        ],
+        applicationData: {
+          experience: 'New graduate - eager to learn',
+          availability: 'Part-time (15 hours)',
+          transport: 'Public transport',
+          certifications: ['Certificate III in Individual Support (studying)']
+        },
+        autoImported: false,
+        screeningStarted: false
+      }
+    ];
+  }
+
+  async getImportConfiguration() {
+    // Mock implementation - in production this would query configuration database
+    return {
+      enabled: true,
+      websiteUrls: [
+        'https://company-website.com.au/careers/apply',
+        'https://seek.com.au/job-applications',
+        'https://linkedin.com/jobs/applications'
+      ],
+      autoScreening: true,
+      notificationEmails: [
+        'hr@primacycare.com.au',
+        'recruitment@primacycare.com.au'
+      ],
+      filterCriteria: {
+        requiredFields: ['email', 'phone', 'experience'],
+        minimumDocuments: 1,
+        excludeKeywords: ['spam', 'test', 'demo']
+      }
+    };
+  }
+
+  async importWebsiteApplication(applicationId: string) {
+    // Mock implementation - in production this would:
+    // 1. Move application from website queue to main CMS
+    // 2. Create participant record
+    // 3. Download and store documents
+    // 4. Start screening process if auto-screening enabled
+    // 5. Send notifications to relevant teams
+    
+    console.log(`Importing website application ${applicationId}`);
+    
+    return {
+      id: applicationId,
+      imported: true,
+      screeningStarted: true,
+      notificationsSent: ['HR Team', 'Recruitment Manager']
+    };
+  }
+
+  async bulkImportApplications(applicationIds: string[]) {
+    // Mock implementation - in production this would process multiple applications
+    console.log(`Bulk importing ${applicationIds.length} applications`);
+    
+    return {
+      imported: applicationIds.length,
+      failed: 0,
+      details: applicationIds.map(id => ({ id, status: 'imported' }))
+    };
+  }
+
+  async updateImportConfiguration(config: any) {
+    // Mock implementation - in production this would update configuration database
+    console.log('Updating import configuration:', config);
+  }
+
+  async receiveWebsiteApplication(applicationData: any) {
+    // Mock implementation - in production this would:
+    // 1. Validate incoming application data
+    // 2. Store in website applications queue
+    // 3. If auto-import enabled, immediately process
+    // 4. Send confirmation email to applicant
+    
+    const applicationId = `WEB${Date.now()}`;
+    console.log(`Received new website application ${applicationId} from ${applicationData.websiteSource}`);
+    
+    return {
+      id: applicationId,
+      status: 'received',
+      autoImportScheduled: true
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

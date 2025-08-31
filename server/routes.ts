@@ -1754,6 +1754,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Website Application Auto-Import Endpoints
+  app.get("/api/intake/website-applications", isAuthenticated, async (req, res) => {
+    try {
+      const applications = await storage.getWebsiteApplications();
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching website applications:", error);
+      res.status(500).json({ error: "Failed to fetch website applications" });
+    }
+  });
+
+  app.get("/api/intake/import-config", isAuthenticated, async (req, res) => {
+    try {
+      const config = await storage.getImportConfiguration();
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching import config:", error);
+      res.status(500).json({ error: "Failed to fetch import configuration" });
+    }
+  });
+
+  app.post("/api/intake/import-application", isAuthenticated, async (req, res) => {
+    try {
+      const { applicationId } = req.body;
+      const result = await storage.importWebsiteApplication(applicationId);
+      res.json({ success: true, imported: result });
+    } catch (error) {
+      console.error("Error importing application:", error);
+      res.status(500).json({ error: "Failed to import application" });
+    }
+  });
+
+  app.post("/api/intake/bulk-import", isAuthenticated, async (req, res) => {
+    try {
+      const { applicationIds } = req.body;
+      const results = await storage.bulkImportApplications(applicationIds);
+      res.json({ success: true, imported: results.imported, failed: results.failed });
+    } catch (error) {
+      console.error("Error bulk importing applications:", error);
+      res.status(500).json({ error: "Failed to bulk import applications" });
+    }
+  });
+
+  app.post("/api/intake/update-import-config", isAuthenticated, async (req, res) => {
+    try {
+      const config = req.body;
+      await storage.updateImportConfiguration(config);
+      res.json({ success: true, message: "Configuration updated successfully" });
+    } catch (error) {
+      console.error("Error updating import config:", error);
+      res.status(500).json({ error: "Failed to update configuration" });
+    }
+  });
+
+  // Website plugin webhook endpoint (public - no auth required for external websites)
+  app.post("/api/intake/website-webhook", async (req, res) => {
+    try {
+      const applicationData = req.body;
+      const result = await storage.receiveWebsiteApplication(applicationData);
+      res.json({ success: true, applicationId: result.id });
+    } catch (error) {
+      console.error("Error receiving website application:", error);
+      res.status(500).json({ error: "Failed to receive application" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");
