@@ -1491,6 +1491,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Applicant Portal Endpoints
+  app.post("/api/applicant-portal/login", async (req, res) => {
+    try {
+      const { applicantId, accessCode } = req.body;
+      
+      // Verify applicant credentials
+      const applicant = await storage.verifyApplicantCredentials(applicantId, accessCode);
+      if (!applicant) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+      
+      res.json({ success: true, applicant });
+    } catch (error) {
+      console.error("Error logging in applicant:", error);
+      res.status(500).json({ error: "Failed to log in" });
+    }
+  });
+
+  app.get("/api/applicant-portal/application/:id", async (req, res) => {
+    try {
+      const application = await storage.getApplicantApplication(req.params.id);
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+      res.json(application);
+    } catch (error) {
+      console.error("Error fetching application:", error);
+      res.status(500).json({ error: "Failed to fetch application" });
+    }
+  });
+
+  app.post("/api/applicant-portal/upload-document", async (req, res) => {
+    try {
+      // In a real implementation, this would handle file upload to storage
+      const { applicantId } = req.body;
+      
+      // Mock document upload processing
+      await storage.addApplicantDocument(applicantId, 'uploaded-document.pdf');
+      
+      res.json({ success: true, message: "Document uploaded successfully" });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ error: "Failed to upload document" });
+    }
+  });
+
+  app.post("/api/applicant-portal/add-referee", async (req, res) => {
+    try {
+      const { applicantId, name, relationship, phone, email } = req.body;
+      
+      await storage.addApplicantReferee(applicantId, {
+        name, relationship, phone, email
+      });
+      
+      res.json({ success: true, message: "Referee added successfully" });
+    } catch (error) {
+      console.error("Error adding referee:", error);
+      res.status(500).json({ error: "Failed to add referee" });
+    }
+  });
+
+  app.post("/api/applicant-portal/sign-contract", async (req, res) => {
+    try {
+      const { applicantId, signedAt, ipAddress } = req.body;
+      
+      await storage.signApplicantContract(applicantId, {
+        signedAt, ipAddress
+      });
+      
+      // Trigger contract signed workflow
+      const { ContractService } = await import("./contractService");
+      const contractService = new ContractService();
+      await contractService.handleContractSigned(`contract_${applicantId}`, req.body);
+      
+      res.json({ success: true, message: "Contract signed successfully" });
+    } catch (error) {
+      console.error("Error signing contract:", error);
+      res.status(500).json({ error: "Failed to sign contract" });
+    }
+  });
+
+  app.post("/api/applicant-portal/send-invitation", isAuthenticated, async (req, res) => {
+    try {
+      const { applicantId, email } = req.body;
+      
+      // Generate access code and send invitation
+      const accessCode = Math.random().toString(36).substring(2, 15);
+      await storage.sendApplicantInvitation(applicantId, email, accessCode);
+      
+      res.json({ success: true, message: "Invitation sent successfully" });
+    } catch (error) {
+      console.error("Error sending invitation:", error);
+      res.status(500).json({ error: "Failed to send invitation" });
+    }
+  });
+
+  app.patch("/api/applicant-portal/deactivate/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deactivateApplicantAccess(req.params.id);
+      res.json({ success: true, message: "Applicant access deactivated" });
+    } catch (error) {
+      console.error("Error deactivating applicant:", error);
+      res.status(500).json({ error: "Failed to deactivate applicant" });
+    }
+  });
+
+  // Get shortlisted applicants for portal management
+  app.get("/api/recruitment/shortlisted-applicants", isAuthenticated, async (req, res) => {
+    try {
+      const applicants = await storage.getShortlistedApplicants();
+      res.json(applicants);
+    } catch (error) {
+      console.error("Error fetching shortlisted applicants:", error);
+      res.status(500).json({ error: "Failed to fetch shortlisted applicants" });
+    }
+  });
+
+  // Training Module Endpoints
+  app.get("/api/training/modules", async (req, res) => {
+    try {
+      const modules = await storage.getTrainingModules();
+      res.json(modules);
+    } catch (error) {
+      console.error("Error fetching training modules:", error);
+      res.status(500).json({ error: "Failed to fetch training modules" });
+    }
+  });
+
+  app.get("/api/training/progress/:staffId", async (req, res) => {
+    try {
+      const progress = await storage.getTrainingProgress(req.params.staffId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching training progress:", error);
+      res.status(500).json({ error: "Failed to fetch training progress" });
+    }
+  });
+
+  app.get("/api/training/pathways", async (req, res) => {
+    try {
+      const pathways = await storage.getTrainingPathways();
+      res.json(pathways);
+    } catch (error) {
+      console.error("Error fetching training pathways:", error);
+      res.status(500).json({ error: "Failed to fetch training pathways" });
+    }
+  });
+
+  app.post("/api/training/start-module", async (req, res) => {
+    try {
+      const { moduleId, staffId } = req.body;
+      await storage.startTrainingModule(staffId, moduleId);
+      res.json({ success: true, message: "Module started successfully" });
+    } catch (error) {
+      console.error("Error starting training module:", error);
+      res.status(500).json({ error: "Failed to start training module" });
+    }
+  });
+
+  app.post("/api/training/complete-module", async (req, res) => {
+    try {
+      const { moduleId, staffId, score } = req.body;
+      await storage.completeTrainingModule(staffId, moduleId, score);
+      res.json({ success: true, message: "Module completed successfully" });
+    } catch (error) {
+      console.error("Error completing training module:", error);
+      res.status(500).json({ error: "Failed to complete training module" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

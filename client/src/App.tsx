@@ -52,6 +52,7 @@ import { WidgetEmbedPage } from "@/pages/widget-embed-page";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import ParticipantDirectoryPage from "@/pages/participant-directory";
 import StaffDirectoryPage from "@/pages/staff-directory";
+import ApplicantPortal from "@/pages/applicant-portal";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   // Enable keyboard shortcuts throughout the app
@@ -138,6 +139,7 @@ function Router() {
             <Route path="/role-dashboards/quality-manager" component={QualityManagerDashboard} />
             <Route path="/role-dashboards/support-worker" component={SupportWorkerDashboard} />
             <Route path="/privacy" component={PrivacyPolicy} />
+            <Route path="/applicant-portal" component={ApplicantPortal} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>

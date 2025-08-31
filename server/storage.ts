@@ -2142,6 +2142,325 @@ export class DatabaseStorage implements IStorage {
     // Mock implementation - in production this would update the notification in database
     console.log(`Notification ${notificationId} marked as read`);
   }
+
+  // Applicant Portal Methods
+  async verifyApplicantCredentials(applicantId: string, accessCode: string) {
+    // Mock implementation - in production this would verify against database
+    const mockApplicants = [
+      {
+        id: 'APP001',
+        accessCode: 'temp123',
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@email.com',
+        position: 'Support Worker Level 2',
+        status: 'shortlisted'
+      },
+      {
+        id: 'APP002', 
+        accessCode: 'temp456',
+        name: 'Michael Chen',
+        email: 'michael.chen@email.com',
+        position: 'Team Coordinator',
+        status: 'contract_pending'
+      }
+    ];
+
+    return mockApplicants.find(a => a.id === applicantId && a.accessCode === accessCode);
+  }
+
+  async getApplicantApplication(applicantId: string) {
+    // Mock implementation - in production this would query database
+    const mockApplications: Record<string, any> = {
+      'APP001': {
+        id: 'APP001',
+        applicantName: 'Sarah Johnson',
+        email: 'sarah.johnson@email.com',
+        phone: '0400 123 456',
+        position: 'Support Worker Level 2',
+        status: 'documents_pending',
+        invitationSent: true,
+        documentsUploaded: ['Resume/CV', 'NDIS Worker Screening Check'],
+        interviewDate: null,
+        contractSigned: false,
+        trainingProgress: 0,
+        referees: []
+      },
+      'APP002': {
+        id: 'APP002',
+        applicantName: 'Michael Chen',
+        email: 'michael.chen@email.com',
+        phone: '0400 789 012',
+        position: 'Team Coordinator',
+        status: 'contract_pending',
+        invitationSent: true,
+        documentsUploaded: ['Resume/CV', 'Cover Letter', 'Qualifications/Certificates', 'NDIS Worker Screening Check'],
+        interviewDate: '2025-01-05T10:00:00.000Z',
+        contractSigned: false,
+        trainingProgress: 0,
+        referees: [
+          {
+            name: 'Jennifer Smith',
+            relationship: 'Previous Manager',
+            phone: '0400 555 111',
+            email: 'j.smith@company.com',
+            contacted: true
+          },
+          {
+            name: 'David Wilson',
+            relationship: 'Team Leader',
+            phone: '0400 555 222', 
+            email: 'd.wilson@company.com',
+            contacted: false
+          }
+        ]
+      }
+    };
+
+    return mockApplications[applicantId];
+  }
+
+  async addApplicantDocument(applicantId: string, documentName: string) {
+    // Mock implementation - in production this would update database
+    console.log(`Document ${documentName} added for applicant ${applicantId}`);
+  }
+
+  async addApplicantReferee(applicantId: string, refereeData: any) {
+    // Mock implementation - in production this would update database
+    console.log(`Referee ${refereeData.name} added for applicant ${applicantId}`);
+  }
+
+  async signApplicantContract(applicantId: string, signatureData: any) {
+    // Mock implementation - in production this would update database
+    console.log(`Contract signed by applicant ${applicantId}`, signatureData);
+  }
+
+  async sendApplicantInvitation(applicantId: string, email: string, accessCode: string) {
+    // Mock implementation - in production this would send email
+    console.log(`Invitation sent to ${email} for applicant ${applicantId} with code ${accessCode}`);
+    
+    // In a real implementation, this would:
+    // 1. Generate secure access code
+    // 2. Send email with portal link and credentials
+    // 3. Set invitation expiry date
+    // 4. Log invitation activity
+  }
+
+  async deactivateApplicantAccess(applicantId: string) {
+    // Mock implementation - in production this would update database
+    console.log(`Access deactivated for applicant ${applicantId}`);
+  }
+
+  async getShortlistedApplicants() {
+    // Mock implementation - in production this would query database
+    return [
+      {
+        id: 'APP001',
+        name: 'Sarah Johnson',
+        email: 'sarah.johnson@email.com',
+        position: 'Support Worker Level 2',
+        applicationDate: '2025-01-01T00:00:00.000Z',
+        invitationSent: true,
+        portalAccess: true,
+        lastLogin: '2025-01-02T10:30:00.000Z',
+        status: 'documents_pending'
+      },
+      {
+        id: 'APP002',
+        name: 'Michael Chen',
+        email: 'michael.chen@email.com',
+        position: 'Team Coordinator',
+        applicationDate: '2025-01-01T00:00:00.000Z',
+        invitationSent: true,
+        portalAccess: true,
+        lastLogin: '2025-01-03T14:20:00.000Z',
+        status: 'contract_pending'
+      },
+      {
+        id: 'APP003',
+        name: 'Emma Davis',
+        email: 'emma.davis@email.com',
+        position: 'Support Worker Level 1',
+        applicationDate: '2025-01-02T00:00:00.000Z',
+        invitationSent: false,
+        portalAccess: false,
+        status: 'shortlisted'
+      },
+      {
+        id: 'APP004',
+        name: 'James Wilson',
+        email: 'james.wilson@email.com',
+        position: 'Community Access Coordinator',
+        applicationDate: '2025-01-02T00:00:00.000Z',
+        invitationSent: true,
+        portalAccess: true,
+        status: 'interview_scheduled'
+      },
+      {
+        id: 'APP005',
+        name: 'Lisa Anderson',
+        email: 'lisa.anderson@email.com',
+        position: 'Behaviour Support Practitioner',
+        applicationDate: '2025-01-03T00:00:00.000Z',
+        invitationSent: false,
+        portalAccess: false,
+        status: 'shortlisted'
+      }
+    ];
+  }
+
+  // Training Module Methods
+  async getTrainingModules() {
+    // Mock implementation - in production this would query database
+    return [
+      {
+        id: 'TM001',
+        title: 'NDIS Introduction and Overview',
+        description: 'Comprehensive introduction to the National Disability Insurance Scheme, its principles, and core values.',
+        type: 'video',
+        duration: 45,
+        mandatory: true,
+        category: 'onboarding',
+        prerequisites: [],
+        completionRate: 95,
+        dueDate: '2025-01-10T00:00:00.000Z'
+      },
+      {
+        id: 'TM002',
+        title: 'Person-Centered Support Approaches',
+        description: 'Learn how to provide person-centered support that respects individual choice and control.',
+        type: 'interactive',
+        duration: 60,
+        mandatory: true,
+        category: 'ndis_compliance',
+        prerequisites: ['TM001'],
+        completionRate: 88
+      },
+      {
+        id: 'TM003',
+        title: 'Risk Assessment and Management',
+        description: 'Understanding risk assessment processes and developing effective risk management strategies.',
+        type: 'assessment',
+        duration: 30,
+        mandatory: true,
+        category: 'safety',
+        prerequisites: ['TM001'],
+        completionRate: 76
+      },
+      {
+        id: 'TM004',
+        title: 'Documentation and Reporting',
+        description: 'Best practices for documentation, incident reporting, and maintaining accurate records.',
+        type: 'document',
+        duration: 25,
+        mandatory: true,
+        category: 'ndis_compliance',
+        prerequisites: ['TM001', 'TM002'],
+        completionRate: 82
+      },
+      {
+        id: 'TM005',
+        title: 'Emergency Procedures',
+        description: 'Essential emergency response procedures and safety protocols for NDIS service delivery.',
+        type: 'video',
+        duration: 35,
+        mandatory: true,
+        category: 'safety',
+        prerequisites: [],
+        completionRate: 91,
+        dueDate: '2025-01-15T00:00:00.000Z'
+      },
+      {
+        id: 'TM006',
+        title: 'Cultural Competency in Disability Support',
+        description: 'Understanding cultural diversity and providing culturally appropriate support services.',
+        type: 'interactive',
+        duration: 50,
+        mandatory: false,
+        category: 'professional_development',
+        prerequisites: ['TM002'],
+        completionRate: 65
+      }
+    ];
+  }
+
+  async getTrainingProgress(staffId: string) {
+    // Mock implementation - in production this would query database
+    const progressData: Record<string, any[]> = {
+      'APP001': [
+        { moduleId: 'TM001', status: 'completed', progress: 100, completedAt: '2025-01-02T10:00:00.000Z', score: 95, timeSpent: 47 },
+        { moduleId: 'TM002', status: 'in_progress', progress: 60, timeSpent: 30 },
+        { moduleId: 'TM003', status: 'not_started', progress: 0, timeSpent: 0 },
+        { moduleId: 'TM005', status: 'not_started', progress: 0, timeSpent: 0 }
+      ],
+      'APP002': [
+        { moduleId: 'TM001', status: 'completed', progress: 100, completedAt: '2025-01-01T15:00:00.000Z', score: 88, timeSpent: 45 },
+        { moduleId: 'TM002', status: 'completed', progress: 100, completedAt: '2025-01-02T09:00:00.000Z', score: 92, timeSpent: 58 },
+        { moduleId: 'TM003', status: 'completed', progress: 100, completedAt: '2025-01-02T14:00:00.000Z', score: 85, timeSpent: 32 },
+        { moduleId: 'TM004', status: 'in_progress', progress: 40, timeSpent: 15 }
+      ],
+      'current': [
+        { moduleId: 'TM001', status: 'completed', progress: 100, completedAt: '2025-01-01T10:00:00.000Z', score: 92, timeSpent: 48 },
+        { moduleId: 'TM002', status: 'completed', progress: 100, completedAt: '2025-01-01T16:00:00.000Z', score: 89, timeSpent: 62 },
+        { moduleId: 'TM003', status: 'in_progress', progress: 75, timeSpent: 25 },
+        { moduleId: 'TM004', status: 'not_started', progress: 0, timeSpent: 0 },
+        { moduleId: 'TM005', status: 'completed', progress: 100, completedAt: '2025-01-02T08:00:00.000Z', score: 96, timeSpent: 38 }
+      ]
+    };
+
+    return progressData[staffId] || [];
+  }
+
+  async getTrainingPathways() {
+    // Mock implementation - in production this would query database
+    return [
+      {
+        id: 'TP001',
+        name: 'New Staff Onboarding',
+        description: 'Essential training for all new NDIS support workers covering compliance, safety, and best practices.',
+        modules: ['TM001', 'TM002', 'TM003', 'TM004', 'TM005'],
+        estimatedDuration: 195,
+        category: 'onboarding',
+        mandatory: true
+      },
+      {
+        id: 'TP002',
+        name: 'NDIS Compliance Specialist',
+        description: 'Advanced compliance training for senior staff and team leaders.',
+        modules: ['TM001', 'TM002', 'TM004'],
+        estimatedDuration: 130,
+        category: 'ndis_compliance',
+        mandatory: false
+      },
+      {
+        id: 'TP003',
+        name: 'Safety and Risk Management',
+        description: 'Comprehensive safety training focusing on risk assessment and emergency procedures.',
+        modules: ['TM003', 'TM005'],
+        estimatedDuration: 65,
+        category: 'safety',
+        mandatory: true
+      },
+      {
+        id: 'TP004',
+        name: 'Professional Development Track',
+        description: 'Ongoing professional development for experienced support workers.',
+        modules: ['TM006'],
+        estimatedDuration: 50,
+        category: 'professional_development',
+        mandatory: false
+      }
+    ];
+  }
+
+  async startTrainingModule(staffId: string, moduleId: string) {
+    // Mock implementation - in production this would update database
+    console.log(`Staff ${staffId} started training module ${moduleId}`);
+  }
+
+  async completeTrainingModule(staffId: string, moduleId: string, score?: number) {
+    // Mock implementation - in production this would update database
+    console.log(`Staff ${staffId} completed training module ${moduleId} with score ${score || 'N/A'}`);
+  }
 }
 
 export const storage = new DatabaseStorage();

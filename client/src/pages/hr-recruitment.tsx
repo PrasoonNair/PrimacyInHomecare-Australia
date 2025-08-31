@@ -27,6 +27,7 @@ import {
 import { ContractGenerator } from '@/components/hr/contract-generator';
 import { ContractNotifications, DepartmentNotificationSummary } from '@/components/hr/contract-notifications';
 import { ContractSigningDemo } from '@/components/hr/contract-signing-demo';
+import { ApplicantInvitationManager } from '@/components/hr/applicant-invitation-manager';
 import { format } from "date-fns";
 
 // Form schemas
@@ -1332,6 +1333,8 @@ export default function HRRecruitment() {
           </div>
           
           <ContractNotifications department="HR" />
+          
+          <ApplicantInvitationManager />
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-4">
