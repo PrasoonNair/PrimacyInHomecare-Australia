@@ -25,6 +25,7 @@ import NotFound from "@/pages/not-found";
 import Automation from "@/pages/automation";
 import WorkflowManagement from "@/pages/workflow-management";
 import Recruitment from "@/pages/recruitment";
+import ApplicantPortal from "@/pages/applicant-portal";
 import PlanReader from "@/pages/plan-reader";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TestLogin from "@/pages/test-login";
@@ -52,7 +53,6 @@ import { WidgetEmbedPage } from "@/pages/widget-embed-page";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import ParticipantDirectoryPage from "@/pages/participant-directory";
 import StaffDirectoryPage from "@/pages/staff-directory";
-import ApplicantPortal from "@/pages/applicant-portal";
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   // Enable keyboard shortcuts throughout the app

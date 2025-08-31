@@ -1820,6 +1820,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Candidate Invitation System Endpoints
+  app.get("/api/recruitment/shortlisted-candidates", isAuthenticated, async (req, res) => {
+    try {
+      const candidates = await storage.getShortlistedCandidates();
+      res.json(candidates);
+    } catch (error) {
+      console.error("Error fetching shortlisted candidates:", error);
+      res.status(500).json({ error: "Failed to fetch candidates" });
+    }
+  });
+
+  app.get("/api/recruitment/invitation-templates", isAuthenticated, async (req, res) => {
+    try {
+      const templates = await storage.getInvitationTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching invitation templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  app.post("/api/recruitment/send-invitations", isAuthenticated, async (req, res) => {
+    try {
+      const { candidateIds, channels, templateId, customMessage, scheduledSend, sendDateTime } = req.body;
+      const result = await storage.sendCandidateInvitations({
+        candidateIds,
+        channels,
+        templateId,
+        customMessage,
+        scheduledSend,
+        sendDateTime
+      });
+      res.json({ success: true, sent: result.sent, channels: result.channels });
+    } catch (error) {
+      console.error("Error sending invitations:", error);
+      res.status(500).json({ error: "Failed to send invitations" });
+    }
+  });
+
+  app.post("/api/recruitment/generate-portal-link", isAuthenticated, async (req, res) => {
+    try {
+      const { candidateId } = req.body;
+      const result = await storage.generateSecurePortalLink(candidateId);
+      res.json({ success: true, portalUrl: result.portalUrl, expiresAt: result.expiresAt });
+    } catch (error) {
+      console.error("Error generating portal link:", error);
+      res.status(500).json({ error: "Failed to generate portal link" });
+    }
+  });
+
+  // Applicant Portal Endpoints (public access with token validation)
+  app.post("/api/applicant-portal/authenticate", async (req, res) => {
+    try {
+      const { token } = req.body;
+      const result = await storage.authenticatePortalAccess(token);
+      res.json({ success: true, authenticated: result.valid });
+    } catch (error) {
+      console.error("Error authenticating portal access:", error);
+      res.status(401).json({ error: "Invalid or expired token" });
+    }
+  });
+
+  app.get("/api/applicant-portal/data", async (req, res) => {
+    try {
+      const { token } = req.query;
+      const portalData = await storage.getApplicantPortalData(token as string);
+      res.json(portalData);
+    } catch (error) {
+      console.error("Error fetching portal data:", error);
+      res.status(401).json({ error: "Invalid or expired token" });
+    }
+  });
+
+  app.post("/api/applicant-portal/upload-document", async (req, res) => {
+    try {
+      // Note: In production, this would handle file uploads to cloud storage
+      const result = await storage.uploadApplicantDocument(req.body);
+      res.json({ success: true, documentId: result.documentId });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ error: "Failed to upload document" });
+    }
+  });
+
+  app.post("/api/applicant-portal/complete-requirement", async (req, res) => {
+    try {
+      const { token, requirementId } = req.body;
+      const result = await storage.completePortalRequirement(token, requirementId);
+      res.json({ success: true, completed: result.completed });
+    } catch (error) {
+      console.error("Error completing requirement:", error);
+      res.status(500).json({ error: "Failed to complete requirement" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

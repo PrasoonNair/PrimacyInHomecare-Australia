@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { CandidateInvitationSystem } from '@/components/recruitment/candidate-invitation-system';
 
 interface KanbanColumn {
   id: string;
@@ -202,6 +203,7 @@ export default function RecruitmentPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
             <TabsTrigger value="pipeline">Recruitment Pipeline</TabsTrigger>
+            <TabsTrigger value="invitations">Candidate Invitations</TabsTrigger>
             <TabsTrigger value="jobs">Job Requisitions</TabsTrigger>
             <TabsTrigger value="candidates">Candidate Pool</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -281,6 +283,11 @@ export default function RecruitmentPage() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Candidate Invitations System */}
+          <TabsContent value="invitations">
+            <CandidateInvitationSystem />
           </TabsContent>
 
           {/* Job Requisitions Management */}

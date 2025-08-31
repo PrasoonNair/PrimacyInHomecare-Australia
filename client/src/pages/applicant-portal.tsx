@@ -3,873 +3,474 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  User, 
+  Shield, 
+  FileText, 
   Upload, 
   CheckCircle, 
   Clock, 
-  FileText, 
-  Eye,
-  Download,
-  Users,
-  GraduationCap,
-  Shield,
-  Calendar,
-  Phone,
+  AlertCircle,
+  User,
   Mail,
-  MapPin,
-  AlertCircle
+  Phone,
+  Calendar,
+  Building,
+  Download,
+  Eye,
+  Lock,
+  Camera,
+  Fingerprint
 } from 'lucide-react';
-import { StaffTrainingModules } from '@/components/staff/training-modules';
 
-interface ApplicantApplication {
-  id: string;
-  applicantName: string;
-  email: string;
-  phone: string;
-  position: string;
-  status: 'shortlisted' | 'documents_pending' | 'interview_scheduled' | 'references_pending' | 'contract_pending' | 'hired' | 'rejected';
-  invitationSent: boolean;
-  documentsUploaded: string[];
-  interviewDate?: string;
-  contractSigned: boolean;
-  trainingProgress: number;
-  referees: Array<{
+interface ApplicantPortalData {
+  candidate: {
+    id: string;
     name: string;
-    relationship: string;
-    phone: string;
     email: string;
-    contacted: boolean;
+    phone: string;
+    position: string;
+    applicationId: string;
+    status: string;
+    invitedAt: string;
+    portalExpiresAt: string;
+  };
+  requirements: Array<{
+    id: string;
+    title: string;
+    description: string;
+    type: 'document' | 'form' | 'verification' | 'assessment';
+    required: boolean;
+    completed: boolean;
+    dueDate?: string;
+    instructions: string;
+  }>;
+  documents: Array<{
+    id: string;
+    name: string;
+    type: string;
+    uploadedAt: string;
+    status: 'pending' | 'verified' | 'rejected';
+    notes?: string;
+  }>;
+  nextSteps: Array<{
+    id: string;
+    title: string;
+    description: string;
+    scheduledDate?: string;
+    status: 'pending' | 'scheduled' | 'completed';
   }>;
 }
 
 export default function ApplicantPortal() {
-  const [applicantId, setApplicantId] = useState<string>('');
-  const [accessCode, setAccessCode] = useState<string>('');
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [token, setToken] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingDocument, setUploadingDocument] = useState(false);
   const { toast } = useToast();
 
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async ({ applicantId, accessCode }: { applicantId: string; accessCode: string }) => {
-      return apiRequest('/api/applicant-portal/login', {
+  // Get token from URL on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    if (urlToken) {
+      setToken(urlToken);
+      authenticatePortalMutation.mutate(urlToken);
+    }
+  }, []);
+
+  // Authenticate portal access
+  const authenticatePortalMutation = useMutation({
+    mutationFn: (token: string) =>
+      apiRequest('/api/applicant-portal/authenticate', {
         method: 'POST',
-        body: JSON.stringify({ applicantId, accessCode })
-      });
-    },
-    onSuccess: (data) => {
-      setIsLoggedIn(true);
-      localStorage.setItem('applicant_session', JSON.stringify({ applicantId, accessCode }));
-      toast({
-        title: "Welcome to Primacy Care Australia",
-        description: "Access granted to your application portal.",
-      });
+        body: JSON.stringify({ token })
+      }),
+    onSuccess: () => {
+      setIsAuthenticated(true);
+      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/data'] });
     },
     onError: () => {
       toast({
         title: "Access Denied",
-        description: "Invalid application ID or access code.",
+        description: "Invalid or expired portal link. Please contact HR for assistance.",
         variant: "destructive"
       });
     }
   });
 
-  // Check for existing session
-  useEffect(() => {
-    const session = localStorage.getItem('applicant_session');
-    if (session) {
-      const { applicantId: savedId, accessCode: savedCode } = JSON.parse(session);
-      setApplicantId(savedId);
-      setAccessCode(savedCode);
-      setIsLoggedIn(true);
-    }
-  }, []);
-
-  // Fetch application data
-  const { data: application } = useQuery<ApplicantApplication>({
-    queryKey: ['/api/applicant-portal/application', applicantId],
-    queryFn: () => apiRequest(`/api/applicant-portal/application/${applicantId}`),
-    enabled: isLoggedIn && !!applicantId
+  // Fetch portal data
+  const { data: portalData } = useQuery<ApplicantPortalData>({
+    queryKey: ['/api/applicant-portal/data', token],
+    queryFn: () => apiRequest(`/api/applicant-portal/data?token=${token}`),
+    enabled: isAuthenticated && !!token
   });
 
-  // Document upload mutation
+  // Upload document mutation
   const uploadDocumentMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      return apiRequest('/api/applicant-portal/upload-document', {
+      formData.append('token', token);
+      const response = await fetch('/api/applicant-portal/upload-document', {
         method: 'POST',
         body: formData
       });
+      if (!response.ok) throw new Error('Upload failed');
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/application'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/data'] });
+      setSelectedFile(null);
+      setUploadingDocument(false);
       toast({
         title: "Document Uploaded",
-        description: "Your document has been successfully uploaded.",
+        description: "Your document has been uploaded successfully and is being reviewed.",
       });
     }
   });
 
-  // Add referee mutation
-  const addRefereeMutation = useMutation({
-    mutationFn: async (refereeData: any) => {
-      return apiRequest('/api/applicant-portal/add-referee', {
+  // Complete requirement mutation
+  const completeRequirementMutation = useMutation({
+    mutationFn: (requirementId: string) =>
+      apiRequest('/api/applicant-portal/complete-requirement', {
         method: 'POST',
-        body: JSON.stringify({ applicantId, ...refereeData })
-      });
-    },
+        body: JSON.stringify({ token, requirementId })
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/application'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/data'] });
       toast({
-        title: "Referee Added",
-        description: "Your referee has been added successfully.",
+        title: "Requirement Completed",
+        description: "Thank you for completing this requirement.",
       });
     }
   });
 
-  // Sign contract mutation
-  const signContractMutation = useMutation({
-    mutationFn: async (signatureData: any) => {
-      return apiRequest('/api/applicant-portal/sign-contract', {
-        method: 'POST',
-        body: JSON.stringify({ applicantId, ...signatureData })
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/applicant-portal/application'] });
-      toast({
-        title: "Contract Signed",
-        description: "Your employment contract has been signed successfully!",
-      });
-    }
-  });
-
-  const handleLogin = () => {
-    if (!applicantId || !accessCode) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter both Application ID and Access Code.",
-        variant: "destructive"
-      });
-      return;
-    }
-    loginMutation.mutate({ applicantId, accessCode });
+  const handleFileUpload = (requirementId: string) => {
+    if (!selectedFile) return;
+    
+    setUploadingDocument(true);
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('requirementId', requirementId);
+    
+    uploadDocumentMutation.mutate(formData);
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setApplicantId('');
-    setAccessCode('');
-    localStorage.removeItem('applicant_session');
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully.",
-    });
+  const getRequirementIcon = (type: string) => {
+    switch (type) {
+      case 'document': return <FileText className="h-4 w-4" />;
+      case 'form': return <User className="h-4 w-4" />;
+      case 'verification': return <Shield className="h-4 w-4" />;
+      case 'assessment': return <Eye className="h-4 w-4" />;
+      default: return <CheckCircle className="h-4 w-4" />;
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'shortlisted': return 'bg-blue-100 text-blue-800';
-      case 'documents_pending': return 'bg-yellow-100 text-yellow-800';
-      case 'interview_scheduled': return 'bg-purple-100 text-purple-800';
-      case 'references_pending': return 'bg-orange-100 text-orange-800';
-      case 'contract_pending': return 'bg-green-100 text-green-800';
-      case 'hired': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'verified': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getProgressPercentage = (status: string) => {
-    switch (status) {
-      case 'shortlisted': return 20;
-      case 'documents_pending': return 40;
-      case 'interview_scheduled': return 60;
-      case 'references_pending': return 80;
-      case 'contract_pending': return 90;
-      case 'hired': return 100;
-      default: return 0;
-    }
+  const calculateProgress = () => {
+    if (!portalData?.requirements.length) return 0;
+    const completed = portalData.requirements.filter(req => req.completed).length;
+    return Math.round((completed / portalData.requirements.length) * 100);
   };
 
-  if (!isLoggedIn) {
+  if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Applicant Portal
-            </CardTitle>
-            <p className="text-gray-600">Primacy Care Australia</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="applicantId">Application ID</Label>
-              <Input
-                id="applicantId"
-                type="text"
-                placeholder="Enter your Application ID"
-                value={applicantId}
-                onChange={(e) => setApplicantId(e.target.value)}
-                data-testid="input-applicant-id"
-              />
-            </div>
-            <div>
-              <Label htmlFor="accessCode">Access Code</Label>
-              <Input
-                id="accessCode"
-                type="password"
-                placeholder="Enter your Access Code"
-                value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
-                data-testid="input-access-code"
-              />
-            </div>
-            <Button
-              onClick={handleLogin}
-              className="w-full"
-              disabled={loginMutation.isPending}
-              data-testid="button-login"
-            >
-              {loginMutation.isPending ? 'Logging in...' : 'Access Portal'}
-            </Button>
-            
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Your Application ID and Access Code were sent to your email address when you were shortlisted.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!application) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Clock className="h-12 w-12 mx-auto text-gray-400 mb-4 animate-spin" />
-          <p className="text-gray-600">Loading your application...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">Primacy Care Australia</h1>
-              <Badge variant="outline">Applicant Portal</Badge>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {application.applicantName}</span>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Status Overview */}
-        <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <User className="h-5 w-5" />
-              <span>Application Status</span>
+            <CardTitle className="text-center flex items-center justify-center space-x-2">
+              <Shield className="h-5 w-5" />
+              <span>Secure Applicant Portal</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <h3 className="font-semibold text-gray-900">Position Applied</h3>
-                <p className="text-lg text-blue-600">{application.position}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Current Status</h3>
-                <Badge className={getStatusColor(application.status)}>
-                  {application.status.replace('_', ' ').toUpperCase()}
-                </Badge>
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Progress</h3>
-                <Progress value={getProgressPercentage(application.status)} className="mt-2" />
-                <p className="text-sm text-gray-600 mt-1">
-                  {getProgressPercentage(application.status)}% Complete
+            <div className="space-y-4">
+              <div className="text-center">
+                <Lock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-gray-600">
+                  {token ? "Verifying your access..." : "Please use the secure link provided in your invitation."}
                 </p>
               </div>
+              
+              {!token && (
+                <div>
+                  <Label htmlFor="access-token">Access Token</Label>
+                  <div className="flex space-x-2 mt-1">
+                    <Input
+                      id="access-token"
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      placeholder="Enter your access token"
+                    />
+                    <Button 
+                      onClick={() => authenticatePortalMutation.mutate(token)}
+                      disabled={!token || authenticatePortalMutation.isPending}
+                    >
+                      Access
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <Alert>
+                <Shield className="h-4 w-4" />
+                <AlertDescription>
+                  This is a secure portal for Primacy Care Australia candidates. 
+                  Access is granted only through verified invitation links.
+                </AlertDescription>
+              </Alert>
             </div>
           </CardContent>
         </Card>
-
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="interview">Interview</TabsTrigger>
-            <TabsTrigger value="references">References</TabsTrigger>
-            <TabsTrigger value="contract">Contract</TabsTrigger>
-            <TabsTrigger value="training">Training</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Next Steps</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {application.status === 'shortlisted' && (
-                    <Alert>
-                      <CheckCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Congratulations! You've been shortlisted. Please upload the required documents to proceed.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {application.status === 'documents_pending' && (
-                    <Alert>
-                      <Upload className="h-4 w-4" />
-                      <AlertDescription>
-                        Please upload all required documents. Once complete, we'll schedule your interview.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {application.status === 'interview_scheduled' && (
-                    <Alert>
-                      <Calendar className="h-4 w-4" />
-                      <AlertDescription>
-                        Your interview has been scheduled. Check the Interview tab for details.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {application.status === 'references_pending' && (
-                    <Alert>
-                      <Users className="h-4 w-4" />
-                      <AlertDescription>
-                        Please provide your referee details so we can complete reference checks.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {application.status === 'contract_pending' && (
-                    <Alert>
-                      <FileText className="h-4 w-4" />
-                      <AlertDescription>
-                        Your employment contract is ready for signing. Check the Contract tab.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {application.status === 'hired' && (
-                    <Alert>
-                      <CheckCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Welcome to the team! Your onboarding training is now available.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="documents" className="space-y-6">
-            <DocumentUploadSection 
-              applicantId={applicantId}
-              uploadedDocuments={application.documentsUploaded}
-              onUpload={(file) => {
-                const formData = new FormData();
-                formData.append('document', file);
-                formData.append('applicantId', applicantId);
-                uploadDocumentMutation.mutate(formData);
-              }}
-            />
-          </TabsContent>
-
-          <TabsContent value="interview" className="space-y-6">
-            <InterviewSection 
-              application={application}
-            />
-          </TabsContent>
-
-          <TabsContent value="references" className="space-y-6">
-            <ReferenceSection 
-              referees={application.referees}
-              onAddReferee={(refereeData) => addRefereeMutation.mutate(refereeData)}
-              canAddReferees={application.status === 'references_pending'}
-            />
-          </TabsContent>
-
-          <TabsContent value="contract" className="space-y-6">
-            <ContractSection 
-              application={application}
-              onSignContract={(signatureData) => signContractMutation.mutate(signatureData)}
-            />
-          </TabsContent>
-
-          <TabsContent value="training" className="space-y-6">
-            {application.status === 'hired' || application.contractSigned ? (
-              <StaffTrainingModules staffId={application.id} isApplicant={true} />
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <GraduationCap className="h-5 w-5" />
-                    <span>Training Modules</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Alert>
-                    <Clock className="h-4 w-4" />
-                    <AlertDescription>
-                      Training modules will become available once your employment contract is signed and you're officially part of the team.
-                    </AlertDescription>
-                  </Alert>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg mt-4">
-                    <h4 className="font-semibold text-blue-800 mb-2">What to expect in your training:</h4>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• NDIS Introduction and Core Principles</li>
-                      <li>• Person-Centered Support Approaches</li>
-                      <li>• Risk Assessment and Safety Procedures</li>
-                      <li>• Documentation and Compliance Requirements</li>
-                      <li>• Cultural Competency Training</li>
-                      <li>• Emergency Response Procedures</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// Document Upload Section Component
-function DocumentUploadSection({ 
-  applicantId, 
-  uploadedDocuments, 
-  onUpload 
-}: { 
-  applicantId: string; 
-  uploadedDocuments: string[]; 
-  onUpload: (file: File) => void; 
-}) {
-  const requiredDocuments = [
-    'Resume/CV',
-    'Cover Letter',
-    'Qualifications/Certificates',
-    'NDIS Worker Screening Check',
-    'Working with Children Check',
-    'Driver\'s License',
-    'First Aid Certificate'
-  ];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Upload className="h-5 w-5" />
-          <span>Document Upload</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {requiredDocuments.map((docType, index) => (
-            <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-gray-400" />
-                <span className="font-medium">{docType}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                {uploadedDocuments.includes(docType) ? (
-                  <Badge className="bg-green-100 text-green-800">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Uploaded
-                  </Badge>
-                ) : (
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) onUpload(file);
-                    }}
-                    className="hidden"
-                    id={`upload-${index}`}
-                  />
-                )}
-                <label
-                  htmlFor={`upload-${index}`}
-                  className="cursor-pointer"
-                >
-                  <Button
-                    variant={uploadedDocuments.includes(docType) ? "outline" : "default"}
-                    size="sm"
-                    asChild
-                  >
-                    <span>
-                      {uploadedDocuments.includes(docType) ? 'Replace' : 'Upload'}
-                    </span>
-                  </Button>
-                </label>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Interview Section Component
-function InterviewSection({ application }: { application: ApplicantApplication }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Calendar className="h-5 w-5" />
-          <span>Interview Information</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {application.interviewDate ? (
-          <div className="space-y-4">
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                Your interview has been scheduled for {new Date(application.interviewDate).toLocaleString()}.
-              </AlertDescription>
-            </Alert>
-            
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-blue-800 mb-2">Interview Preparation</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• Review the NDIS Quality and Safeguards Commission standards</li>
-                <li>• Prepare examples of working with people with disabilities</li>
-                <li>• Bring copies of your qualifications and certifications</li>
-                <li>• Be ready to discuss your motivation for NDIS work</li>
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <Alert>
-            <Clock className="h-4 w-4" />
-            <AlertDescription>
-              Your interview will be scheduled once all documents are uploaded and reviewed.
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// Reference Section Component
-function ReferenceSection({ 
-  referees, 
-  onAddReferee, 
-  canAddReferees 
-}: { 
-  referees: any[]; 
-  onAddReferee: (data: any) => void; 
-  canAddReferees: boolean; 
-}) {
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [refereeData, setRefereeData] = useState({
-    name: '',
-    relationship: '',
-    phone: '',
-    email: ''
-  });
-
-  const handleSubmitReferee = () => {
-    if (!refereeData.name || !refereeData.phone || !refereeData.email) {
-      return;
-    }
-    
-    onAddReferee(refereeData);
-    setRefereeData({ name: '', relationship: '', phone: '', email: '' });
-    setShowAddForm(false);
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Users className="h-5 w-5" />
-            <span>Professional References</span>
-          </div>
-          {canAddReferees && referees.length < 3 && (
-            <Button
-              onClick={() => setShowAddForm(true)}
-              size="sm"
-              data-testid="button-add-referee"
-            >
-              Add Referee
-            </Button>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {referees.map((referee, index) => (
-            <div key={index} className="p-4 border rounded-lg">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="font-semibold">{referee.name}</h4>
-                  <p className="text-sm text-gray-600">{referee.relationship}</p>
-                  <div className="flex items-center space-x-4 mt-2 text-sm">
-                    <span className="flex items-center">
-                      <Phone className="h-3 w-3 mr-1" />
-                      {referee.phone}
-                    </span>
-                    <span className="flex items-center">
-                      <Mail className="h-3 w-3 mr-1" />
-                      {referee.email}
-                    </span>
-                  </div>
-                </div>
-                <Badge variant={referee.contacted ? "default" : "secondary"}>
-                  {referee.contacted ? 'Contacted' : 'Pending'}
-                </Badge>
-              </div>
-            </div>
-          ))}
-
-          {showAddForm && (
-            <div className="p-4 border-2 border-dashed rounded-lg space-y-4">
-              <h4 className="font-semibold">Add New Referee</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Full Name</Label>
-                  <Input
-                    value={refereeData.name}
-                    onChange={(e) => setRefereeData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Referee's full name"
-                  />
-                </div>
-                <div>
-                  <Label>Relationship</Label>
-                  <Input
-                    value={refereeData.relationship}
-                    onChange={(e) => setRefereeData(prev => ({ ...prev, relationship: e.target.value }))}
-                    placeholder="e.g., Previous Manager"
-                  />
-                </div>
-                <div>
-                  <Label>Phone Number</Label>
-                  <Input
-                    value={refereeData.phone}
-                    onChange={(e) => setRefereeData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="Contact phone number"
-                  />
-                </div>
-                <div>
-                  <Label>Email Address</Label>
-                  <Input
-                    value={refereeData.email}
-                    onChange={(e) => setRefereeData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Contact email address"
-                    type="email"
-                  />
-                </div>
-              </div>
-              <div className="flex space-x-2">
-                <Button onClick={handleSubmitReferee} size="sm">
-                  Add Referee
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowAddForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {referees.length === 0 && !showAddForm && (
-            <div className="text-center py-8 text-gray-500">
-              <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-              <p>No references added yet</p>
-              {canAddReferees && (
-                <p className="text-sm">Please add at least 2 professional references</p>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Contract Section Component
-function ContractSection({ 
-  application, 
-  onSignContract 
-}: { 
-  application: ApplicantApplication; 
-  onSignContract: (data: any) => void; 
-}) {
-  const [showContract, setShowContract] = useState(false);
-  const [agreementChecked, setAgreementChecked] = useState(false);
-
-  const handleSignContract = () => {
-    if (!agreementChecked) {
-      return;
-    }
-    
-    onSignContract({
-      signedAt: new Date().toISOString(),
-      ipAddress: 'xxx.xxx.xxx.xxx', // Would be actual IP
-      signatureType: 'digital'
-    });
-  };
-
-  if (application.status !== 'contract_pending' && !application.contractSigned) {
+  if (!portalData) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-5 w-5" />
-            <span>Employment Contract</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <Clock className="h-4 w-4" />
-            <AlertDescription>
-              Your employment contract will be available here once you complete the interview and reference check process.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Clock className="h-12 w-12 mx-auto mb-4 animate-spin text-blue-500" />
+          <p>Loading your application portal...</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <FileText className="h-5 w-5" />
-          <span>Employment Contract</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {application.contractSigned ? (
-          <Alert>
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>
-              Congratulations! You have successfully signed your employment contract. Welcome to Primacy Care Australia!
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-4">
-            <Alert>
-              <FileText className="h-4 w-4" />
-              <AlertDescription>
-                Your employment contract is ready for digital signing. Please review carefully before signing.
-              </AlertDescription>
-            </Alert>
-            
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowContract(!showContract)}
-                data-testid="button-view-contract"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                {showContract ? 'Hide' : 'View'} Contract
-              </Button>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 max-w-4xl">
+        {/* Header */}
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl">Welcome, {portalData.candidate.name}</CardTitle>
+                <p className="text-gray-600 mt-1">
+                  Application for: <strong>{portalData.candidate.position}</strong>
+                </p>
+              </div>
+              <div className="text-right">
+                <Badge className="mb-2">Application ID: {portalData.candidate.applicationId}</Badge>
+                <p className="text-sm text-gray-500">
+                  Portal expires: {new Date(portalData.candidate.portalExpiresAt).toLocaleDateString()}
+                </p>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Application Progress</span>
+                  <span className="text-sm text-gray-500">{calculateProgress()}% Complete</span>
+                </div>
+                <Progress value={calculateProgress()} className="h-2" />
+              </div>
+              
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Complete all requirements below to proceed to the next stage of our hiring process.
+                  Our team will review your submissions within 2-3 business days.
+                </AlertDescription>
+              </Alert>
+            </div>
+          </CardContent>
+        </Card>
 
-            {showContract && (
-              <div className="bg-gray-50 p-6 rounded-lg border max-h-96 overflow-y-auto">
-                <h4 className="font-bold text-center mb-4">EMPLOYMENT AGREEMENT</h4>
-                <div className="space-y-4 text-sm">
-                  <p><strong>Between:</strong> Primacy Care Australia (ABN: 12 345 678 901)</p>
-                  <p><strong>And:</strong> {application.applicantName}</p>
-                  <p><strong>Position:</strong> {application.position}</p>
-                  <p>This Employment Agreement is made on {new Date().toLocaleDateString()}.</p>
-                  
-                  <div className="space-y-2">
-                    <h5 className="font-semibold">1. POSITION AND COMMENCEMENT</h5>
-                    <p>1.1 The Employee will be employed as {application.position}.</p>
-                    <p>1.2 Employment will commence as agreed between the parties.</p>
-                    <p>1.3 The Employee's employment is subject to a probationary period of 6 months.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h5 className="font-semibold">2. NDIS COMPLIANCE</h5>
-                    <p>2.1 The Employee must maintain current NDIS Worker Screening Check.</p>
-                    <p>2.2 The Employee agrees to maintain confidentiality of all participant information.</p>
-                    <p>2.3 The Employee will comply with all NDIS Quality and Safeguards standards.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <h5 className="font-semibold">3. GENERAL TERMS</h5>
-                    <p>3.1 This agreement is subject to the Fair Work Act 2009 and SCHADS Award.</p>
-                    <p>3.2 Standard working hours are as per the SCHADS Award provisions.</p>
-                    <p>3.3 The Employee will receive all entitlements as per the SCHADS Award.</p>
+        {/* Requirements */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Application Requirements</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {portalData.requirements.map((requirement) => (
+                <div
+                  key={requirement.id}
+                  className={`p-4 border rounded-lg ${
+                    requirement.completed ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        {getRequirementIcon(requirement.type)}
+                        <h4 className="font-semibold">{requirement.title}</h4>
+                        {requirement.required && (
+                          <Badge variant="outline" className="text-xs">Required</Badge>
+                        )}
+                        <Badge className={getStatusColor(requirement.completed ? 'completed' : 'pending')}>
+                          {requirement.completed ? 'Completed' : 'Pending'}
+                        </Badge>
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 mb-3">{requirement.description}</p>
+                      
+                      <div className="text-sm text-gray-500 mb-3">
+                        <strong>Instructions:</strong> {requirement.instructions}
+                      </div>
+                      
+                      {requirement.dueDate && (
+                        <p className="text-xs text-orange-600">
+                          Due: {new Date(requirement.dueDate).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="ml-4">
+                      {requirement.type === 'document' && !requirement.completed && (
+                        <div className="space-y-2">
+                          <Input
+                            type="file"
+                            onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            className="text-sm"
+                          />
+                          <Button
+                            size="sm"
+                            onClick={() => handleFileUpload(requirement.id)}
+                            disabled={!selectedFile || uploadingDocument}
+                          >
+                            <Upload className="h-3 w-3 mr-1" />
+                            Upload
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {requirement.type === 'form' && !requirement.completed && (
+                        <Button
+                          size="sm"
+                          onClick={() => completeRequirementMutation.mutate(requirement.id)}
+                          disabled={completeRequirementMutation.isPending}
+                        >
+                          <User className="h-3 w-3 mr-1" />
+                          Complete Form
+                        </Button>
+                      )}
+                      
+                      {requirement.type === 'verification' && !requirement.completed && (
+                        <Button
+                          size="sm"
+                          onClick={() => completeRequirementMutation.mutate(requirement.id)}
+                          disabled={completeRequirementMutation.isPending}
+                        >
+                          <Fingerprint className="h-3 w-3 mr-1" />
+                          Verify Identity
+                        </Button>
+                      )}
+                      
+                      {requirement.completed && (
+                        <Badge className="bg-green-100 text-green-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Complete
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="agreement"
-                checked={agreementChecked}
-                onChange={(e) => setAgreementChecked(e.target.checked)}
-                className="rounded"
-              />
-              <label htmlFor="agreement" className="text-sm">
-                I have read, understood, and agree to all terms and conditions of this employment contract.
-              </label>
+              ))}
             </div>
+          </CardContent>
+        </Card>
 
-            <Button
-              onClick={handleSignContract}
-              disabled={!agreementChecked}
-              className="w-full"
-              data-testid="button-sign-contract"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Digitally Sign Contract
-            </Button>
-          </div>
+        {/* Uploaded Documents */}
+        {portalData.documents.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Your Documents</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {portalData.documents.map((document) => (
+                  <div key={document.id} className="flex items-center justify-between p-3 border rounded">
+                    <div className="flex items-center space-x-3">
+                      <FileText className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">{document.name}</p>
+                        <p className="text-sm text-gray-500">
+                          Uploaded: {new Date(document.uploadedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge className={getStatusColor(document.status)}>
+                        {document.status.toUpperCase()}
+                      </Badge>
+                      {document.notes && (
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Notes
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
-      </CardContent>
-    </Card>
+
+        {/* Next Steps */}
+        {portalData.nextSteps.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5" />
+                <span>Next Steps</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {portalData.nextSteps.map((step) => (
+                  <div key={step.id} className="flex items-center justify-between p-3 border rounded">
+                    <div>
+                      <h4 className="font-medium">{step.title}</h4>
+                      <p className="text-sm text-gray-600">{step.description}</p>
+                      {step.scheduledDate && (
+                        <p className="text-sm text-blue-600">
+                          Scheduled: {new Date(step.scheduledDate).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <Badge className={getStatusColor(step.status)}>
+                      {step.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Footer */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>© 2025 Primacy Care Australia. This is a secure portal for authorized applicants only.</p>
+          <p>If you need assistance, please contact our HR team at hr@primacycare.com.au</p>
+        </div>
+      </div>
+    </div>
   );
 }

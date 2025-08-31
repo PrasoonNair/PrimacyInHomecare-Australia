@@ -2946,6 +2946,342 @@ export class DatabaseStorage implements IStorage {
       autoImportScheduled: true
     };
   }
+
+  // Candidate Invitation System Methods
+  async getShortlistedCandidates() {
+    // Mock implementation - in production this would query candidates database
+    return [
+      {
+        id: 'CAND001',
+        name: 'Emma Thompson',
+        email: 'emma.thompson@email.com',
+        phone: '+61 4 1234 5678',
+        position: 'Support Worker Level 2',
+        applicationSource: 'company-website.com.au',
+        shortlistedAt: '2025-01-03T14:30:00.000Z',
+        score: 87,
+        status: 'shortlisted',
+        preferredContact: 'email',
+        invitationsSent: [],
+        secureToken: 'secure_token_001',
+        portalAccessed: false,
+        lastPortalActivity: null
+      },
+      {
+        id: 'CAND002',
+        name: 'David Park',
+        email: 'david.park@email.com',
+        phone: '+61 4 2345 6789',
+        position: 'Team Coordinator',
+        applicationSource: 'seek.com.au',
+        shortlistedAt: '2025-01-02T16:45:00.000Z',
+        score: 92,
+        status: 'portal_accessed',
+        preferredContact: 'email',
+        invitationsSent: [
+          { channel: 'email', sentAt: '2025-01-03T09:00:00.000Z', status: 'clicked' },
+          { channel: 'sms', sentAt: '2025-01-03T09:00:00.000Z', status: 'delivered' }
+        ],
+        secureToken: 'secure_token_002',
+        portalAccessed: true,
+        lastPortalActivity: '2025-01-03T15:30:00.000Z'
+      },
+      {
+        id: 'CAND003',
+        name: 'Sophie Martinez',
+        email: 'sophie.martinez@email.com',
+        phone: '+61 4 3456 7890',
+        position: 'Community Access Coordinator',
+        applicationSource: 'company-website.com.au',
+        shortlistedAt: '2025-01-01T12:00:00.000Z',
+        score: 89,
+        status: 'documents_submitted',
+        preferredContact: 'whatsapp',
+        invitationsSent: [
+          { channel: 'email', sentAt: '2025-01-02T10:00:00.000Z', status: 'read' },
+          { channel: 'whatsapp', sentAt: '2025-01-02T10:05:00.000Z', status: 'clicked' }
+        ],
+        secureToken: 'secure_token_003',
+        portalAccessed: true,
+        lastPortalActivity: '2025-01-03T11:15:00.000Z'
+      },
+      {
+        id: 'CAND004',
+        name: 'Mark Johnson',
+        email: 'mark.johnson@email.com',
+        phone: '+61 4 4567 8901',
+        position: 'Support Worker Level 1',
+        applicationSource: 'linkedin.com',
+        shortlistedAt: '2025-01-03T10:30:00.000Z',
+        score: 78,
+        status: 'invited',
+        preferredContact: 'sms',
+        invitationsSent: [
+          { channel: 'email', sentAt: '2025-01-03T11:00:00.000Z', status: 'delivered' },
+          { channel: 'sms', sentAt: '2025-01-03T11:00:00.000Z', status: 'sent' }
+        ],
+        secureToken: 'secure_token_004',
+        portalAccessed: false,
+        lastPortalActivity: null
+      }
+    ];
+  }
+
+  async getInvitationTemplates() {
+    // Mock implementation - in production this would query templates database
+    return [
+      {
+        id: 'TEMP001',
+        name: 'Standard Invitation',
+        subject: 'Next Steps in Your Application - Primacy Care Australia',
+        emailContent: `Dear {{candidateName}},
+
+Thank you for your interest in the {{position}} role at Primacy Care Australia.
+
+We're pleased to inform you that you've been shortlisted and we'd like to invite you to complete the next stage of our recruitment process.
+
+Please access your secure candidate portal using the link below:
+{{portalLink}}
+
+This portal will allow you to:
+- Complete required documentation
+- Upload additional documents
+- Schedule your interview
+- Access important information about the role
+
+Your portal access will expire in 7 days, so please complete the requirements as soon as possible.
+
+If you have any questions, please don't hesitate to contact our HR team.
+
+Best regards,
+Primacy Care Australia Recruitment Team`,
+        smsContent: 'Hi {{candidateName}}, you\'ve been shortlisted for {{position}} at Primacy Care Australia! Complete your application here: {{portalLink}} (expires in 7 days)',
+        whatsappContent: 'Congratulations {{candidateName}}! 🎉 You\'ve been shortlisted for the {{position}} role at Primacy Care Australia. Please complete your application via our secure portal: {{portalLink}} This link expires in 7 days. Contact us if you need assistance!',
+        includeSecureLink: true,
+        customFields: {
+          supportContact: 'hr@primacycare.com.au',
+          companyPhone: '+61 1800 PRIMACY'
+        }
+      },
+      {
+        id: 'TEMP002',
+        name: 'Urgent Role Invitation',
+        subject: 'Urgent: Complete Your Application - {{position}}',
+        emailContent: `Dear {{candidateName}},
+
+We have an urgent requirement for the {{position}} role and you've been shortlisted as a priority candidate.
+
+Please complete your application immediately using this secure link:
+{{portalLink}}
+
+We aim to complete the hiring process within 48 hours for this position.
+
+Thank you,
+Primacy Care Australia`,
+        smsContent: 'URGENT: {{candidateName}}, complete your {{position}} application now: {{portalLink}} We\'re hiring within 48hrs!',
+        whatsappContent: '⚡ URGENT OPPORTUNITY: {{candidateName}}, you\'ve been priority shortlisted for {{position}}! Complete now: {{portalLink}} Hiring decision within 48 hours.',
+        includeSecureLink: true,
+        customFields: {}
+      }
+    ];
+  }
+
+  async sendCandidateInvitations(invitationData: any) {
+    // Mock implementation - in production this would:
+    // 1. Load invitation template
+    // 2. Personalize content for each candidate
+    // 3. Send via selected channels (email, SMS, WhatsApp)
+    // 4. Generate secure portal links
+    // 5. Track delivery status
+    // 6. Schedule follow-ups if needed
+
+    const { candidateIds, channels, templateId, customMessage, scheduledSend, sendDateTime } = invitationData;
+    
+    console.log(`Sending invitations to ${candidateIds.length} candidates via ${channels.join(', ')}`);
+    console.log(`Template: ${templateId}, Scheduled: ${scheduledSend}, Custom message: ${customMessage ? 'Yes' : 'No'}`);
+    
+    // Simulate sending process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    return {
+      sent: candidateIds.length,
+      channels: channels,
+      scheduled: scheduledSend,
+      deliveryTracking: candidateIds.map(id => ({ candidateId: id, status: 'sent' }))
+    };
+  }
+
+  async generateSecurePortalLink(candidateId: string) {
+    // Mock implementation - in production this would:
+    // 1. Generate cryptographically secure token
+    // 2. Set expiration time (7 days)
+    // 3. Store token-candidate mapping
+    // 4. Return portal URL with token
+    
+    const secureToken = `secure_${candidateId}_${Date.now()}`;
+    const portalUrl = `${process.env.REPLIT_URL || 'http://localhost:5000'}/applicant-portal?token=${secureToken}`;
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+    
+    console.log(`Generated secure portal link for candidate ${candidateId}: ${portalUrl}`);
+    
+    return {
+      portalUrl,
+      expiresAt,
+      token: secureToken
+    };
+  }
+
+  // Applicant Portal Methods
+  async authenticatePortalAccess(token: string) {
+    // Mock implementation - in production this would:
+    // 1. Validate token exists and hasn't expired
+    // 2. Check if candidate is still eligible
+    // 3. Log portal access attempt
+    // 4. Update candidate status
+    
+    console.log(`Authenticating portal access with token: ${token}`);
+    
+    // Simulate token validation
+    const isValid = token.startsWith('secure_');
+    
+    if (isValid) {
+      console.log('Portal access authenticated successfully');
+      return { valid: true, candidateId: token.split('_')[1] };
+    } else {
+      throw new Error('Invalid or expired token');
+    }
+  }
+
+  async getApplicantPortalData(token: string) {
+    // Mock implementation - in production this would:
+    // 1. Validate token and get candidate ID
+    // 2. Fetch candidate information
+    // 3. Get required documents/forms
+    // 4. Get current status and next steps
+    // 5. Track portal access
+    
+    console.log(`Fetching portal data for token: ${token}`);
+    
+    return {
+      candidate: {
+        id: 'CAND001',
+        name: 'Emma Thompson',
+        email: 'emma.thompson@email.com',
+        phone: '+61 4 1234 5678',
+        position: 'Support Worker Level 2',
+        applicationId: 'APP2025001',
+        status: 'portal_accessed',
+        invitedAt: '2025-01-03T09:00:00.000Z',
+        portalExpiresAt: '2025-01-10T09:00:00.000Z'
+      },
+      requirements: [
+        {
+          id: 'REQ001',
+          title: 'NDIS Worker Screening Check',
+          description: 'Upload your current NDIS Worker Screening Check clearance',
+          type: 'document',
+          required: true,
+          completed: false,
+          dueDate: '2025-01-08T00:00:00.000Z',
+          instructions: 'Please upload a clear photo or scan of your NDIS Worker Screening Check. Ensure all text is readable and the document is in date.'
+        },
+        {
+          id: 'REQ002',
+          title: 'Identity Verification',
+          description: 'Verify your identity with official documents',
+          type: 'verification',
+          required: true,
+          completed: false,
+          instructions: 'Upload a photo of your driver\'s license or passport, plus a recent utility bill for address verification.'
+        },
+        {
+          id: 'REQ003',
+          title: 'Skills Assessment',
+          description: 'Complete our online skills assessment',
+          type: 'assessment',
+          required: true,
+          completed: false,
+          instructions: 'This assessment takes approximately 30 minutes and covers disability support scenarios.'
+        },
+        {
+          id: 'REQ004',
+          title: 'Emergency Contact Information',
+          description: 'Provide emergency contact details',
+          type: 'form',
+          required: true,
+          completed: false,
+          instructions: 'Fill in your emergency contact information including name, relationship, and phone number.'
+        },
+        {
+          id: 'REQ005',
+          title: 'Qualification Certificates',
+          description: 'Upload relevant qualification certificates',
+          type: 'document',
+          required: false,
+          completed: false,
+          instructions: 'Upload any relevant certificates such as First Aid, Certificate III in Individual Support, etc.'
+        }
+      ],
+      documents: [],
+      nextSteps: [
+        {
+          id: 'STEP001',
+          title: 'Document Review',
+          description: 'Our team will review your submitted documents',
+          status: 'pending'
+        },
+        {
+          id: 'STEP002',
+          title: 'Interview Scheduling',
+          description: 'Schedule your final interview with the hiring manager',
+          status: 'pending'
+        },
+        {
+          id: 'STEP003',
+          title: 'Reference Checks',
+          description: 'We\'ll contact your nominated referees',
+          status: 'pending'
+        }
+      ]
+    };
+  }
+
+  async uploadApplicantDocument(documentData: any) {
+    // Mock implementation - in production this would:
+    // 1. Validate file type and size
+    // 2. Scan for malware
+    // 3. Upload to secure cloud storage
+    // 4. Extract data using OCR if applicable
+    // 5. Update requirement status
+    // 6. Notify HR team for review
+    
+    const documentId = `DOC${Date.now()}`;
+    console.log(`Document uploaded: ${documentId}`);
+    
+    return {
+      documentId,
+      status: 'uploaded',
+      requirementCompleted: true
+    };
+  }
+
+  async completePortalRequirement(token: string, requirementId: string) {
+    // Mock implementation - in production this would:
+    // 1. Validate token and requirement
+    // 2. Mark requirement as completed
+    // 3. Check if all requirements are completed
+    // 4. Trigger next workflow stage if ready
+    // 5. Send notifications
+    
+    console.log(`Completing requirement ${requirementId} for token ${token}`);
+    
+    return {
+      completed: true,
+      requirementId,
+      allRequirementsCompleted: false,
+      nextStep: 'Continue completing remaining requirements'
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();
