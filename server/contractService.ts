@@ -129,6 +129,177 @@ export class ContractService {
     }
   }
 
+  async handleContractSigned(contractId: string, signatureData: any): Promise<{ success: boolean }> {
+    try {
+      const contract = await this.getContract(contractId);
+      if (!contract) {
+        throw new Error('Contract not found');
+      }
+
+      // Update contract status to signed
+      await this.updateContractStatus(contractId, 'signed', {
+        signedAt: new Date().toISOString(),
+        signatureData: signatureData
+      });
+
+      // Trigger automatic notifications to departments
+      await this.notifyDepartmentsOfNewStaff(contract);
+
+      // Create onboarding tasks
+      await this.createOnboardingTasks(contract);
+
+      // Add to payroll system
+      await this.addToPayrollSystem(contract);
+
+      // Alert HR team for finalization
+      await this.alertHRTeam(contract);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error handling signed contract:', error);
+      throw new Error('Failed to process signed contract');
+    }
+  }
+
+  private async notifyDepartmentsOfNewStaff(contract: GeneratedContract): Promise<void> {
+    const notifications = [
+      {
+        department: 'Finance',
+        message: `New staff member contract signed: ${contract.applicantId}. Please set up payroll and SCHADS award payments.`,
+        priority: 'high',
+        actionRequired: 'Setup payroll account and SCHADS classification'
+      },
+      {
+        department: 'Service Delivery',
+        message: `New staff member available for allocation: ${contract.applicantId}. Please assign to appropriate shifts and participant services.`,
+        priority: 'medium',
+        actionRequired: 'Add to staff allocation system and shift management'
+      },
+      {
+        department: 'HR',
+        message: `Contract signed for ${contract.applicantId}. Please finalize onboarding process and welcome new team member.`,
+        priority: 'high',
+        actionRequired: 'Complete onboarding checklist and schedule orientation'
+      },
+      {
+        department: 'Compliance',
+        message: `New staff member requires compliance verification: ${contract.applicantId}. Please verify NDIS clearances and certifications.`,
+        priority: 'high',
+        actionRequired: 'Verify NDIS Worker Screening and required certifications'
+      }
+    ];
+
+    // Send notifications to each department
+    for (const notification of notifications) {
+      await this.sendDepartmentNotification(notification);
+    }
+  }
+
+  private async sendDepartmentNotification(notification: any): Promise<void> {
+    // This would integrate with your notification system
+    // For now, we'll log and store in the system
+    console.log(`Notification sent to ${notification.department}:`, notification.message);
+    
+    // In a real system, this would:
+    // 1. Send email notifications to department managers
+    // 2. Create in-app notifications
+    // 3. Add tasks to department task lists
+    // 4. Update department dashboards
+  }
+
+  private async createOnboardingTasks(contract: GeneratedContract): Promise<void> {
+    const onboardingTasks = [
+      {
+        title: 'Welcome Email and Orientation Scheduling',
+        department: 'HR',
+        assignee: 'HR Manager',
+        dueDate: this.addDays(new Date(), 1),
+        priority: 'high'
+      },
+      {
+        title: 'Payroll Account Setup',
+        department: 'Finance',
+        assignee: 'Finance Manager',
+        dueDate: this.addDays(new Date(), 2),
+        priority: 'high'
+      },
+      {
+        title: 'System Access and IT Setup',
+        department: 'IT',
+        assignee: 'IT Administrator',
+        dueDate: this.addDays(new Date(), 2),
+        priority: 'medium'
+      },
+      {
+        title: 'NDIS Training Enrollment',
+        department: 'Training',
+        assignee: 'Training Coordinator',
+        dueDate: this.addDays(new Date(), 3),
+        priority: 'medium'
+      },
+      {
+        title: 'Staff Allocation and Shift Assignment',
+        department: 'Service Delivery',
+        assignee: 'Service Delivery Manager',
+        dueDate: this.addDays(new Date(), 5),
+        priority: 'medium'
+      }
+    ];
+
+    // Create tasks in the system
+    for (const task of onboardingTasks) {
+      await this.createSystemTask(task);
+    }
+  }
+
+  private async addToPayrollSystem(contract: GeneratedContract): Promise<void> {
+    // This would integrate with your payroll system
+    console.log(`Adding ${contract.applicantId} to payroll system with contract details`);
+    
+    // In a real implementation, this would:
+    // 1. Create payroll record with SCHADS classification
+    // 2. Set up bank details and tax information
+    // 3. Configure automatic pay calculations
+    // 4. Set up superannuation contributions
+  }
+
+  private async alertHRTeam(contract: GeneratedContract): Promise<void> {
+    const hrAlert = {
+      type: 'contract_signed',
+      contractId: contract.id,
+      applicantId: contract.applicantId,
+      message: `Contract has been signed! Please finalize onboarding process.`,
+      urgency: 'high',
+      actionItems: [
+        'Verify all onboarding tasks are assigned',
+        'Schedule welcome call/orientation',
+        'Confirm start date with new staff member',
+        'Update staff directory and organizational chart'
+      ],
+      createdAt: new Date().toISOString()
+    };
+
+    // Send alert to HR team
+    console.log('HR Alert created:', hrAlert);
+    
+    // In a real system, this would:
+    // 1. Send immediate notification to HR managers
+    // 2. Create high-priority task in HR dashboard
+    // 3. Send SMS/email alerts if configured
+    // 4. Update HR metrics and reporting
+  }
+
+  private async createSystemTask(task: any): Promise<void> {
+    // This would create tasks in your task management system
+    console.log('Creating onboarding task:', task);
+  }
+
+  private addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
   private async getTemplate(templateId: string): Promise<ContractTemplate | null> {
     // Mock implementation - replace with actual database query
     const templates: ContractTemplate[] = [

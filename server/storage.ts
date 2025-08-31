@@ -2107,6 +2107,41 @@ export class DatabaseStorage implements IStorage {
     // Mock implementation - in production this would query the contracts table
     return null;
   }
+
+  // Department notifications
+  async getDepartmentNotifications(department?: string) {
+    // Mock implementation - in production this would query notifications table
+    const mockNotifications = [
+      {
+        id: '1',
+        department: 'Finance',
+        message: 'New staff member contract signed: Sarah Johnson. Please set up payroll and SCHADS award payments.',
+        priority: 'high',
+        actionRequired: 'Setup payroll account and SCHADS classification',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        department: 'Service Delivery',
+        message: 'New staff member available for allocation: Michael Chen. Please assign to appropriate shifts and participant services.',
+        priority: 'medium',
+        actionRequired: 'Add to staff allocation system and shift management',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    if (department) {
+      return mockNotifications.filter(n => n.department === department);
+    }
+    return mockNotifications;
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+    // Mock implementation - in production this would update the notification in database
+    console.log(`Notification ${notificationId} marked as read`);
+  }
 }
 
 export const storage = new DatabaseStorage();

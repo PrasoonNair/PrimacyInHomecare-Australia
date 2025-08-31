@@ -25,6 +25,8 @@ import {
   ClipboardCheck, Shield, Mail, Phone, Send
 } from "lucide-react";
 import { ContractGenerator } from '@/components/hr/contract-generator';
+import { ContractNotifications, DepartmentNotificationSummary } from '@/components/hr/contract-notifications';
+import { ContractSigningDemo } from '@/components/hr/contract-signing-demo';
 import { format } from "date-fns";
 
 // Form schemas
@@ -1294,7 +1296,7 @@ export default function HRRecruitment() {
                         <span className="text-sm">Sarah Johnson - Full-Time Support Worker</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="success">Signed</Badge>
+                        <Badge className="bg-green-600 text-white">Signed & Processed</Badge>
                         <span className="text-xs text-gray-500">2 hours ago</span>
                       </div>
                     </div>
@@ -1323,6 +1325,13 @@ export default function HRRecruitment() {
               </div>
             </CardContent>
           </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ContractSigningDemo />
+            <DepartmentNotificationSummary />
+          </div>
+          
+          <ContractNotifications department="HR" />
         </TabsContent>
 
         <TabsContent value="onboarding" className="space-y-4">

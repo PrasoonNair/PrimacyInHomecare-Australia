@@ -1444,6 +1444,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Contract signature webhook (for DocuSign or similar e-signature services)
+  app.post("/api/hr/contracts/:id/signature-webhook", async (req, res) => {
+    try {
+      const { ContractService } = await import("./contractService");
+      const contractService = new ContractService();
+      
+      const contractId = req.params.id;
+      const signatureData = req.body;
+      
+      // Verify the webhook signature (important for security)
+      // In production, verify this is a legitimate webhook from your e-signature provider
+      
+      if (signatureData.status === 'completed') {
+        await contractService.handleContractSigned(contractId, signatureData);
+        res.json({ success: true, message: "Contract signature processed successfully" });
+      } else {
+        res.json({ success: true, message: "Signature status updated" });
+      }
+    } catch (error) {
+      console.error("Error processing contract signature:", error);
+      res.status(500).json({ error: "Failed to process contract signature" });
+    }
+  });
+
+  // Department notifications endpoint
+  app.get("/api/department-notifications", isAuthenticated, async (req, res) => {
+    try {
+      const { department } = req.query;
+      const notifications = await storage.getDepartmentNotifications(department as string);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching department notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch("/api/department-notifications/:id/read", isAuthenticated, async (req, res) => {
+    try {
+      await storage.markNotificationAsRead(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");
