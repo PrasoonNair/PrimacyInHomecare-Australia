@@ -2066,6 +2066,47 @@ export class DatabaseStorage implements IStorage {
   async deleteDepartmentRegion(id: string): Promise<void> {
     await db.update(departmentRegions).set({ isActive: false }).where(eq(departmentRegions.id, id));
   }
+
+  // Contract management methods
+  async getContractTemplates() {
+    const templates = [
+      {
+        id: 'full_time_template',
+        name: 'Full-Time Employment Contract',
+        type: 'full_time',
+        template: '{{contract_template_content}}',
+        variables: ['applicantName', 'position', 'department', 'startDate', 'salary', 'probationPeriod'],
+        isDefault: true
+      },
+      {
+        id: 'part_time_template',
+        name: 'Part-Time Employment Contract',
+        type: 'part_time',
+        template: '{{contract_template_content}}',
+        variables: ['applicantName', 'position', 'department', 'startDate', 'salary', 'probationPeriod'],
+        isDefault: false
+      },
+      {
+        id: 'casual_template',
+        name: 'Casual Employment Contract',
+        type: 'casual',
+        template: '{{contract_template_content}}',
+        variables: ['applicantName', 'position', 'department', 'startDate', 'hourlyRate'],
+        isDefault: false
+      }
+    ];
+    return templates;
+  }
+
+  async getContracts() {
+    // Mock implementation - in production this would query the contracts table
+    return [];
+  }
+
+  async getContractById(id: string) {
+    // Mock implementation - in production this would query the contracts table
+    return null;
+  }
 }
 
 export const storage = new DatabaseStorage();

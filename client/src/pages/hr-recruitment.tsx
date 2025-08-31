@@ -22,8 +22,9 @@ import {
   GraduationCap, DollarSign, Award, Clock,
   FileText, UserPlus, CalendarDays, CheckCircle,
   XCircle, AlertCircle, TrendingUp, BookOpen,
-  ClipboardCheck, Shield, Mail, Phone
+  ClipboardCheck, Shield, Mail, Phone, Send
 } from "lucide-react";
+import { ContractGenerator } from '@/components/hr/contract-generator';
 import { format } from "date-fns";
 
 // Form schemas
@@ -951,9 +952,10 @@ export default function HRRecruitment() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
+          <TabsTrigger value="contracts">Contracts</TabsTrigger>
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           <TabsTrigger value="leave">Leave</TabsTrigger>
           <TabsTrigger value="training">Training</TabsTrigger>
@@ -1129,6 +1131,196 @@ export default function HRRecruitment() {
                   ))}
                 </div>
               </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contracts" className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Ready for Contracts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">
+                  {jobApplications.filter(a => a.status === "offer" || a.status === "hired").length}
+                </div>
+                <p className="text-sm text-gray-600">Applicants ready</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Contracts Generated</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">8</div>
+                <p className="text-sm text-gray-600">This month</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Awaiting Signature</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-yellow-600">3</div>
+                <p className="text-sm text-gray-600">Contracts sent</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Contract Generation
+                </CardTitle>
+                <CardDescription>Generate employment contracts for successful applicants</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-600 mb-4">
+                    Select an applicant who has completed interviews and reference checks to generate their employment contract automatically.
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {jobApplications
+                      .filter(app => app.status === "offer" || app.status === "hired")
+                      .slice(0, 5)
+                      .map((application) => (
+                      <div key={application.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-semibold">{application.applicantName}</h4>
+                            <p className="text-sm text-gray-600">
+                              Applied for position • Status: {application.status}
+                            </p>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            data-testid={`button-generate-contract-${application.id}`}
+                          >
+                            <Send className="h-3 w-3" />
+                            Generate Contract
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {jobApplications.filter(app => app.status === "offer" || app.status === "hired").length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                      <p>No applicants ready for contract generation</p>
+                      <p className="text-sm">Move applicants to "Offer" status after interviews and reference checks</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Contract Templates</CardTitle>
+                <CardDescription>Available employment contract templates</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="border rounded p-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">Full-Time Employment</h4>
+                        <p className="text-sm text-gray-600">38 hours/week, SCHADS Level 2-6</p>
+                      </div>
+                      <Badge variant="default">Default</Badge>
+                    </div>
+                  </div>
+                  <div className="border rounded p-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">Part-Time Employment</h4>
+                        <p className="text-sm text-gray-600">Flexible hours, pro-rata benefits</p>
+                      </div>
+                      <Badge variant="secondary">Available</Badge>
+                    </div>
+                  </div>
+                  <div className="border rounded p-3">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">Casual Employment</h4>
+                        <p className="text-sm text-gray-600">25% casual loading, no leave entitlements</p>
+                      </div>
+                      <Badge variant="secondary">Available</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Contract Status Tracker</CardTitle>
+              <CardDescription>Track contract generation and signature status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="text-center p-4 border rounded-lg bg-blue-50">
+                    <div className="text-2xl font-bold text-blue-600">5</div>
+                    <p className="text-sm text-gray-600">Draft</p>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg bg-yellow-50">
+                    <div className="text-2xl font-bold text-yellow-600">3</div>
+                    <p className="text-sm text-gray-600">Sent for Signature</p>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg bg-green-50">
+                    <div className="text-2xl font-bold text-green-600">12</div>
+                    <p className="text-sm text-gray-600">Signed</p>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg bg-gray-50">
+                    <div className="text-2xl font-bold text-gray-600">15</div>
+                    <p className="text-sm text-gray-600">Active</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-semibold">Recent Contract Activity</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 border rounded">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm">Sarah Johnson - Full-Time Support Worker</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="success">Signed</Badge>
+                        <span className="text-xs text-gray-500">2 hours ago</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded">
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-4 w-4 text-yellow-600" />
+                        <span className="text-sm">Michael Chen - Part-Time Coordinator</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">Sent</Badge>
+                        <span className="text-xs text-gray-500">1 day ago</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm">Emma Davis - Casual Support Worker</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">Draft</Badge>
+                        <span className="text-xs text-gray-500">3 days ago</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

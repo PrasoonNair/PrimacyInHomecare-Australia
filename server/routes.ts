@@ -1384,6 +1384,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Contract generation and management endpoints
+  app.get("/api/hr/contract-templates", isAuthenticated, async (req, res) => {
+    try {
+      const templates = await storage.getContractTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching contract templates:", error);
+      res.status(500).json({ error: "Failed to fetch contract templates" });
+    }
+  });
+
+  app.post("/api/hr/contracts/generate", isAuthenticated, async (req, res) => {
+    try {
+      const { ContractService } = await import("./contractService");
+      const contractService = new ContractService();
+      
+      const contract = await contractService.generateContract(req.body);
+      res.json(contract);
+    } catch (error) {
+      console.error("Error generating contract:", error);
+      res.status(500).json({ error: "Failed to generate contract" });
+    }
+  });
+
+  app.post("/api/hr/contracts/:id/send-signature", isAuthenticated, async (req, res) => {
+    try {
+      const { ContractService } = await import("./contractService");
+      const contractService = new ContractService();
+      
+      const result = await contractService.sendForSignature(req.params.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error sending contract for signature:", error);
+      res.status(500).json({ error: "Failed to send contract for signature" });
+    }
+  });
+
+  app.get("/api/hr/contracts", isAuthenticated, async (req, res) => {
+    try {
+      const contracts = await storage.getContracts();
+      res.json(contracts);
+    } catch (error) {
+      console.error("Error fetching contracts:", error);
+      res.status(500).json({ error: "Failed to fetch contracts" });
+    }
+  });
+
+  app.get("/api/hr/contracts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const contract = await storage.getContractById(req.params.id);
+      if (!contract) {
+        return res.status(404).json({ error: "Contract not found" });
+      }
+      res.json(contract);
+    } catch (error) {
+      console.error("Error fetching contract:", error);
+      res.status(500).json({ error: "Failed to fetch contract" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");
