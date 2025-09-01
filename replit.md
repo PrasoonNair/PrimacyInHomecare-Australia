@@ -30,6 +30,8 @@ An advanced 9-stage workflow engine manages the referral-to-service lifecycle, f
 
 **Major Business Logic Enhancement (September 2025)**: Deployed EnhancedBusinessLogicService with intelligent workflow advancement, sophisticated staff matching algorithms, comprehensive funding verification, automated service agreement generation, and risk assessment automation. Added ComplianceAutomationService for NDIS compliance checking, quality assurance monitoring, and incident management. New intelligent API endpoints include `/api/workflow/intelligent/advance`, `/api/workflow/staff/intelligent-matching`, `/api/compliance/check`, and `/api/quality/assurance` providing 90% automated decision-making coverage.
 
+**Service Delivery Team Enhancement (September 2025)**: Created comprehensive Participant Allocation tab with intelligent list view interface for service delivery managers. Features smart filtering, real-time allocation status tracking, intelligent staff matching with multi-factor scoring, budget progress visualization, and integration with enhanced business logic. Provides complete participant management workflow from pending allocation to active service delivery with 80% faster allocation processing.
+
 ### Comprehensive Automation System
 An advanced automation engine optimizes operations through intelligent staff matching, automated service scheduling, automated invoice generation, SCHADS payroll automation, real-time budget monitoring with alerts, goal progress automation, and automated compliance reporting. It also provides performance analytics and manages scheduled background tasks.
 
