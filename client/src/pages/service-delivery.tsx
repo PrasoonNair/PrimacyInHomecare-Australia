@@ -24,6 +24,7 @@ import {
   Users, Activity, Target, CheckCircle2, AlertTriangle, Clock, DollarSign, UserX
 } from "lucide-react";
 import { ParticipantOffboarding } from "@/components/participants/participant-offboarding";
+import { ParticipantAllocationTab } from "@/components/service-delivery/participant-allocation-tab";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format } from "date-fns";
 
@@ -267,7 +268,7 @@ export default function ServiceDelivery() {
       <KPICards />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-5 w-full max-w-5xl">
+            <TabsList className="grid grid-cols-6 w-full max-w-6xl">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <Activity className="w-4 h-4" />
                 Overview
@@ -275,6 +276,10 @@ export default function ServiceDelivery() {
               <TabsTrigger value="allocation" className="flex items-center gap-2">
                 <Users className="w-4 h-4" />
                 Staff Allocation
+              </TabsTrigger>
+              <TabsTrigger value="participant-allocation" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Participant Allocation
               </TabsTrigger>
               <TabsTrigger value="performance" className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
@@ -741,6 +746,11 @@ export default function ServiceDelivery() {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            {/* Participant Allocation Tab */}
+            <TabsContent value="participant-allocation" className="space-y-6">
+              <ParticipantAllocationTab />
             </TabsContent>
 
             {/* Participant Exit & Offboarding Tab */}
