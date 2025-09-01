@@ -3282,6 +3282,99 @@ Primacy Care Australia`,
       nextStep: 'Continue completing remaining requirements'
     };
   }
+
+  // Enhanced Payroll System Methods
+  async getSCHADSRates() {
+    // Mock implementation - in production this would query SCHADS rates database
+    return [
+      {
+        id: 'SCHADS_L2_1_CASUAL',
+        level: 'Level 2.1',
+        classification: 'Support Worker',
+        streamType: 'social-community-disability',
+        employmentType: 'casual',
+        baseHourlyRate: '31.41',
+        casualLoading: '0.25',
+        saturdayRate: '1.5',
+        sundayRate: '2.0',
+        publicHolidayRate: '2.5',
+        eveningRate: '1.125',
+        nightRate: '1.15',
+        overtime1Rate: '1.5',
+        overtime2Rate: '2.0',
+        brokenShiftAllowance: '24.30',
+        sleeperAllowance: '86.20',
+        onCallAllowance: '32.75',
+        vehicleAllowancePerKm: '0.95',
+        mealAllowance: '18.60',
+        effectiveFrom: '2024-07-01',
+        isActive: true
+      },
+      {
+        id: 'SCHADS_L2_1_PARTTIME',
+        level: 'Level 2.1',
+        classification: 'Support Worker',
+        streamType: 'social-community-disability',
+        employmentType: 'part-time',
+        baseHourlyRate: '25.13',
+        casualLoading: '0.0',
+        saturdayRate: '1.5',
+        sundayRate: '2.0',
+        publicHolidayRate: '2.5',
+        eveningRate: '1.125',
+        nightRate: '1.15',
+        overtime1Rate: '1.5',
+        overtime2Rate: '2.0',
+        brokenShiftAllowance: '24.30',
+        sleeperAllowance: '86.20',
+        onCallAllowance: '32.75',
+        vehicleAllowancePerKm: '0.95',
+        mealAllowance: '18.60',
+        effectiveFrom: '2024-07-01',
+        isActive: true
+      },
+      {
+        id: 'SCHADS_L3_CASUAL',
+        level: 'Level 3',
+        classification: 'Senior Support Worker',
+        streamType: 'social-community-disability',
+        employmentType: 'casual',
+        baseHourlyRate: '32.95',
+        casualLoading: '0.25',
+        saturdayRate: '1.5',
+        sundayRate: '2.0',
+        publicHolidayRate: '2.5',
+        eveningRate: '1.125',
+        nightRate: '1.15',
+        overtime1Rate: '1.5',
+        overtime2Rate: '2.0',
+        brokenShiftAllowance: '25.50',
+        sleeperAllowance: '90.50',
+        onCallAllowance: '34.30',
+        vehicleAllowancePerKm: '0.95',
+        mealAllowance: '18.60',
+        effectiveFrom: '2024-07-01',
+        isActive: true
+      }
+    ];
+  }
+
+  async createStaffPayrollRecord(payrollData: any) {
+    // Mock implementation - in production this would insert into payroll database
+    const payrollId = `PAY${Date.now()}`;
+    console.log(`Created enhanced payroll record ${payrollId} for staff ${payrollData.staffId}`);
+    
+    return {
+      id: payrollId,
+      staffId: payrollData.staffId,
+      payPeriodStart: payrollData.payPeriodStart,
+      payPeriodEnd: payrollData.payPeriodEnd,
+      grossPay: payrollData.grossPay,
+      netPay: payrollData.netPay,
+      breakdown: payrollData.breakdown,
+      status: 'completed'
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

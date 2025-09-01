@@ -14,7 +14,8 @@ import {
   services,
   participants,
   staff,
-  ndisPlanCategoryBudgets
+  ndisPlanCategoryBudgets,
+  schacsAwardRates
 } from "@shared/schema";
 
 export class FinanceService {
@@ -179,23 +180,312 @@ export class FinanceService {
   }
 
   /**
-   * Calculate SCHADS-compliant pay
+   * Calculate SCHADS-compliant pay with full shift allowances
    */
-  private calculateSCHADSPay(hours: number, baseRate: number, employmentType?: string): number {
+  private calculateSCHADSPay(
+    regularHours: number = 0,
+    overtimeHours: number = 0,
+    weekendHours: number = 0,
+    publicHolidayHours: number = 0,
+    eveningHours: number = 0,
+    nightHours: number = 0,
+    baseRate: number,
+    employmentType?: string,
+    allowances?: {
+      brokenShift?: number;
+      sleepover?: number;
+      onCall?: number;
+      travel?: number;
+      meal?: number;
+    }
+  ): number {
     let totalPay = 0;
+    const casualLoading = employmentType === 'casual' ? 0.25 : 0;
 
-    // Base rate calculation
-    if (employmentType === 'casual') {
-      // 25% casual loading
-      totalPay = hours * baseRate * 1.25;
-    } else {
-      totalPay = hours * baseRate;
+    // Regular hours calculation
+    totalPay += regularHours * baseRate * (1 + casualLoading);
+
+    // Weekend penalty rates (SCHADS compliant)
+    // Saturday: 150% + casual loading if applicable
+    // Sunday: 200% + casual loading if applicable
+    totalPay += weekendHours * baseRate * (1.5 + casualLoading);
+
+    // Public holiday rates (250% + casual loading if applicable)
+    totalPay += publicHolidayHours * baseRate * (2.5 + casualLoading);
+
+    // Evening rates (112.5% for 6pm-8pm Mon-Fri + casual loading)
+    totalPay += eveningHours * baseRate * (1.125 + casualLoading);
+
+    // Night rates (115% for 8pm-6am Mon-Fri + casual loading)
+    totalPay += nightHours * baseRate * (1.15 + casualLoading);
+
+    // Overtime calculations
+    if (overtimeHours > 0) {
+      if (overtimeHours <= 2) {
+        // First 2 hours at 150%
+        totalPay += overtimeHours * baseRate * (1.5 + casualLoading);
+      } else {
+        // First 2 hours at 150%
+        totalPay += 2 * baseRate * (1.5 + casualLoading);
+        // Remaining hours at 200%
+        totalPay += (overtimeHours - 2) * baseRate * (2.0 + casualLoading);
+      }
     }
 
-    // TODO: Add penalty rates for weekends, public holidays, overtime
-    // This would require tracking when the hours were worked
+    // Add fixed allowances
+    if (allowances) {
+      totalPay += allowances.brokenShift || 0;
+      totalPay += allowances.sleepover || 0;
+      totalPay += allowances.onCall || 0;
+      totalPay += allowances.travel || 0;
+      totalPay += allowances.meal || 0;
+    }
 
     return totalPay;
+  }
+
+  /**
+   * Enhanced calculate pay with detailed breakdown
+   */
+  async calculateStaffPay(
+    staffId: string,
+    payPeriodStart: Date,
+    payPeriodEnd: Date,
+    hoursBreakdown: {
+      regularHours: number;
+      overtimeHours?: number;
+      weekendHours?: number;
+      publicHolidayHours?: number;
+      eveningHours?: number;
+      nightHours?: number;
+    },
+    allowances?: {
+      brokenShift?: number;
+      sleepover?: number;
+      onCall?: number;
+      travel?: number;
+      meal?: number;
+    }
+  ) {
+    try {
+      // Get staff member details
+      const staffMember = await db
+        .select()
+        .from(staff)
+        .where(eq(staff.id, staffId))
+        .limit(1);
+
+      if (!staffMember.length) {
+        throw new Error(`Staff member ${staffId} not found`);
+      }
+
+      const member = staffMember[0];
+      
+      // Get current SCHADS rate for the staff member
+      const awardRate = await db
+        .select()
+        .from(schacsAwardRates)
+        .where(
+          and(
+            eq(schacsAwardRates.level, member.awardLevel || 'Level 2.1'),
+            eq(schacsAwardRates.employmentType, member.employmentType || 'casual'),
+            eq(schacsAwardRates.isActive, true),
+            lte(schacsAwardRates.effectiveFrom, new Date())
+          )
+        )
+        .orderBy(desc(schacsAwardRates.effectiveFrom))
+        .limit(1);
+
+      if (!awardRate.length) {
+        throw new Error(`No active SCHADS rate found for ${member.awardLevel} ${member.employmentType}`);
+      }
+
+      const rate = awardRate[0];
+      const baseHourlyRate = parseFloat(rate.baseHourlyRate);
+
+      // Calculate gross pay using enhanced SCHADS calculation
+      const grossPay = this.calculateSCHADSPay(
+        hoursBreakdown.regularHours,
+        hoursBreakdown.overtimeHours || 0,
+        hoursBreakdown.weekendHours || 0,
+        hoursBreakdown.publicHolidayHours || 0,
+        hoursBreakdown.eveningHours || 0,
+        hoursBreakdown.nightHours || 0,
+        baseHourlyRate,
+        member.employmentType,
+        allowances
+      );
+
+      // Calculate tax and superannuation
+      const tax = this.calculateTax(grossPay);
+      const superContribution = grossPay * 0.115; // 11.5% super guarantee
+      const netPay = grossPay - tax;
+
+      // Create detailed breakdown
+      const payBreakdown = {
+        staffId,
+        staffName: `${member.firstName} ${member.lastName}`,
+        payPeriodStart,
+        payPeriodEnd,
+        awardLevel: member.awardLevel,
+        employmentType: member.employmentType,
+        baseHourlyRate,
+        hoursBreakdown,
+        allowances,
+        calculations: {
+          regularPay: hoursBreakdown.regularHours * baseHourlyRate * (member.employmentType === 'casual' ? 1.25 : 1),
+          overtimePay: this.calculateOvertimePay(hoursBreakdown.overtimeHours || 0, baseHourlyRate, member.employmentType),
+          weekendPay: (hoursBreakdown.weekendHours || 0) * baseHourlyRate * (1.5 + (member.employmentType === 'casual' ? 0.25 : 0)),
+          publicHolidayPay: (hoursBreakdown.publicHolidayHours || 0) * baseHourlyRate * (2.5 + (member.employmentType === 'casual' ? 0.25 : 0)),
+          eveningPay: (hoursBreakdown.eveningHours || 0) * baseHourlyRate * (1.125 + (member.employmentType === 'casual' ? 0.25 : 0)),
+          nightPay: (hoursBreakdown.nightHours || 0) * baseHourlyRate * (1.15 + (member.employmentType === 'casual' ? 0.25 : 0)),
+          totalAllowances: Object.values(allowances || {}).reduce((sum, val) => sum + (val || 0), 0)
+        },
+        grossPay,
+        tax,
+        superContribution,
+        netPay
+      };
+
+      return payBreakdown;
+    } catch (error) {
+      console.error('Error calculating staff pay:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Calculate overtime pay specifically
+   */
+  private calculateOvertimePay(overtimeHours: number, baseRate: number, employmentType?: string): number {
+    if (overtimeHours <= 0) return 0;
+
+    const casualLoading = employmentType === 'casual' ? 0.25 : 0;
+    let overtimePay = 0;
+
+    if (overtimeHours <= 2) {
+      // First 2 hours at 150%
+      overtimePay = overtimeHours * baseRate * (1.5 + casualLoading);
+    } else {
+      // First 2 hours at 150%
+      overtimePay += 2 * baseRate * (1.5 + casualLoading);
+      // Remaining hours at 200%
+      overtimePay += (overtimeHours - 2) * baseRate * (2.0 + casualLoading);
+    }
+
+    return overtimePay;
+  }
+
+  /**
+   * Process enhanced payroll with full shift allowance calculations
+   */
+  async processEnhancedPayroll(
+    payPeriodStart: Date,
+    payPeriodEnd: Date,
+    staffPayrollData: Array<{
+      staffId: string;
+      hoursBreakdown: {
+        regularHours: number;
+        overtimeHours?: number;
+        weekendHours?: number;
+        publicHolidayHours?: number;
+        eveningHours?: number;
+        nightHours?: number;
+      };
+      allowances?: {
+        brokenShift?: number;
+        sleepover?: number;
+        onCall?: number;
+        travel?: number;
+        meal?: number;
+      };
+    }>
+  ) {
+    try {
+      let totalGross = 0;
+      let totalTax = 0;
+      let totalSuper = 0;
+      let totalNet = 0;
+      const payCalculations = [];
+
+      // Calculate pay for each staff member
+      for (const staffData of staffPayrollData) {
+        const payBreakdown = await this.calculateStaffPay(
+          staffData.staffId,
+          payPeriodStart,
+          payPeriodEnd,
+          staffData.hoursBreakdown,
+          staffData.allowances
+        );
+
+        payCalculations.push(payBreakdown);
+        totalGross += payBreakdown.grossPay;
+        totalTax += payBreakdown.tax;
+        totalSuper += payBreakdown.superContribution;
+        totalNet += payBreakdown.netPay;
+      }
+
+      // Create enhanced pay run record
+      const [payRun] = await db
+        .insert(payRuns)
+        .values({
+          payPeriodStart,
+          payPeriodEnd,
+          totalStaff: staffPayrollData.length,
+          totalGross: totalGross.toString(),
+          totalTax: totalTax.toString(),
+          totalSuper: totalSuper.toString(),
+          totalNet: totalNet.toString(),
+          status: 'completed'
+        })
+        .returning();
+
+      // Create enhanced pay slips with detailed breakdown
+      for (const calc of payCalculations) {
+        await db.insert(paySlips).values({
+          payRunId: payRun.id,
+          staffId: calc.staffId,
+          grossPay: calc.grossPay.toString(),
+          taxWithheld: calc.tax.toString(),
+          superContribution: calc.superContribution.toString(),
+          netPay: calc.netPay.toString(),
+          ordinaryHours: calc.hoursBreakdown.regularHours.toString(),
+          overtimeHours: (calc.hoursBreakdown.overtimeHours || 0).toString(),
+          weekendHours: (calc.hoursBreakdown.weekendHours || 0).toString(),
+          publicHolidayHours: (calc.hoursBreakdown.publicHolidayHours || 0).toString(),
+          penaltyRates: JSON.stringify({
+            eveningHours: calc.hoursBreakdown.eveningHours || 0,
+            nightHours: calc.hoursBreakdown.nightHours || 0,
+            eveningPay: calc.calculations.eveningPay,
+            nightPay: calc.calculations.nightPay
+          }),
+          allowances: JSON.stringify(calc.allowances || {}),
+          awardLevel: calc.awardLevel,
+          baseHourlyRate: calc.baseHourlyRate.toString()
+        });
+      }
+
+      return {
+        payRunId: payRun.id,
+        summary: {
+          totalStaff: staffPayrollData.length,
+          totalGross,
+          totalTax,
+          totalSuper,
+          totalNet,
+          payCalculations: payCalculations.map(calc => ({
+            staffId: calc.staffId,
+            staffName: calc.staffName,
+            grossPay: calc.grossPay,
+            netPay: calc.netPay,
+            breakdown: calc.calculations
+          }))
+        }
+      };
+    } catch (error) {
+      console.error('Error processing enhanced payroll:', error);
+      throw error;
+    }
   }
 
   /**

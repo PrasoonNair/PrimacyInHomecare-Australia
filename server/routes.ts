@@ -1915,6 +1915,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced Payroll Calculation Endpoints
+  app.post("/api/payroll/calculate-staff-pay", isAuthenticated, async (req, res) => {
+    try {
+      const { staffId, payPeriodStart, payPeriodEnd, hoursBreakdown, allowances } = req.body;
+      
+      if (!staffId || !payPeriodStart || !payPeriodEnd || !hoursBreakdown) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const payCalculation = await financeService.calculateStaffPay(
+        staffId,
+        new Date(payPeriodStart),
+        new Date(payPeriodEnd),
+        hoursBreakdown,
+        allowances
+      );
+
+      res.json({ success: true, payCalculation });
+    } catch (error) {
+      console.error("Error calculating staff pay:", error);
+      res.status(500).json({ error: "Failed to calculate staff pay" });
+    }
+  });
+
+  app.get("/api/payroll/schads-rates", isAuthenticated, async (req, res) => {
+    try {
+      const rates = await storage.getSCHADSRates();
+      res.json(rates);
+    } catch (error) {
+      console.error("Error fetching SCHADS rates:", error);
+      res.status(500).json({ error: "Failed to fetch SCHADS rates" });
+    }
+  });
+
+  app.post("/api/payroll/process-enhanced-payroll", isAuthenticated, async (req, res) => {
+    try {
+      const { payPeriodStart, payPeriodEnd, staffPayrollData } = req.body;
+      
+      const result = await financeService.processEnhancedPayroll(
+        new Date(payPeriodStart),
+        new Date(payPeriodEnd),
+        staffPayrollData
+      );
+
+      res.json({ success: true, payRunId: result.payRunId, summary: result.summary });
+    } catch (error) {
+      console.error("Error processing enhanced payroll:", error);
+      res.status(500).json({ error: "Failed to process enhanced payroll" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

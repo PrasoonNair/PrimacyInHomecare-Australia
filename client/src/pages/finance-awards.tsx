@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertAwardRateSchema, insertPayrollSchema, type AwardRate, type Payroll, type Staff } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { DollarSignIcon, PlusIcon, FileTextIcon, CalendarIcon, TrendingUpIcon, AlertCircleIcon } from "lucide-react";
+import { ShiftAllowanceCalculator } from '@/components/finance/shift-allowance-calculator';
 import { format } from "date-fns";
 
 export default function FinanceAwards() {
