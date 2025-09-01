@@ -1966,6 +1966,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Price Guide Management Endpoints
+  app.get("/api/price-guides", isAuthenticated, async (req, res) => {
+    try {
+      const priceGuides = await storage.getPriceGuideDocuments();
+      res.json(priceGuides);
+    } catch (error) {
+      console.error("Error fetching price guides:", error);
+      res.status(500).json({ error: "Failed to fetch price guides" });
+    }
+  });
+
+  app.post("/api/price-guides/upload", isAuthenticated, async (req, res) => {
+    try {
+      // In production, this would handle file upload to Google Cloud Storage
+      const { documentType, version, effectiveDate, description } = req.body;
+      
+      // Mock file upload response
+      const result = await storage.uploadPriceGuideDocument({
+        documentType,
+        version,
+        effectiveDate,
+        description,
+        uploadedBy: req.user?.id || 'system',
+        fileName: `${documentType}-${version}.pdf`,
+        fileSize: 1024000, // 1MB mock size
+        fileUrl: `/mock-documents/${documentType}-${version}.pdf`
+      });
+
+      res.json({ 
+        success: true, 
+        documentId: result.id,
+        ratesExtracted: result.ratesExtracted,
+        extractedRatesCount: result.extractedRatesCount
+      });
+    } catch (error) {
+      console.error("Error uploading price guide:", error);
+      res.status(500).json({ error: "Failed to upload price guide document" });
+    }
+  });
+
+  app.post("/api/price-guides/:id/activate", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await storage.activatePriceGuideDocument(id);
+      res.json({ success: true, activated: result.activated });
+    } catch (error) {
+      console.error("Error activating price guide:", error);
+      res.status(500).json({ error: "Failed to activate price guide document" });
+    }
+  });
+
+  app.post("/api/price-guides/:id/extract-rates", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const result = await storage.extractRatesFromDocument(id);
+      res.json({ 
+        success: true, 
+        extractedRatesCount: result.extractedRatesCount,
+        extractionLog: result.extractionLog
+      });
+    } catch (error) {
+      console.error("Error extracting rates:", error);
+      res.status(500).json({ error: "Failed to extract rates from document" });
+    }
+  });
+
+  app.delete("/api/price-guides/:id", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deletePriceGuideDocument(id);
+      res.json({ success: true, deleted: true });
+    } catch (error) {
+      console.error("Error deleting price guide:", error);
+      res.status(500).json({ error: "Failed to delete price guide document" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

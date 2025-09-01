@@ -45,6 +45,9 @@ export const serviceCategoryEnum = pgEnum("service_category", [
 // Department enums - moved before userRoleEnum
 export const departmentEnum = pgEnum("department", ["intake", "hr_recruitment", "finance", "service_delivery", "compliance_quality"]);
 
+// Price guide document types
+export const priceGuideTypeEnum = pgEnum("price_guide_type", ["schads", "ndis"]);
+
 // Define specific role enum for all 15 roles
 export const userRoleEnum = pgEnum("user_role", [
   "super_admin",
@@ -756,6 +759,27 @@ export const paySlips = pgTable("pay_slips", {
   ytdTax: decimal("ytd_tax", { precision: 12, scale: 2 }),
   ytdSuper: decimal("ytd_super", { precision: 12, scale: 2 }),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Price Guide Documents table for SCHADS and NDIS master documents
+export const priceGuideDocuments = pgTable("price_guide_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentType: priceGuideTypeEnum("document_type").notNull(),
+  title: varchar("title").notNull(),
+  version: varchar("version").notNull(),
+  effectiveDate: date("effective_date").notNull(),
+  uploadDate: timestamp("upload_date").defaultNow(),
+  fileUrl: text("file_url").notNull(),
+  fileName: varchar("file_name").notNull(),
+  fileSize: integer("file_size").notNull(),
+  isActive: boolean("is_active").default(false),
+  uploadedBy: varchar("uploaded_by").references(() => users.id).notNull(),
+  description: text("description"),
+  ratesExtracted: boolean("rates_extracted").default(false),
+  extractedRatesCount: integer("extracted_rates_count").default(0),
+  extractionLog: jsonb("extraction_log"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // 4. SERVICE DELIVERY DEPARTMENT TABLES

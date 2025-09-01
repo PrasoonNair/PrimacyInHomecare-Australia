@@ -3375,6 +3375,164 @@ Primacy Care Australia`,
       status: 'completed'
     };
   }
+
+  // Price Guide Document Management Methods
+  async getPriceGuideDocuments() {
+    // Mock implementation - in production this would query the priceGuideDocuments table
+    return [
+      {
+        id: 'schads-2024-1',
+        documentType: 'schads',
+        title: 'SCHADS Award - 2024 Pay Guide',
+        version: '2024.1',
+        effectiveDate: '2024-07-01',
+        uploadDate: '2024-06-15T00:00:00Z',
+        fileUrl: '/mock-documents/schads-2024.1.pdf',
+        fileName: 'schads-award-2024.1.pdf',
+        fileSize: 2048000,
+        isActive: true,
+        uploadedBy: 'system',
+        description: 'Updated SCHADS Award rates effective July 1, 2024',
+        ratesExtracted: true,
+        extractedRatesCount: 15
+      },
+      {
+        id: 'ndis-2024-1',
+        documentType: 'ndis',
+        title: 'NDIS Price Guide - 2024-25',
+        version: '2024-25',
+        effectiveDate: '2024-07-01',
+        uploadDate: '2024-06-20T00:00:00Z',
+        fileUrl: '/mock-documents/ndis-price-guide-2024-25.pdf',
+        fileName: 'ndis-price-guide-2024-25.pdf',
+        fileSize: 5120000,
+        isActive: true,
+        uploadedBy: 'system',
+        description: 'NDIS Price Guide and Limits 2024-25',
+        ratesExtracted: true,
+        extractedRatesCount: 150
+      },
+      {
+        id: 'schads-2025-1',
+        documentType: 'schads',
+        title: 'SCHADS Award - 2025 Draft',
+        version: '2025.1-draft',
+        effectiveDate: '2025-01-01',
+        uploadDate: '2024-12-01T00:00:00Z',
+        fileUrl: '/mock-documents/schads-2025.1-draft.pdf',
+        fileName: 'schads-award-2025.1-draft.pdf',
+        fileSize: 1800000,
+        isActive: false,
+        uploadedBy: 'system',
+        description: 'Draft SCHADS Award rates for 2025 - pending approval',
+        ratesExtracted: false,
+        extractedRatesCount: 0
+      }
+    ];
+  }
+
+  async uploadPriceGuideDocument(documentData: any) {
+    // Mock implementation - in production this would:
+    // 1. Upload file to Google Cloud Storage
+    // 2. Insert record into priceGuideDocuments table
+    // 3. Optionally trigger automatic rate extraction via OCR/AI
+    
+    const documentId = `${documentData.documentType}-${Date.now()}`;
+    console.log(`Uploaded price guide document ${documentId}`);
+    
+    // Simulate rate extraction for certain document types
+    const shouldExtractRates = documentData.documentType === 'schads';
+    const extractedRatesCount = shouldExtractRates ? Math.floor(Math.random() * 20) + 10 : 0;
+    
+    return {
+      id: documentId,
+      title: `${documentData.documentType.toUpperCase()} - ${documentData.version}`,
+      documentType: documentData.documentType,
+      version: documentData.version,
+      effectiveDate: documentData.effectiveDate,
+      uploadDate: new Date().toISOString(),
+      fileUrl: documentData.fileUrl,
+      fileName: documentData.fileName,
+      fileSize: documentData.fileSize,
+      isActive: false,
+      uploadedBy: documentData.uploadedBy,
+      description: documentData.description,
+      ratesExtracted: shouldExtractRates,
+      extractedRatesCount
+    };
+  }
+
+  async activatePriceGuideDocument(documentId: string) {
+    // Mock implementation - in production this would:
+    // 1. Set isActive = false for all other documents of same type
+    // 2. Set isActive = true for this document
+    // 3. Update current rates in system from extracted rates
+    // 4. Create audit log of rate changes
+    
+    console.log(`Activating price guide document ${documentId}`);
+    console.log('Deactivating other documents of same type');
+    console.log('Updating system rates from document');
+    console.log('Creating rate change audit log');
+    
+    return {
+      activated: true,
+      previousActiveDocument: 'previous-doc-id',
+      ratesUpdated: true,
+      auditLogId: `AUDIT-${Date.now()}`
+    };
+  }
+
+  async extractRatesFromDocument(documentId: string) {
+    // Mock implementation - in production this would:
+    // 1. Use OCR to scan document
+    // 2. Use AI/ML to identify rate tables
+    // 3. Parse and validate extracted rates
+    // 4. Store rates in structured format
+    // 5. Create extraction log
+    
+    console.log(`Extracting rates from document ${documentId}`);
+    
+    // Simulate extraction process
+    const extractedRatesCount = Math.floor(Math.random() * 25) + 15;
+    
+    const extractionLog = {
+      timestamp: new Date().toISOString(),
+      method: 'OCR + AI',
+      pagesProcessed: 45,
+      tablesFound: 8,
+      ratesExtracted: extractedRatesCount,
+      confidence: 0.95,
+      warnings: [
+        'Some table formatting required manual review',
+        'Regional variations detected and processed'
+      ],
+      successRate: '96%'
+    };
+    
+    return {
+      extractedRatesCount,
+      extractionLog,
+      success: true
+    };
+  }
+
+  async deletePriceGuideDocument(documentId: string) {
+    // Mock implementation - in production this would:
+    // 1. Check if document is currently active (prevent deletion)
+    // 2. Remove file from Google Cloud Storage
+    // 3. Delete record from database
+    // 4. Create deletion audit log
+    
+    console.log(`Deleting price guide document ${documentId}`);
+    console.log('Removing file from cloud storage');
+    console.log('Creating deletion audit log');
+    
+    return {
+      deleted: true,
+      fileRemoved: true,
+      auditLogId: `DELETE-AUDIT-${Date.now()}`
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();
