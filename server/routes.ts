@@ -2038,6 +2038,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Master Agreements API Endpoints
+  app.get("/api/master-agreements", isAuthenticated, async (req, res) => {
+    try {
+      const agreements = await storage.getMasterAgreements();
+      res.json(agreements);
+    } catch (error) {
+      console.error("Error fetching master agreements:", error);
+      res.status(500).json({ message: "Failed to fetch master agreements" });
+    }
+  });
+
+  app.post("/api/master-agreements", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const agreementData = {
+        ...req.body,
+        uploadedBy: userId,
+      };
+      
+      const agreement = await storage.createMasterAgreement(agreementData);
+      res.json(agreement);
+    } catch (error) {
+      console.error("Error creating master agreement:", error);
+      res.status(500).json({ message: "Failed to create master agreement" });
+    }
+  });
+
+  app.get("/api/master-agreements/:id", isAuthenticated, async (req, res) => {
+    try {
+      const agreement = await storage.getMasterAgreementById(req.params.id);
+      if (!agreement) {
+        return res.status(404).json({ message: "Master agreement not found" });
+      }
+      res.json(agreement);
+    } catch (error) {
+      console.error("Error fetching master agreement:", error);
+      res.status(500).json({ message: "Failed to fetch master agreement" });
+    }
+  });
+
+  app.post("/api/master-agreements/:id/approve", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { action, notes } = req.body;
+      
+      const agreement = await storage.updateMasterAgreementApproval(
+        req.params.id,
+        action,
+        userId,
+        notes
+      );
+      res.json(agreement);
+    } catch (error) {
+      console.error("Error updating master agreement approval:", error);
+      res.status(500).json({ message: "Failed to update approval status" });
+    }
+  });
+
+  app.post("/api/master-agreements/:id/access", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { accessType } = req.body;
+      
+      await storage.logMasterAgreementAccess(req.params.id, userId, accessType);
+      
+      // Update download count if it's a download
+      if (accessType === "download") {
+        await storage.incrementMasterAgreementDownloadCount(req.params.id);
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error logging master agreement access:", error);
+      res.status(500).json({ message: "Failed to log access" });
+    }
+  });
+
+  app.get("/api/master-agreements/:id/versions", isAuthenticated, async (req, res) => {
+    try {
+      const versions = await storage.getMasterAgreementVersions(req.params.id);
+      res.json(versions);
+    } catch (error) {
+      console.error("Error fetching master agreement versions:", error);
+      res.status(500).json({ message: "Failed to fetch versions" });
+    }
+  });
+
+  app.post("/api/master-agreements/:id/versions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const versionData = {
+        ...req.body,
+        masterAgreementId: req.params.id,
+        uploadedBy: userId,
+      };
+      
+      const version = await storage.createMasterAgreementVersion(versionData);
+      res.json(version);
+    } catch (error) {
+      console.error("Error creating master agreement version:", error);
+      res.status(500).json({ message: "Failed to create version" });
+    }
+  });
+
   // Price Guide Management Endpoints
   app.get("/api/price-guides", isAuthenticated, async (req, res) => {
     try {

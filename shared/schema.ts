@@ -3022,6 +3022,85 @@ export type TravelVerificationRule = typeof travelVerificationRules.$inferSelect
 export type InsertDailyShiftSequence = z.infer<typeof insertDailyShiftSequenceSchema>;
 export type DailyShiftSequence = typeof dailyShiftSequences.$inferSelect;
 
+// Master Agreements Management System
+export const masterAgreements = pgTable("master_agreements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  documentType: varchar("document_type").notNull(), // service_agreement, schads, ndis_price_guide, invoice_template, payroll_template
+  title: varchar("title").notNull(),
+  description: text("description"),
+  fileName: varchar("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"), // in bytes
+  mimeType: varchar("mime_type").notNull(),
+  version: varchar("version").default("1.0"),
+  isActive: boolean("is_active").default(true),
+  effectiveFrom: date("effective_from"),
+  expiresAt: date("expires_at"),
+  uploadedBy: varchar("uploaded_by").references(() => users.id).notNull(),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvalStatus: varchar("approval_status").default("pending"), // pending, approved, rejected
+  approvalDate: timestamp("approval_date"),
+  approvalNotes: text("approval_notes"),
+  tags: text("tags").array(), // searchable tags
+  category: varchar("category"), // financial, legal, operational, hr
+  complianceRequired: boolean("compliance_required").default(false),
+  lastReviewDate: date("last_review_date"),
+  nextReviewDate: date("next_review_date"),
+  accessLevel: varchar("access_level").default("staff"), // public, staff, management, admin
+  downloadCount: integer("download_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Master Agreement Versions (for version control)
+export const masterAgreementVersions = pgTable("master_agreement_versions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  masterAgreementId: varchar("master_agreement_id").references(() => masterAgreements.id).notNull(),
+  version: varchar("version").notNull(),
+  fileName: varchar("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"),
+  changeLog: text("change_log"),
+  uploadedBy: varchar("uploaded_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Master Agreement Access Log
+export const masterAgreementAccessLog = pgTable("master_agreement_access_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  masterAgreementId: varchar("master_agreement_id").references(() => masterAgreements.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  accessType: varchar("access_type").notNull(), // view, download, edit, approve
+  accessDate: timestamp("access_date").defaultNow(),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+});
+
+// Master Agreement schemas
+export const insertMasterAgreementSchema = createInsertSchema(masterAgreements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMasterAgreementVersionSchema = createInsertSchema(masterAgreementVersions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMasterAgreementAccessLogSchema = createInsertSchema(masterAgreementAccessLog).omit({
+  id: true,
+  accessDate: true,
+});
+
+// Master Agreement types
+export type InsertMasterAgreement = z.infer<typeof insertMasterAgreementSchema>;
+export type MasterAgreement = typeof masterAgreements.$inferSelect;
+export type InsertMasterAgreementVersion = z.infer<typeof insertMasterAgreementVersionSchema>;
+export type MasterAgreementVersion = typeof masterAgreementVersions.$inferSelect;
+export type InsertMasterAgreementAccessLog = z.infer<typeof insertMasterAgreementAccessLogSchema>;
+export type MasterAgreementAccessLog = typeof masterAgreementAccessLog.$inferSelect;
+
 // Roles and permissions tables
 export const roles = pgTable("roles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

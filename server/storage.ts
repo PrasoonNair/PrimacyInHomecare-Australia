@@ -138,6 +138,16 @@ import {
   type InsertRegion,
   type DepartmentRegion,
   type InsertDepartmentRegion,
+  // Master Agreements types
+  masterAgreements,
+  masterAgreementVersions,
+  masterAgreementAccessLog,
+  type MasterAgreement,
+  type InsertMasterAgreement,
+  type MasterAgreementVersion,
+  type InsertMasterAgreementVersion,
+  type MasterAgreementAccessLog,
+  type InsertMasterAgreementAccessLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, sql, count, sum, or, like, ilike } from "drizzle-orm";

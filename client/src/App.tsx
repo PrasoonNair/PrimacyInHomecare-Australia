@@ -33,6 +33,7 @@ import TestLogin from "@/pages/test-login";
 import Intake from "@/pages/intake";
 import HRRecruitment from "@/pages/hr-recruitment";
 import FinanceAwards from "@/pages/finance-awards";
+import MasterAgreements from "@/pages/master-agreements";
 import ServiceDelivery from "@/pages/service-delivery";
 import ShiftManagement from "@/pages/shift-management";
 import CalendarShifts from "@/pages/calendar-shifts";
@@ -115,6 +116,7 @@ function Router() {
             <Route path="/intake" component={Intake} />
             <Route path="/hr-recruitment" component={HRRecruitment} />
             <Route path="/finance-awards" component={FinanceAwards} />
+            <Route path="/master-agreements" component={MasterAgreements} />
             <Route path="/service-delivery" component={ServiceDelivery} />
             <Route path="/shift-management" component={ShiftManagement} />
           <Route path="/calendar-shifts" component={CalendarShifts} />
