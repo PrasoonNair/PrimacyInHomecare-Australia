@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DollarSignIcon, PlusIcon, FileTextIcon, CalendarIcon, TrendingUpIcon, AlertCircleIcon } from "lucide-react";
 import { ShiftAllowanceCalculator } from '@/components/finance/shift-allowance-calculator';
 import { PriceGuideManager } from '@/components/finance/price-guide-manager';
+import { ProviderTravelCalculator } from '@/components/finance/provider-travel-calculator';
 import { format } from "date-fns";
 
 export default function FinanceAwards() {
@@ -133,9 +134,10 @@ export default function FinanceAwards() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="awards" data-testid="tab-awards">Award Rates</TabsTrigger>
             <TabsTrigger value="calculator" data-testid="tab-calculator">Shift Calculator</TabsTrigger>
+            <TabsTrigger value="travel" data-testid="tab-travel">Travel Calculator</TabsTrigger>
             <TabsTrigger value="documents" data-testid="tab-documents">Price Guides</TabsTrigger>
             <TabsTrigger value="payroll" data-testid="tab-payroll">Payroll</TabsTrigger>
           </TabsList>
@@ -378,6 +380,10 @@ export default function FinanceAwards() {
 
           <TabsContent value="calculator" className="space-y-6">
             <ShiftAllowanceCalculator />
+          </TabsContent>
+
+          <TabsContent value="travel" className="space-y-6">
+            <ProviderTravelCalculator />
           </TabsContent>
 
           <TabsContent value="documents" className="space-y-6">

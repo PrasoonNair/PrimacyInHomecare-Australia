@@ -1966,6 +1966,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Provider Travel Calculator API Endpoints
+  app.get("/api/travel-calculations", isAuthenticated, async (req, res) => {
+    try {
+      const { TravelCalculationService } = await import("./services/travel-calculation");
+      const travelService = new TravelCalculationService();
+      const calculations = await travelService.getAllCalculations();
+      res.json(calculations);
+    } catch (error) {
+      console.error("Error fetching travel calculations:", error);
+      res.status(500).json({ message: "Failed to fetch travel calculations" });
+    }
+  });
+
+  app.post("/api/travel-calculations/calculate", isAuthenticated, async (req, res) => {
+    try {
+      const { TravelCalculationService } = await import("./services/travel-calculation");
+      const travelService = new TravelCalculationService();
+      const calculation = await travelService.calculateTravel(req.body);
+      res.json(calculation);
+    } catch (error) {
+      console.error("Error calculating travel:", error);
+      res.status(500).json({ message: "Failed to calculate travel costs" });
+    }
+  });
+
+  app.get("/api/travel-calculations/daily-summaries", isAuthenticated, async (req, res) => {
+    try {
+      const { TravelCalculationService } = await import("./services/travel-calculation");
+      const travelService = new TravelCalculationService();
+      const summaries = await travelService.getDailySummaries();
+      res.json(summaries);
+    } catch (error) {
+      console.error("Error fetching daily summaries:", error);
+      res.status(500).json({ message: "Failed to fetch daily summaries" });
+    }
+  });
+
+  app.get("/api/travel-rates/current", isAuthenticated, async (req, res) => {
+    try {
+      // Return current NDIS and SCHADS rates
+      const currentRates = {
+        ndisMmm1Rate: 0.99,
+        ndisMmm2Rate: 0.99,
+        ndisMmm3Rate: 0.99,
+        ndisMmm4Rate: 0.85,
+        ndisMmm5Rate: 0.78,
+        ndisMmm123MaxMinutes: 30,
+        ndisMmm45MaxMinutes: 60,
+        schacsVehicleAllowanceRate: 0.95,
+        atoBusinessKmRate: 0.85,
+        effectiveFrom: "2024-07-01",
+        isActive: true
+      };
+      res.json(currentRates);
+    } catch (error) {
+      console.error("Error fetching travel rates:", error);
+      res.status(500).json({ message: "Failed to fetch travel rates" });
+    }
+  });
+
+  app.post("/api/travel-calculations/bulk-recalculate", isAuthenticated, async (req, res) => {
+    try {
+      const { TravelCalculationService } = await import("./services/travel-calculation");
+      const travelService = new TravelCalculationService();
+      const result = await travelService.bulkRecalculate(req.body.fromDate, req.body.toDate);
+      res.json(result);
+    } catch (error) {
+      console.error("Error in bulk recalculation:", error);
+      res.status(500).json({ message: "Failed to perform bulk recalculation" });
+    }
+  });
+
   // Price Guide Management Endpoints
   app.get("/api/price-guides", isAuthenticated, async (req, res) => {
     try {

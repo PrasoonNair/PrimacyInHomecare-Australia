@@ -1,7 +1,7 @@
 # Primacy Care Australia CMS
 
 ## Overview
-Primacy Care Australia CMS is a comprehensive case management system for NDIS (National Disability Insurance Scheme) service providers. It manages the entire lifecycle of NDIS participants, including profiles, plan management, service scheduling, progress tracking, financial management, and compliance reporting. The system features an NDIS Plan Reader for extracting participant goals, a 9-stage workflow management system for referrals, and an automation engine for intelligent scheduling, invoicing, payroll, and compliance. It also includes advanced quick search functionality and operations-level efficiency optimization with performance dashboards and AI-powered recommendations.
+Primacy Care Australia CMS is a comprehensive case management system for NDIS (National Disability Insurance Scheme) service providers. It manages the entire lifecycle of NDIS participants, including profiles, plan management, service scheduling, progress tracking, financial management, and compliance reporting. The system features an NDIS Plan Reader for extracting participant goals, a 9-stage workflow management system for referrals, and an automation engine for intelligent scheduling, invoicing, payroll, and compliance. It also includes advanced quick search functionality, operations-level efficiency optimization with performance dashboards and AI-powered recommendations, and an automated Provider Travel Calculation system with dual-purpose billing and payment calculations.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -31,6 +31,9 @@ An advanced automation engine optimizes operations through intelligent staff mat
 
 ### Leave Management System with Hierarchical Approval
 A comprehensive leave management system featuring hierarchical approval workflows, multiple leave types (annual, sick, personal, compassionate, unpaid), leave balance tracking, and automated approval routing based on organizational hierarchy. The system includes mandatory fields for handover notes, covering staff assignments, emergency contacts, and integrates with the staff availability calendar for optimal scheduling coordination.
+
+### Provider Travel Calculation System
+An advanced automated travel calculation system that handles dual-purpose billing and payment calculations for provider travel. The system calculates participant billing using NDIS price guide rates (up to $0.99/km for MMM1-3 areas, $0.85/km for MMM4-5) and staff payments using SCHADS vehicle allowance rates. Key features include critical business rule enforcement (first shift of day is non-billable to participants and non-payable to staff), automatic verification against award rates, geographic location compliance (MMM1-5 classification), comprehensive audit trails, and integration with finance and payroll systems. The calculator provides real-time calculation capabilities with database persistence for travel records and rate configurations.
 
 ## External Dependencies
 

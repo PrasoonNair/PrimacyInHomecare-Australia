@@ -2839,6 +2839,142 @@ export const insertESignatureIntegrationSchema = createInsertSchema(eSignatureIn
   updatedAt: true,
 });
 
+
+
+// Provider Travel Calculation System
+export const providerTravelCalculations = pgTable("provider_travel_calculations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  shiftId: varchar("shift_id").references(() => shifts.id).notNull(),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  
+  // Travel route details
+  originAddress: varchar("origin_address").notNull(),
+  destinationAddress: varchar("destination_address").notNull(),
+  travelDate: date("travel_date").notNull(),
+  
+  // Distance and time calculations
+  distanceKm: decimal("distance_km", { precision: 8, scale: 2 }).notNull(),
+  travelTimeMinutes: integer("travel_time_minutes").notNull(),
+  
+  // Shift sequence tracking
+  shiftSequenceNumber: integer("shift_sequence_number").notNull(), // 1st, 2nd, 3rd shift of the day
+  isFirstShiftOfDay: boolean("is_first_shift_of_day").default(false),
+  previousShiftEndTime: timestamp("previous_shift_end_time"),
+  currentShiftStartTime: timestamp("current_shift_start_time"),
+  
+  // Geographic classification
+  originMmmClassification: varchar("origin_mmm_classification"), // MMM1, MMM2, MMM3, MMM4, MMM5
+  destinationMmmClassification: varchar("destination_mmm_classification"),
+  applicableMmmRating: varchar("applicable_mmm_rating"), // Determines travel time limits
+  
+  // NDIS Billing Calculations (Participant-facing)
+  ndisMaxTravelTimeMinutes: integer("ndis_max_travel_time_minutes"), // 30 for MMM1-3, 60 for MMM4-5
+  ndisBillableTimeMinutes: integer("ndis_billable_time_minutes"),
+  ndisRatePerKm: decimal("ndis_rate_per_km", { precision: 5, scale: 2 }),
+  ndisTravelAmount: decimal("ndis_travel_amount", { precision: 8, scale: 2 }),
+  ndisIsBillable: boolean("ndis_is_billable").default(true),
+  ndisNonBillableReason: varchar("ndis_non_billable_reason"),
+  
+  // SCHADS Staff Payment Calculations
+  schacsVehicleAllowancePerKm: decimal("schacs_vehicle_allowance_per_km", { precision: 5, scale: 2 }),
+  schacsTravelPayment: decimal("schacs_travel_payment", { precision: 8, scale: 2 }),
+  schacsIsPayable: boolean("schacs_is_payable").default(true),
+  schacsNonPayableReason: varchar("schacs_non_payable_reason"),
+  
+  // Verification and compliance
+  autoVerificationStatus: varchar("auto_verification_status").default("pending"), // pending, verified, requires_review, failed
+  verificationFlags: text("verification_flags").array(),
+  manualReviewRequired: boolean("manual_review_required").default(false),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  
+  // ATO compliance tracking
+  atoCompliant: boolean("ato_compliant").default(true),
+  atoNonComplianceReasons: text("ato_non_compliance_reasons").array(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const travelRateConfigurations = pgTable("travel_rate_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // NDIS rates by geographic area
+  ndisMmm1Rate: decimal("ndis_mmm1_rate", { precision: 5, scale: 2 }).default("0.99"),
+  ndisMmm2Rate: decimal("ndis_mmm2_rate", { precision: 5, scale: 2 }).default("0.99"),
+  ndisMmm3Rate: decimal("ndis_mmm3_rate", { precision: 5, scale: 2 }).default("0.99"),
+  ndisMmm4Rate: decimal("ndis_mmm4_rate", { precision: 5, scale: 2 }).default("0.85"),
+  ndisMmm5Rate: decimal("ndis_mmm5_rate", { precision: 5, scale: 2 }).default("0.78"),
+  
+  // NDIS travel time limits
+  ndisMmm123MaxMinutes: integer("ndis_mmm123_max_minutes").default(30),
+  ndisMmm45MaxMinutes: integer("ndis_mmm45_max_minutes").default(60),
+  
+  // SCHADS rates (from current award)
+  schacsVehicleAllowanceRate: decimal("schacs_vehicle_allowance_rate", { precision: 5, scale: 2 }).default("0.95"),
+  
+  // ATO rates for comparison
+  atoBusinessKmRate: decimal("ato_business_km_rate", { precision: 5, scale: 2 }).default("0.85"),
+  
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  isActive: boolean("is_active").default(true),
+  lastUpdatedBy: varchar("last_updated_by").references(() => users.id),
+  updateSource: varchar("update_source"), // ndis_pricing_update, schads_award_variation, ato_determination
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const travelVerificationRules = pgTable("travel_verification_rules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ruleName: varchar("rule_name").notNull(),
+  ruleType: varchar("rule_type").notNull(), // first_shift_rule, distance_validation, time_validation, rate_verification
+  ruleDescription: text("rule_description"),
+  
+  // Rule parameters
+  maxDistanceKm: decimal("max_distance_km", { precision: 8, scale: 2 }),
+  maxTimeMinutes: integer("max_time_minutes"),
+  minDistanceKm: decimal("min_distance_km", { precision: 8, scale: 2 }),
+  
+  // Actions when rule is triggered
+  actionType: varchar("action_type"), // flag_for_review, auto_reject, auto_approve, require_manual_verification
+  flagMessage: text("flag_message"),
+  isBlocking: boolean("is_blocking").default(false), // If true, prevents automatic processing
+  
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const dailyShiftSequences = pgTable("daily_shift_sequences", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  shiftDate: date("shift_date").notNull(),
+  
+  // Shift sequence tracking
+  totalShiftsForDay: integer("total_shifts_for_day").default(0),
+  shiftsWithTravel: integer("shifts_with_travel").default(0),
+  firstShiftId: varchar("first_shift_id").references(() => shifts.id),
+  lastShiftId: varchar("last_shift_id").references(() => shifts.id),
+  
+  // Travel summary for the day
+  totalTravelKm: decimal("total_travel_km", { precision: 10, scale: 2 }).default("0"),
+  totalNdisBillableTravel: decimal("total_ndis_billable_travel", { precision: 10, scale: 2 }).default("0"),
+  totalSchacsTravelPayments: decimal("total_schacs_travel_payments", { precision: 10, scale: 2 }).default("0"),
+  
+  // Compliance tracking
+  hasComplianceIssues: boolean("has_compliance_issues").default(false),
+  complianceIssues: text("compliance_issues").array(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Service Agreement Auto-Generation types
 export type InsertServiceAgreementTemplate = z.infer<typeof insertServiceAgreementTemplateSchema>;
 export type ServiceAgreementTemplate = typeof serviceAgreementTemplates.$inferSelect;
@@ -2850,6 +2986,41 @@ export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommuni
 export type AgreementCommunication = typeof agreementCommunications.$inferSelect;
 export type InsertESignatureIntegration = z.infer<typeof insertESignatureIntegrationSchema>;
 export type ESignatureIntegration = typeof eSignatureIntegrations.$inferSelect;
+
+// Provider Travel schemas
+export const insertProviderTravelCalculationSchema = createInsertSchema(providerTravelCalculations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTravelRateConfigurationSchema = createInsertSchema(travelRateConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTravelVerificationRuleSchema = createInsertSchema(travelVerificationRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDailyShiftSequenceSchema = createInsertSchema(dailyShiftSequences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Provider Travel types
+export type InsertProviderTravelCalculation = z.infer<typeof insertProviderTravelCalculationSchema>;
+export type ProviderTravelCalculation = typeof providerTravelCalculations.$inferSelect;
+export type InsertTravelRateConfiguration = z.infer<typeof insertTravelRateConfigurationSchema>;
+export type TravelRateConfiguration = typeof travelRateConfigurations.$inferSelect;
+export type InsertTravelVerificationRule = z.infer<typeof insertTravelVerificationRuleSchema>;
+export type TravelVerificationRule = typeof travelVerificationRules.$inferSelect;
+export type InsertDailyShiftSequence = z.infer<typeof insertDailyShiftSequenceSchema>;
+export type DailyShiftSequence = typeof dailyShiftSequences.$inferSelect;
 
 // Roles and permissions tables
 export const roles = pgTable("roles", {
