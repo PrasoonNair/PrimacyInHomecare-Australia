@@ -4399,6 +4399,380 @@ Primacy Care Australia`,
       sentAt: new Date().toISOString()
     };
   }
+
+  // Leave Management Methods
+  async getLeaveTypes() {
+    // Mock implementation - in production this would query leaveTypes table
+    return [
+      {
+        id: 'leave-annual',
+        name: 'Annual Leave',
+        description: 'Paid annual vacation leave',
+        maxDaysPerYear: 20,
+        paidLeave: true,
+        requiresMedicalCertificate: false,
+        medicalCertificateThreshold: 0,
+        advanceNoticeRequired: 14
+      },
+      {
+        id: 'leave-sick',
+        name: 'Sick Leave',
+        description: 'Personal illness or medical appointments',
+        maxDaysPerYear: 10,
+        paidLeave: true,
+        requiresMedicalCertificate: true,
+        medicalCertificateThreshold: 3,
+        advanceNoticeRequired: 0
+      },
+      {
+        id: 'leave-personal',
+        name: 'Personal Leave',
+        description: 'Personal or family emergencies',
+        maxDaysPerYear: 5,
+        paidLeave: true,
+        requiresMedicalCertificate: false,
+        medicalCertificateThreshold: 0,
+        advanceNoticeRequired: 7
+      },
+      {
+        id: 'leave-compassionate',
+        name: 'Compassionate Leave',
+        description: 'Bereavement or family emergency',
+        maxDaysPerYear: 3,
+        paidLeave: true,
+        requiresMedicalCertificate: false,
+        medicalCertificateThreshold: 0,
+        advanceNoticeRequired: 0
+      },
+      {
+        id: 'leave-unpaid',
+        name: 'Unpaid Leave',
+        description: 'Extended unpaid personal leave',
+        maxDaysPerYear: 30,
+        paidLeave: false,
+        requiresMedicalCertificate: false,
+        medicalCertificateThreshold: 0,
+        advanceNoticeRequired: 30
+      }
+    ];
+  }
+
+  async getLeaveBalances(userId: string) {
+    // Mock implementation - in production this would query staffLeaveBalances table
+    const leaveTypes = await this.getLeaveTypes();
+    
+    return leaveTypes.map(type => ({
+      id: `balance-${type.id}-${userId}`,
+      leaveType: type,
+      totalEntitlement: type.maxDaysPerYear,
+      usedDays: Math.floor(Math.random() * 10),
+      pendingDays: Math.floor(Math.random() * 3),
+      remainingDays: type.maxDaysPerYear - Math.floor(Math.random() * 10) - Math.floor(Math.random() * 3),
+      carryOverDays: Math.floor(Math.random() * 5),
+      financialYear: '2024-2025'
+    }));
+  }
+
+  async getLeaveRequests(params: { userId: string; status?: string; search?: string }) {
+    // Mock implementation - in production this would query leaveRequests table with joins
+    const mockRequests = [
+      {
+        id: 'req-001',
+        staff: {
+          id: 'staff-001',
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          position: 'Support Worker',
+          department: 'Service Delivery'
+        },
+        leaveType: {
+          id: 'leave-annual',
+          name: 'Annual Leave',
+          description: 'Paid annual vacation leave',
+          maxDaysPerYear: 20,
+          paidLeave: true,
+          requiresMedicalCertificate: false,
+          medicalCertificateThreshold: 0,
+          advanceNoticeRequired: 14
+        },
+        startDate: '2025-02-15',
+        endDate: '2025-02-19',
+        totalDays: 5,
+        reason: 'Family vacation to Gold Coast',
+        status: 'pending',
+        submittedAt: '2025-02-01T10:00:00Z',
+        approvalLevel: 1,
+        currentApprover: {
+          id: 'manager-001',
+          name: 'Emma Davis',
+          role: 'Service Delivery Manager'
+        },
+        handoverNotes: 'All current participants have been briefed. Emergency contact available.',
+        coveringStaff: {
+          id: 'staff-002',
+          name: 'Mike Chen'
+        }
+      },
+      {
+        id: 'req-002',
+        staff: {
+          id: 'staff-003',
+          firstName: 'David',
+          lastName: 'Wilson',
+          position: 'Finance Officer',
+          department: 'Finance'
+        },
+        leaveType: {
+          id: 'leave-sick',
+          name: 'Sick Leave',
+          description: 'Personal illness or medical appointments',
+          maxDaysPerYear: 10,
+          paidLeave: true,
+          requiresMedicalCertificate: true,
+          medicalCertificateThreshold: 3,
+          advanceNoticeRequired: 0
+        },
+        startDate: '2025-02-10',
+        endDate: '2025-02-12',
+        totalDays: 3,
+        reason: 'Medical procedure and recovery',
+        status: 'approved',
+        submittedAt: '2025-02-08T14:30:00Z',
+        approvalLevel: 2,
+        currentApprover: null
+      },
+      {
+        id: 'req-003',
+        staff: {
+          id: 'staff-004',
+          firstName: 'Lisa',
+          lastName: 'Wong',
+          position: 'HR Coordinator',
+          department: 'Human Resources'
+        },
+        leaveType: {
+          id: 'leave-personal',
+          name: 'Personal Leave',
+          description: 'Personal or family emergencies',
+          maxDaysPerYear: 5,
+          paidLeave: true,
+          requiresMedicalCertificate: false,
+          medicalCertificateThreshold: 0,
+          advanceNoticeRequired: 7
+        },
+        startDate: '2025-02-20',
+        endDate: '2025-02-20',
+        totalDays: 1,
+        reason: 'Child school event',
+        status: 'pending',
+        submittedAt: '2025-02-05T09:15:00Z',
+        approvalLevel: 1,
+        currentApprover: {
+          id: 'manager-002',
+          name: 'Jennifer Lee',
+          role: 'HR Manager'
+        }
+      }
+    ];
+
+    // Filter based on parameters
+    let filtered = mockRequests;
+    if (params.status && params.status !== 'all') {
+      filtered = filtered.filter(req => req.status === params.status);
+    }
+    if (params.search) {
+      const searchLower = params.search.toLowerCase();
+      filtered = filtered.filter(req => 
+        req.staff.firstName.toLowerCase().includes(searchLower) ||
+        req.staff.lastName.toLowerCase().includes(searchLower) ||
+        req.leaveType.name.toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filtered;
+  }
+
+  async createLeaveRequest(requestData: any) {
+    // Mock implementation - in production this would:
+    // 1. Insert into leaveRequests table
+    // 2. Determine approval hierarchy for the staff member
+    // 3. Create initial approval record
+    // 4. Send notification to first approver
+    // 5. Update leave balance pending days
+    // 6. Check for conflicts with existing approved leave
+
+    const requestId = `REQ-${Date.now()}`;
+    console.log(`Created leave request ${requestId} for staff ${requestData.staffId}`);
+    console.log(`Leave type: ${requestData.leaveTypeId}, Days: ${requestData.totalDays}`);
+    console.log(`Dates: ${requestData.startDate} to ${requestData.endDate}`);
+    
+    // Simulate approval hierarchy lookup
+    const approvers = await this.getApprovalHierarchy(requestData.staffId);
+    const firstApprover = approvers[0];
+    
+    if (firstApprover) {
+      console.log(`Assigning to first approver: ${firstApprover.approverName} (${firstApprover.approverRole})`);
+      // Simulate sending notification
+      console.log(`Notification sent to ${firstApprover.approverEmail}`);
+    }
+
+    return {
+      id: requestId,
+      staffId: requestData.staffId,
+      leaveTypeId: requestData.leaveTypeId,
+      startDate: requestData.startDate,
+      endDate: requestData.endDate,
+      totalDays: requestData.totalDays,
+      status: 'pending',
+      approvalLevel: 1,
+      currentApproverId: firstApprover?.approverId,
+      submittedAt: new Date().toISOString()
+    };
+  }
+
+  async getPendingApprovals(userId: string) {
+    // Mock implementation - in production this would query based on approval hierarchy
+    const mockPendingApprovals = [
+      {
+        id: 'req-005',
+        staff: {
+          id: 'staff-005',
+          firstName: 'Alex',
+          lastName: 'Thompson',
+          position: 'Support Worker',
+          department: 'Service Delivery'
+        },
+        leaveType: {
+          id: 'leave-annual',
+          name: 'Annual Leave',
+          description: 'Paid annual vacation leave',
+          maxDaysPerYear: 20,
+          paidLeave: true,
+          requiresMedicalCertificate: false,
+          medicalCertificateThreshold: 0,
+          advanceNoticeRequired: 14
+        },
+        startDate: '2025-03-01',
+        endDate: '2025-03-05',
+        totalDays: 5,
+        reason: 'Wedding anniversary celebration',
+        status: 'pending',
+        submittedAt: '2025-02-10T11:30:00Z',
+        approvalLevel: 1,
+        handoverNotes: 'Client visits scheduled for next week have been rescheduled.',
+        coveringStaff: {
+          id: 'staff-006',
+          name: 'Rachel Green'
+        }
+      },
+      {
+        id: 'req-006',
+        staff: {
+          id: 'staff-007',
+          firstName: 'Tom',
+          lastName: 'Anderson',
+          position: 'Senior Support Worker',
+          department: 'Service Delivery'
+        },
+        leaveType: {
+          id: 'leave-sick',
+          name: 'Sick Leave',
+          description: 'Personal illness or medical appointments',
+          maxDaysPerYear: 10,
+          paidLeave: true,
+          requiresMedicalCertificate: true,
+          medicalCertificateThreshold: 3,
+          advanceNoticeRequired: 0
+        },
+        startDate: '2025-02-18',
+        endDate: '2025-02-21',
+        totalDays: 4,
+        reason: 'Surgery recovery - medical certificate provided',
+        status: 'pending',
+        submittedAt: '2025-02-12T16:45:00Z',
+        approvalLevel: 1
+      }
+    ];
+
+    // In production, this would filter based on the user's role in approval hierarchy
+    // For demo, return all pending approvals
+    return mockPendingApprovals;
+  }
+
+  async processLeaveApproval(approvalData: any) {
+    // Mock implementation - in production this would:
+    // 1. Update leaveApprovals table
+    // 2. Check if this is final approval level
+    // 3. If approved and final level, update request status to 'approved'
+    // 4. If approved but not final, move to next approval level
+    // 5. If rejected, update request status to 'rejected'
+    // 6. Send notifications to staff member and next approver (if applicable)
+    // 7. Update leave balance if finally approved
+
+    const { requestId, approverId, action, comments } = approvalData;
+    
+    console.log(`Processing ${action} for leave request ${requestId} by approver ${approverId}`);
+    if (comments) {
+      console.log(`Comments: ${comments}`);
+    }
+
+    // Simulate approval hierarchy check
+    const isTopLevel = Math.random() > 0.5; // Mock check for final approval level
+    
+    let finalStatus;
+    if (action === 'reject') {
+      finalStatus = 'rejected';
+      console.log(`Leave request ${requestId} has been rejected`);
+    } else if (action === 'approve' && isTopLevel) {
+      finalStatus = 'approved';
+      console.log(`Leave request ${requestId} has been fully approved`);
+      // Simulate leave balance update
+      console.log('Updating staff leave balance...');
+    } else if (action === 'approve' && !isTopLevel) {
+      finalStatus = 'pending';
+      console.log(`Leave request ${requestId} approved at current level, moving to next approver`);
+    }
+
+    // Simulate notification sending
+    console.log(`Notification sent to staff member about ${action} decision`);
+    
+    return {
+      requestId,
+      action,
+      status: finalStatus,
+      approvedAt: action === 'approve' ? new Date().toISOString() : null,
+      rejectedAt: action === 'reject' ? new Date().toISOString() : null,
+      comments
+    };
+  }
+
+  async getApprovalHierarchy(staffId: string) {
+    // Mock implementation - in production this would query leaveApprovalHierarchy table
+    // This defines the approval chain for a staff member
+    return [
+      {
+        approvalLevel: 1,
+        approverId: 'manager-001',
+        approverName: 'Emma Davis',
+        approverRole: 'Direct Manager',
+        approverEmail: 'emma.davis@primacycare.com'
+      },
+      {
+        approvalLevel: 2,
+        approverId: 'dept-head-001',
+        approverName: 'Michael Smith',
+        approverRole: 'Department Head',
+        approverEmail: 'michael.smith@primacycare.com'
+      },
+      {
+        approvalLevel: 3,
+        approverId: 'hr-manager-001',
+        approverName: 'Jennifer Lee',
+        approverRole: 'HR Manager',
+        approverEmail: 'jennifer.lee@primacycare.com'
+      }
+    ];
+  }
 }
 
 export const storage = new DatabaseStorage();

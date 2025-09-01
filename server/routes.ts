@@ -2312,6 +2312,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Leave Management Endpoints
+  app.get("/api/leave/types", isAuthenticated, async (req, res) => {
+    try {
+      const leaveTypes = await storage.getLeaveTypes();
+      res.json(leaveTypes);
+    } catch (error) {
+      console.error("Error fetching leave types:", error);
+      res.status(500).json({ error: "Failed to fetch leave types" });
+    }
+  });
+
+  app.get("/api/leave/balances", isAuthenticated, async (req, res) => {
+    try {
+      const balances = await storage.getLeaveBalances(req.user?.id || 'current-user');
+      res.json(balances);
+    } catch (error) {
+      console.error("Error fetching leave balances:", error);
+      res.status(500).json({ error: "Failed to fetch leave balances" });
+    }
+  });
+
+  app.get("/api/leave/requests", isAuthenticated, async (req, res) => {
+    try {
+      const { status, search } = req.query;
+      const requests = await storage.getLeaveRequests({
+        userId: req.user?.id || 'current-user',
+        status: status as string,
+        search: search as string
+      });
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching leave requests:", error);
+      res.status(500).json({ error: "Failed to fetch leave requests" });
+    }
+  });
+
+  app.post("/api/leave/requests", isAuthenticated, async (req, res) => {
+    try {
+      const requestData = req.body;
+      const result = await storage.createLeaveRequest({
+        ...requestData,
+        staffId: req.user?.id || 'current-user',
+        submittedBy: req.user?.id || 'current-user'
+      });
+      res.json({ success: true, requestId: result.id });
+    } catch (error) {
+      console.error("Error creating leave request:", error);
+      res.status(500).json({ error: "Failed to create leave request" });
+    }
+  });
+
+  app.get("/api/leave/pending-approvals", isAuthenticated, async (req, res) => {
+    try {
+      const approvals = await storage.getPendingApprovals(req.user?.id || 'current-user');
+      res.json(approvals);
+    } catch (error) {
+      console.error("Error fetching pending approvals:", error);
+      res.status(500).json({ error: "Failed to fetch pending approvals" });
+    }
+  });
+
+  app.post("/api/leave/requests/:requestId/approval", isAuthenticated, async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const { action, comments } = req.body;
+      const result = await storage.processLeaveApproval({
+        requestId,
+        approverId: req.user?.id || 'current-user',
+        action,
+        comments
+      });
+      res.json({ success: true, status: result.status });
+    } catch (error) {
+      console.error("Error processing leave approval:", error);
+      res.status(500).json({ error: "Failed to process leave approval" });
+    }
+  });
+
+  app.get("/api/leave/hierarchy/:staffId", isAuthenticated, async (req, res) => {
+    try {
+      const { staffId } = req.params;
+      const hierarchy = await storage.getApprovalHierarchy(staffId);
+      res.json(hierarchy);
+    } catch (error) {
+      console.error("Error fetching approval hierarchy:", error);
+      res.status(500).json({ error: "Failed to fetch approval hierarchy" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

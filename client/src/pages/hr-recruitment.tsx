@@ -31,6 +31,7 @@ import { ApplicantInvitationManager } from '@/components/hr/applicant-invitation
 import { DocumentVerificationSystem } from '@/components/verification/document-verification-system';
 import { DiscrepancyAlertDashboard } from '@/components/alerts/discrepancy-alert-dashboard';
 import { StaffOffboarding } from '@/components/hr/staff-offboarding';
+import { LeaveManagement } from '@/components/hr/leave-management';
 import { format } from "date-fns";
 
 // Form schemas
@@ -1419,94 +1420,7 @@ export default function HRRecruitment() {
         </TabsContent>
 
         <TabsContent value="leave" className="space-y-4">
-          <div className="grid grid-cols-4 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Pending Requests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-yellow-600">
-                  {staffLeave.filter(l => l.status === "pending").length}
-                </div>
-                <p className="text-sm text-gray-600">Awaiting approval</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">On Leave Today</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">3</div>
-                <p className="text-sm text-gray-600">Staff members</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Annual Leave Balance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">152</div>
-                <p className="text-sm text-gray-600">Days available (avg)</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Sick Leave YTD</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-red-600">48</div>
-                <p className="text-sm text-gray-600">Days taken</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Submit Leave Request</CardTitle>
-                <CardDescription>Record staff leave applications</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <LeaveForm />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Leave Requests</CardTitle>
-                <CardDescription>Latest leave applications</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-3">
-                    {staffLeave.map((leave) => (
-                      <div key={leave.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">
-                              {leave.leaveType.replace("_", " ").charAt(0).toUpperCase() + 
-                               leave.leaveType.replace("_", " ").slice(1)}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              {leave.startDate} to {leave.endDate}
-                            </p>
-                          </div>
-                          <Badge variant={
-                            leave.status === "approved" ? "success" :
-                            leave.status === "rejected" ? "destructive" :
-                            leave.status === "pending" ? "warning" :
-                            "secondary"
-                          }>
-                            {leave.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
+          <LeaveManagement />
         </TabsContent>
 
         <TabsContent value="training" className="space-y-4">

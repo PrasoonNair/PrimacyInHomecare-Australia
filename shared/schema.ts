@@ -2471,6 +2471,148 @@ export const insertAvailabilityReminderSchema = createInsertSchema(availabilityR
   sentAt: true,
 });
 
+// Leave Management Tables
+export const leaveTypes = pgTable("leave_types", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(), // Annual, Sick, Personal, Compassionate, etc.
+  description: text("description"),
+  maxDaysPerYear: integer("max_days_per_year"),
+  carryOverAllowed: boolean("carry_over_allowed").default(false),
+  maxCarryOverDays: integer("max_carry_over_days").default(0),
+  requiresMedicalCertificate: boolean("requires_medical_certificate").default(false),
+  medicalCertificateThreshold: integer("medical_certificate_threshold").default(3), // days
+  paidLeave: boolean("paid_leave").default(true),
+  advanceNoticeRequired: integer("advance_notice_required").default(14), // days
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const staffLeaveBalances = pgTable("staff_leave_balances", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  leaveTypeId: varchar("leave_type_id").references(() => leaveTypes.id).notNull(),
+  totalEntitlement: decimal("total_entitlement", { precision: 5, scale: 2 }).notNull(),
+  usedDays: decimal("used_days", { precision: 5, scale: 2 }).default("0.00"),
+  pendingDays: decimal("pending_days", { precision: 5, scale: 2 }).default("0.00"),
+  remainingDays: decimal("remaining_days", { precision: 5, scale: 2 }).notNull(),
+  carryOverDays: decimal("carry_over_days", { precision: 5, scale: 2 }).default("0.00"),
+  accrualRate: decimal("accrual_rate", { precision: 5, scale: 4 }).default("0.0000"), // days per pay period
+  lastAccrual: date("last_accrual"),
+  financialYear: varchar("financial_year").notNull(), // "2024-2025"
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leaveRequests = pgTable("leave_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  leaveTypeId: varchar("leave_type_id").references(() => leaveTypes.id).notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  totalDays: decimal("total_days", { precision: 5, scale: 2 }).notNull(),
+  halfDayType: varchar("half_day_type"), // morning, afternoon, null for full days
+  reason: text("reason").notNull(),
+  emergencyContact: text("emergency_contact"),
+  medicalCertificateRequired: boolean("medical_certificate_required").default(false),
+  medicalCertificateUploaded: boolean("medical_certificate_uploaded").default(false),
+  medicalCertificateUrl: varchar("medical_certificate_url"),
+  status: varchar("status").default("pending"), // pending, approved, rejected, cancelled
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  approvalLevel: integer("approval_level").default(1),
+  currentApproverId: varchar("current_approver_id").references(() => users.id),
+  finalApproverId: varchar("final_approver_id").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectedAt: timestamp("rejected_at"),
+  rejectionReason: text("rejection_reason"),
+  cancelledAt: timestamp("cancelled_at"),
+  cancellationReason: text("cancellation_reason"),
+  handoverNotes: text("handover_notes"),
+  coveringStaffId: varchar("covering_staff_id").references(() => staff.id),
+  managerNotified: boolean("manager_notified").default(false),
+  hrNotified: boolean("hr_notified").default(false),
+  payrollNotified: boolean("payroll_notified").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const leaveApprovals = pgTable("leave_approvals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  leaveRequestId: varchar("leave_request_id").references(() => leaveRequests.id).notNull(),
+  approverId: varchar("approver_id").references(() => users.id).notNull(),
+  approvalLevel: integer("approval_level").notNull(),
+  status: varchar("status").notNull(), // pending, approved, rejected
+  approvedAt: timestamp("approved_at"),
+  rejectedAt: timestamp("rejected_at"),
+  comments: text("comments"),
+  delegatedTo: varchar("delegated_to").references(() => users.id),
+  isDelegated: boolean("is_delegated").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const leaveApprovalHierarchy = pgTable("leave_approval_hierarchy", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  approvalLevel: integer("approval_level").notNull(),
+  approverId: varchar("approver_id").references(() => users.id).notNull(),
+  approverRole: varchar("approver_role").notNull(), // direct_manager, department_head, hr_manager, ceo
+  isActive: boolean("is_active").default(true),
+  effectiveFrom: date("effective_from").notNull(),
+  effectiveTo: date("effective_to"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const publicHolidays = pgTable("public_holidays", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  date: date("date").notNull(),
+  description: text("description"),
+  isNational: boolean("is_national").default(true),
+  stateTerritory: varchar("state_territory"), // NSW, VIC, QLD, etc.
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Leave Management schemas
+export const insertLeaveTypeSchema = createInsertSchema(leaveTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffLeaveBalanceSchema = createInsertSchema(staffLeaveBalances).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLeaveRequestSchema = createInsertSchema(leaveRequests).omit({
+  id: true,
+  submittedAt: true,
+  approvedAt: true,
+  rejectedAt: true,
+  cancelledAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLeaveApprovalSchema = createInsertSchema(leaveApprovals).omit({
+  id: true,
+  approvedAt: true,
+  rejectedAt: true,
+  createdAt: true,
+});
+
+export const insertLeaveApprovalHierarchySchema = createInsertSchema(leaveApprovalHierarchy).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPublicHolidaySchema = createInsertSchema(publicHolidays).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -2561,6 +2703,20 @@ export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema
 export type ShiftRequirement = typeof shiftRequirements.$inferSelect;
 export type InsertAvailabilityReminder = z.infer<typeof insertAvailabilityReminderSchema>;
 export type AvailabilityReminder = typeof availabilityReminders.$inferSelect;
+
+// Leave Management types
+export type InsertLeaveType = z.infer<typeof insertLeaveTypeSchema>;
+export type LeaveType = typeof leaveTypes.$inferSelect;
+export type InsertStaffLeaveBalance = z.infer<typeof insertStaffLeaveBalanceSchema>;
+export type StaffLeaveBalance = typeof staffLeaveBalances.$inferSelect;
+export type InsertLeaveRequest = z.infer<typeof insertLeaveRequestSchema>;
+export type LeaveRequest = typeof leaveRequests.$inferSelect;
+export type InsertLeaveApproval = z.infer<typeof insertLeaveApprovalSchema>;
+export type LeaveApproval = typeof leaveApprovals.$inferSelect;
+export type InsertLeaveApprovalHierarchy = z.infer<typeof insertLeaveApprovalHierarchySchema>;
+export type LeaveApprovalHierarchy = typeof leaveApprovalHierarchy.$inferSelect;
+export type InsertPublicHoliday = z.infer<typeof insertPublicHolidaySchema>;
+export type PublicHoliday = typeof publicHolidays.$inferSelect;
 export type DigitalServiceAgreement = typeof digitalServiceAgreements.$inferSelect;
 export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommunicationSchema>;
 export type AgreementCommunication = typeof agreementCommunications.$inferSelect;

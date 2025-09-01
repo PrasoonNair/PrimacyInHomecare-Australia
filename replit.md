@@ -29,6 +29,9 @@ An advanced 9-stage workflow engine manages the referral-to-service lifecycle, f
 ### Comprehensive Automation System
 An advanced automation engine optimizes operations through intelligent staff matching, automated service scheduling, automated invoice generation, SCHADS payroll automation, real-time budget monitoring with alerts, goal progress automation, and automated compliance reporting. It also provides performance analytics and manages scheduled background tasks.
 
+### Leave Management System with Hierarchical Approval
+A comprehensive leave management system featuring hierarchical approval workflows, multiple leave types (annual, sick, personal, compassionate, unpaid), leave balance tracking, and automated approval routing based on organizational hierarchy. The system includes mandatory fields for handover notes, covering staff assignments, emergency contacts, and integrates with the staff availability calendar for optimal scheduling coordination.
+
 ## External Dependencies
 
 ### Core Infrastructure
