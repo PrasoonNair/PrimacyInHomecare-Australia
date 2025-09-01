@@ -17,6 +17,7 @@ export default function Sidebar() {
     { name: "Financials", href: "/financials", icon: "fas fa-dollar-sign", badge: "New", description: "Revenue & invoicing" },
     { name: "Staff Management", href: "/staff", icon: "fas fa-user-tie", badge: "42", description: "Staff & resources" },
     { name: "Automation", href: "/automation", icon: "fas fa-robot", badge: "AI", description: "Efficiency optimization" },
+    { name: "Automation Dashboard", href: "/automation-dashboard", icon: "fas fa-tachometer-alt", badge: "Live", description: "KPI & workflow monitoring" },
     { name: "Reports", href: "/reports", icon: "fas fa-chart-bar", badge: "12", description: "Business reports" },
     { name: "Calendar View", href: "/calendar-shifts", icon: "fas fa-calendar-alt", badge: "Live", description: "Visual shift calendar" },
   ];
@@ -26,6 +27,7 @@ export default function Sidebar() {
     { name: "HR & Recruitment", href: "/hr-recruitment", icon: "fas fa-user-friends", badge: "5", description: "Staff management", status: "active" },
     { name: "Recruitment Pipeline", href: "/recruitment", icon: "fas fa-briefcase", badge: "New", description: "Hiring workflow", status: "excellent" },
     { name: "Finance & Awards", href: "/finance-awards", icon: "fas fa-coins", badge: "Alert", description: "SCHADS compliance", status: "warning" },
+    { name: "Master Agreements", href: "/master-agreements", icon: "fas fa-file-contract", badge: "5", description: "Document management", status: "active" },
     { name: "Service Delivery", href: "/service-delivery", icon: "fas fa-truck", badge: "89%", description: "Operations & allocation", status: "active" },
     { name: "Compliance & Quality", href: "/compliance-quality", icon: "fas fa-shield-alt", badge: "96%", description: "Quality assurance", status: "excellent" },
   ];

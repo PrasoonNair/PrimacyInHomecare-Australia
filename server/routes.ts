@@ -2142,6 +2142,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Automation and KPI API Endpoints
+  app.get("/api/automation/kpis", isAuthenticated, async (req, res) => {
+    try {
+      const { role, period } = req.query;
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      const kpis = await storage.getKPIMeasurements(userId, role as string, period as string);
+      res.json(kpis);
+    } catch (error) {
+      console.error("Error fetching KPIs:", error);
+      res.status(500).json({ message: "Failed to fetch KPIs" });
+    }
+  });
+
+  app.get("/api/automation/workflows", isAuthenticated, async (req, res) => {
+    try {
+      const workflows = await storage.getWorkflowAutomations();
+      res.json(workflows);
+    } catch (error) {
+      console.error("Error fetching workflow automations:", error);
+      res.status(500).json({ message: "Failed to fetch workflow automations" });
+    }
+  });
+
+  app.post("/api/automation/workflows/:id/toggle", isAuthenticated, async (req, res) => {
+    try {
+      const { active } = req.body;
+      const workflow = await storage.toggleWorkflowAutomation(req.params.id, active);
+      res.json(workflow);
+    } catch (error) {
+      console.error("Error toggling workflow automation:", error);
+      res.status(500).json({ message: "Failed to toggle workflow automation" });
+    }
+  });
+
+  app.get("/api/automation/verifications", isAuthenticated, async (req, res) => {
+    try {
+      const verifications = await storage.getVerificationCheckpointLogs();
+      res.json(verifications);
+    } catch (error) {
+      console.error("Error fetching verification logs:", error);
+      res.status(500).json({ message: "Failed to fetch verification logs" });
+    }
+  });
+
+  app.get("/api/automation/performance", isAuthenticated, async (req, res) => {
+    try {
+      const performance = await storage.getProcessPerformanceMetrics();
+      res.json(performance);
+    } catch (error) {
+      console.error("Error fetching performance metrics:", error);
+      res.status(500).json({ message: "Failed to fetch performance metrics" });
+    }
+  });
+
+  app.post("/api/automation/execute", isAuthenticated, async (req, res) => {
+    try {
+      const { processType, processData } = req.body;
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      const { automationEngine } = await import("./services/automation-engine");
+      const result = await automationEngine.executeProcessAutomation(processType, processData, userId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error executing automation:", error);
+      res.status(500).json({ message: "Failed to execute automation" });
+    }
+  });
+
   // Price Guide Management Endpoints
   app.get("/api/price-guides", isAuthenticated, async (req, res) => {
     try {

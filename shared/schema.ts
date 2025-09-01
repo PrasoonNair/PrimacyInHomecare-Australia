@@ -3101,6 +3101,167 @@ export type MasterAgreementVersion = typeof masterAgreementVersions.$inferSelect
 export type InsertMasterAgreementAccessLog = z.infer<typeof insertMasterAgreementAccessLogSchema>;
 export type MasterAgreementAccessLog = typeof masterAgreementAccessLog.$inferSelect;
 
+// Advanced Workflow Automation and KPI System
+export const workflowAutomations = pgTable("workflow_automations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  triggerType: varchar("trigger_type").notNull(), // time_based, event_based, condition_based
+  triggerConditions: text("trigger_conditions"), // JSON string of conditions
+  targetProcess: varchar("target_process").notNull(), // master_agreements, travel_calc, ndis_workflow, etc.
+  automationActions: text("automation_actions"), // JSON array of actions
+  verificationCheckpoints: text("verification_checkpoints"), // JSON array of checkpoints
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(5), // 1-10 scale
+  executionOrder: integer("execution_order").default(1),
+  lastTriggered: timestamp("last_triggered"),
+  executionCount: integer("execution_count").default(0),
+  successRate: decimal("success_rate", { precision: 5, scale: 2 }).default("0.00"),
+  averageExecutionTime: integer("average_execution_time"), // in milliseconds
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const verificationCheckpoints = pgTable("verification_checkpoints", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  processType: varchar("process_type").notNull(), // agreement_upload, travel_calc, service_delivery, etc.
+  checkpointName: varchar("checkpoint_name").notNull(),
+  checkpointOrder: integer("checkpoint_order").notNull(),
+  verificationType: varchar("verification_type").notNull(), // manual, automated, hybrid
+  requiredRole: varchar("required_role"), // who can approve/verify
+  verificationCriteria: text("verification_criteria"), // JSON of criteria
+  isRequired: boolean("is_required").default(true),
+  timeoutHours: integer("timeout_hours").default(24),
+  escalationRules: text("escalation_rules"), // JSON of escalation logic
+  kpiImpact: text("kpi_impact"), // JSON of KPI metrics affected
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const verificationCheckpointLogs = pgTable("verification_checkpoint_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  checkpointId: varchar("checkpoint_id").references(() => verificationCheckpoints.id).notNull(),
+  processInstanceId: varchar("process_instance_id").notNull(), // reference to specific process
+  processType: varchar("process_type").notNull(),
+  status: varchar("status").notNull(), // pending, approved, rejected, timeout, escalated
+  verifiedBy: varchar("verified_by").references(() => users.id),
+  verificationNotes: text("verification_notes"),
+  verificationData: text("verification_data"), // JSON of verification details
+  timeToComplete: integer("time_to_complete"), // in minutes
+  escalatedTo: varchar("escalated_to").references(() => users.id),
+  escalationReason: text("escalation_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const roleKPIs = pgTable("role_kpis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  roleName: varchar("role_name").notNull(),
+  kpiName: varchar("kpi_name").notNull(),
+  kpiDescription: text("kpi_description"),
+  kpiCategory: varchar("kpi_category").notNull(), // productivity, quality, compliance, efficiency
+  measurementType: varchar("measurement_type").notNull(), // count, percentage, time, currency
+  targetValue: decimal("target_value", { precision: 10, scale: 2 }),
+  targetPeriod: varchar("target_period").notNull(), // daily, weekly, monthly, quarterly
+  calculationMethod: text("calculation_method"), // JSON of calculation logic
+  dataSource: varchar("data_source").notNull(), // table or view to pull data from
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(1),
+  alertThresholds: text("alert_thresholds"), // JSON of warning/critical thresholds
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const kpiMeasurements = pgTable("kpi_measurements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  kpiId: varchar("kpi_id").references(() => roleKPIs.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  measurementPeriod: date("measurement_period").notNull(),
+  actualValue: decimal("actual_value", { precision: 10, scale: 2 }).notNull(),
+  targetValue: decimal("target_value", { precision: 10, scale: 2 }).notNull(),
+  achievementPercentage: decimal("achievement_percentage", { precision: 5, scale: 2 }).notNull(),
+  status: varchar("status").notNull(), // above_target, on_target, below_target, critical
+  dataPoints: text("data_points"), // JSON of supporting data
+  notes: text("notes"),
+  calculatedAt: timestamp("calculated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const automationExecutionLogs = pgTable("automation_execution_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  automationId: varchar("automation_id").references(() => workflowAutomations.id).notNull(),
+  triggerType: varchar("trigger_type").notNull(),
+  triggerData: text("trigger_data"), // JSON of trigger context
+  executionStatus: varchar("execution_status").notNull(), // success, failed, partial, timeout
+  actionsExecuted: text("actions_executed"), // JSON array of executed actions
+  checkpointsTriggered: text("checkpoints_triggered"), // JSON array of triggered checkpoints
+  executionTime: integer("execution_time"), // in milliseconds
+  errorDetails: text("error_details"),
+  affectedEntities: text("affected_entities"), // JSON of entities modified
+  kpiImpacts: text("kpi_impacts"), // JSON of KPI changes
+  executedBy: varchar("executed_by"), // system or user ID
+  executedAt: timestamp("executed_at").defaultNow(),
+});
+
+export const processPerformanceMetrics = pgTable("process_performance_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  processType: varchar("process_type").notNull(),
+  processInstanceId: varchar("process_instance_id").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  totalDuration: integer("total_duration"), // in minutes
+  checkpointCount: integer("checkpoint_count").default(0),
+  checkpointsCompleted: integer("checkpoints_completed").default(0),
+  automationSteps: integer("automation_steps").default(0),
+  manualSteps: integer("manual_steps").default(0),
+  errorCount: integer("error_count").default(0),
+  qualityScore: decimal("quality_score", { precision: 3, scale: 2 }), // 0-10 scale
+  complianceScore: decimal("compliance_score", { precision: 3, scale: 2 }), // 0-10 scale
+  efficientScore: decimal("efficiency_score", { precision: 3, scale: 2 }), // 0-10 scale
+  participantId: varchar("participant_id").references(() => participants.id),
+  staffId: varchar("staff_id").references(() => staff.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Workflow Automation schemas
+export const insertWorkflowAutomationSchema = createInsertSchema(workflowAutomations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertVerificationCheckpointSchema = createInsertSchema(verificationCheckpoints).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRoleKPISchema = createInsertSchema(roleKPIs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertKPIMeasurementSchema = createInsertSchema(kpiMeasurements).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Workflow Automation types
+export type InsertWorkflowAutomation = z.infer<typeof insertWorkflowAutomationSchema>;
+export type WorkflowAutomation = typeof workflowAutomations.$inferSelect;
+export type InsertVerificationCheckpoint = z.infer<typeof insertVerificationCheckpointSchema>;
+export type VerificationCheckpoint = typeof verificationCheckpoints.$inferSelect;
+export type VerificationCheckpointLog = typeof verificationCheckpointLogs.$inferSelect;
+export type InsertRoleKPI = z.infer<typeof insertRoleKPISchema>;
+export type RoleKPI = typeof roleKPIs.$inferSelect;
+export type InsertKPIMeasurement = z.infer<typeof insertKPIMeasurementSchema>;
+export type KPIMeasurement = typeof kpiMeasurements.$inferSelect;
+export type AutomationExecutionLog = typeof automationExecutionLogs.$inferSelect;
+export type ProcessPerformanceMetric = typeof processPerformanceMetrics.$inferSelect;
+
 // Roles and permissions tables
 export const roles = pgTable("roles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

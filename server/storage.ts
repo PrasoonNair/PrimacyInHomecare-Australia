@@ -453,6 +453,13 @@ export interface IStorage {
   createDepartmentRegion(departmentRegion: InsertDepartmentRegion): Promise<DepartmentRegion>;
   updateDepartmentRegion(id: string, updates: Partial<InsertDepartmentRegion>): Promise<DepartmentRegion>;
   deleteDepartmentRegion(id: string): Promise<void>;
+
+  // Automation and KPI methods
+  getKPIMeasurements(userId: string, role?: string, period?: string): Promise<KPIMeasurement[]>;
+  getWorkflowAutomations(): Promise<WorkflowAutomation[]>;
+  toggleWorkflowAutomation(id: string, active: boolean): Promise<WorkflowAutomation | null>;
+  getVerificationCheckpointLogs(): Promise<VerificationCheckpointLog[]>;
+  getProcessPerformanceMetrics(): Promise<ProcessPerformanceMetric[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5231,6 +5238,112 @@ Primacy Care Australia`,
         connectionStatus: 'not_configured',
         agreementsSent: 0,
         agreementsSigned: 0
+      }
+    ];
+  }
+
+  // Automation and KPI methods
+  async getKPIMeasurements(userId: string, role?: string, period?: string): Promise<KPIMeasurement[]> {
+    // Return sample KPI data for testing
+    return [
+      {
+        id: "1",
+        kpiId: "kpi_1",
+        userId,
+        measurementPeriod: "2024-01-01",
+        actualValue: "18",
+        targetValue: "15",
+        achievementPercentage: "120.00",
+        status: "above_target",
+        dataPoints: null,
+        notes: null,
+        calculatedAt: new Date(),
+        createdAt: new Date(),
+      }
+    ];
+  }
+
+  async getWorkflowAutomations(): Promise<WorkflowAutomation[]> {
+    // Return sample automation data for testing
+    return [
+      {
+        id: "1",
+        name: "Master Agreement Auto-Approval",
+        description: "Automatically approve master agreements that meet criteria",
+        triggerType: "event_based",
+        triggerConditions: JSON.stringify({ documentType: "service_agreement" }),
+        targetProcess: "master_agreements",
+        automationActions: JSON.stringify([
+          { type: "send_notification", message: "Document uploaded for review" },
+          { type: "update_status", status: "pending_approval" }
+        ]),
+        verificationCheckpoints: JSON.stringify([
+          { name: "Document Format Check", required: true },
+          { name: "Content Validation", required: true }
+        ]),
+        isActive: true,
+        priority: 5,
+        executionOrder: 1,
+        lastTriggered: new Date(),
+        executionCount: 156,
+        successRate: "98.70",
+        averageExecutionTime: 2500,
+        createdBy: "admin",
+        updatedBy: "admin",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    ];
+  }
+
+  async toggleWorkflowAutomation(id: string, active: boolean): Promise<WorkflowAutomation | null> {
+    // Mock implementation - in production this would update the database
+    console.log(`Toggling automation ${id} to ${active ? 'active' : 'inactive'}`);
+    return null;
+  }
+
+  async getVerificationCheckpointLogs(): Promise<VerificationCheckpointLog[]> {
+    // Return sample verification data for testing
+    return [
+      {
+        id: "1",
+        checkpointId: "checkpoint_1",
+        processInstanceId: "process_123",
+        processType: "master_agreements",
+        status: "approved",
+        verifiedBy: "system",
+        verificationNotes: "Automated verification passed",
+        verificationData: JSON.stringify({ automated: true }),
+        timeToComplete: 15,
+        escalatedTo: null,
+        escalationReason: null,
+        createdAt: new Date(),
+        completedAt: new Date(),
+      }
+    ];
+  }
+
+  async getProcessPerformanceMetrics(): Promise<ProcessPerformanceMetric[]> {
+    // Return sample performance data for testing
+    return [
+      {
+        id: "1",
+        processType: "master_agreements",
+        processInstanceId: "process_123",
+        startTime: new Date(Date.now() - 900000), // 15 minutes ago
+        endTime: new Date(),
+        totalDuration: 15,
+        checkpointCount: 3,
+        checkpointsCompleted: 3,
+        automationSteps: 2,
+        manualSteps: 1,
+        errorCount: 0,
+        qualityScore: "9.5",
+        complianceScore: "10.0",
+        efficientScore: "8.7",
+        participantId: null,
+        staffId: null,
+        createdAt: new Date(),
       }
     ];
   }
