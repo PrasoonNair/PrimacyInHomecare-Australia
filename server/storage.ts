@@ -1178,47 +1178,7 @@ export class DatabaseStorage implements IStorage {
     return shiftsWithDetails;
   }
 
-  async clockInShift(shiftId: string): Promise<any> {
-    const now = new Date();
-    const [updated] = await db
-      .update(shifts)
-      .set({ 
-        clockInTime: now,
-        status: "in_progress",
-        updatedAt: now
-      })
-      .where(eq(shifts.id, shiftId))
-      .returning();
-    return updated;
-  }
 
-  async clockOutShift(shiftId: string): Promise<any> {
-    const now = new Date();
-    
-    // Get the shift to calculate actual duration
-    const [shift] = await db.select().from(shifts).where(eq(shifts.id, shiftId));
-    if (!shift || !shift.clockInTime) {
-      throw new Error("Shift not found or not clocked in");
-    }
-    
-    const actualDurationMs = now.getTime() - new Date(shift.clockInTime).getTime();
-    const actualDurationMinutes = Math.round(actualDurationMs / (1000 * 60));
-    const totalAmount = shift.hourlyRate ? 
-      Number(shift.hourlyRate) * (actualDurationMinutes / 60) : 0;
-    
-    const [updated] = await db
-      .update(shifts)
-      .set({ 
-        clockOutTime: now,
-        actualDuration: actualDurationMinutes,
-        totalAmount: totalAmount.toString(),
-        status: "completed",
-        updatedAt: now
-      })
-      .where(eq(shifts.id, shiftId))
-      .returning();
-    return updated;
-  }
 
   async createShiftCaseNote(caseNote: any): Promise<any> {
     const [newCaseNote] = await db.insert(shiftCaseNotes).values(caseNote).returning();
@@ -1320,11 +1280,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createIncident(incident: InsertIncident): Promise<Incident> {
-    const [newIncident] = await db.insert(incidents).values(incident).returning();
+    // Generate incident number
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const incidentNumber = `INC-${year}${month}${day}-${randomNum}`;
+    
+    const [newIncident] = await db.insert(incidents).values({
+      ...incident,
+      incidentNumber,
+    }).returning();
+    
+    // Add initial timeline entry
+    await this.addIncidentTimelineEntry({
+      incidentId: newIncident.id,
+      action: 'incident_reported',
+      description: 'Incident was reported',
+      performedBy: incident.reportedBy,
+      performedByRole: incident.reportedByRole,
+    });
+    
+    // Create initial notification for management
+    await this.createIncidentNotification({
+      incidentId: newIncident.id,
+      recipientEmail: 'management@primacycare.com.au',
+      recipientRole: 'Management',
+      notificationType: 'new_incident',
+      subject: `New ${incident.severity} Incident Reported - ${incidentNumber}`,
+      message: `A new ${incident.severity} incident has been reported for ${incident.participantName}. Please review and take appropriate action.`,
+      priority: incident.severity === 'critical' ? 'urgent' : 'high',
+    });
+    
     return newIncident;
   }
 
-  async updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident> {
+  async updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident | undefined> {
     const [updated] = await db
       .update(incidents)
       .set({ ...incident, updatedAt: new Date() })
@@ -1885,51 +1877,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(staff);
   }
 
-  async createIncident(incident: InsertIncident): Promise<Incident> {
-    // Generate incident number
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    const incidentNumber = `INC-${year}${month}${day}-${randomNum}`;
-    
-    const [newIncident] = await db.insert(incidents).values({
-      ...incident,
-      incidentNumber,
-    }).returning();
-    
-    // Add initial timeline entry
-    await this.addIncidentTimelineEntry({
-      incidentId: newIncident.id,
-      action: 'incident_reported',
-      description: 'Incident was reported',
-      performedBy: incident.reportedBy,
-      performedByRole: incident.reportedByRole,
-    });
-    
-    // Create initial notification for management
-    await this.createIncidentNotification({
-      incidentId: newIncident.id,
-      recipientEmail: 'management@primacycare.com.au',
-      recipientRole: 'Management',
-      notificationType: 'new_incident',
-      subject: `New ${incident.severity} Incident Reported - ${incidentNumber}`,
-      message: `A new ${incident.severity} incident has been reported for ${incident.participantName}. Please review and take appropriate action.`,
-      priority: incident.severity === 'critical' ? 'urgent' : 'high',
-    });
-    
-    return newIncident;
-  }
 
-  async updateIncident(id: string, incident: Partial<InsertIncident>): Promise<Incident | undefined> {
-    const [updated] = await db
-      .update(incidents)
-      .set({ ...incident, updatedAt: new Date() })
-      .where(eq(incidents.id, id))
-      .returning();
-    return updated;
-  }
 
   async getIncidentApprovals(incidentId: string): Promise<IncidentApproval[]> {
     return await db.select().from(incidentApprovals)
