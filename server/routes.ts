@@ -2212,6 +2212,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Global Search API
+  app.get("/api/search", isAuthenticated, async (req, res) => {
+    try {
+      const { q: query, role, limit = 20 } = req.query;
+      const userId = req.user?.claims?.sub || req.user?.id;
+      
+      if (!query || (query as string).length < 2) {
+        return res.json([]);
+      }
+      
+      const results = await storage.performGlobalSearch(
+        query as string, 
+        role as string, 
+        parseInt(limit as string)
+      );
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error performing search:", error);
+      res.status(500).json({ message: "Search failed" });
+    }
+  });
+
+  // Quick Actions API
+  app.get("/api/search/actions", isAuthenticated, async (req, res) => {
+    try {
+      const { role } = req.query;
+      const actions = await storage.getQuickActions(role as string);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching quick actions:", error);
+      res.status(500).json({ message: "Failed to fetch quick actions" });
+    }
+  });
+
+  // Search History and Favorites
+  app.get("/api/search/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const history = await storage.getSearchHistory(userId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching search history:", error);
+      res.status(500).json({ message: "Failed to fetch search history" });
+    }
+  });
+
+  app.post("/api/search/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { query } = req.body;
+      await storage.addToSearchHistory(userId, query);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving search history:", error);
+      res.status(500).json({ message: "Failed to save search history" });
+    }
+  });
+
+  // Emergency Contact Quick Access
+  app.get("/api/emergency-contacts", isAuthenticated, async (req, res) => {
+    try {
+      const contacts = await storage.getEmergencyContacts();
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching emergency contacts:", error);
+      res.status(500).json({ message: "Failed to fetch emergency contacts" });
+    }
+  });
+
+  // Shift Clock In/Out
+  app.post("/api/shifts/clock-in", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const result = await storage.clockInShift(userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error clocking in:", error);
+      res.status(500).json({ message: "Failed to clock in" });
+    }
+  });
+
+  app.post("/api/shifts/clock-out", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { notes } = req.body;
+      const result = await storage.clockOutShift(userId, notes);
+      res.json(result);
+    } catch (error) {
+      console.error("Error clocking out:", error);
+      res.status(500).json({ message: "Failed to clock out" });
+    }
+  });
+
   // Price Guide Management Endpoints
   app.get("/api/price-guides", isAuthenticated, async (req, res) => {
     try {

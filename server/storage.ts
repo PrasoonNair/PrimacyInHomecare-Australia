@@ -460,6 +460,15 @@ export interface IStorage {
   toggleWorkflowAutomation(id: string, active: boolean): Promise<WorkflowAutomation | null>;
   getVerificationCheckpointLogs(): Promise<VerificationCheckpointLog[]>;
   getProcessPerformanceMetrics(): Promise<ProcessPerformanceMetric[]>;
+
+  // Global Search methods
+  performGlobalSearch(query: string, role?: string, limit?: number): Promise<any[]>;
+  getQuickActions(role?: string): Promise<any[]>;
+  getSearchHistory(userId: string): Promise<string[]>;
+  addToSearchHistory(userId: string, query: string): Promise<void>;
+  getEmergencyContacts(): Promise<any[]>;
+  clockInShift(userId: string): Promise<any>;
+  clockOutShift(userId: string, notes?: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5346,6 +5355,240 @@ Primacy Care Australia`,
         createdAt: new Date(),
       }
     ];
+  }
+
+  // Global Search methods
+  async performGlobalSearch(query: string, role?: string, limit: number = 20): Promise<any[]> {
+    const searchTerm = query.toLowerCase();
+    const results: any[] = [];
+
+    try {
+      // Search participants
+      const participants = await this.getParticipants();
+      participants.forEach((participant, index) => {
+        if (index >= limit) return;
+        const fullName = `${participant.firstName} ${participant.lastName}`.toLowerCase();
+        if (fullName.includes(searchTerm) || participant.email?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: participant.id,
+            type: 'participant',
+            title: `${participant.firstName} ${participant.lastName}`,
+            subtitle: participant.email,
+            description: `NDIS ID: ${participant.ndisNumber || 'Not set'}`,
+            url: `/participants/${participant.id}`,
+            icon: 'UserIcon',
+            badge: participant.status,
+            relevanceScore: fullName.includes(searchTerm) ? 100 : 80,
+            category: 'Participants'
+          });
+        }
+      });
+
+      // Search staff
+      const staff = await this.getStaff();
+      staff.forEach((staffMember, index) => {
+        if (index >= limit) return;
+        const fullName = `${staffMember.firstName} ${staffMember.lastName}`.toLowerCase();
+        if (fullName.includes(searchTerm) || staffMember.email?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: staffMember.id,
+            type: 'staff',
+            title: `${staffMember.firstName} ${staffMember.lastName}`,
+            subtitle: staffMember.email,
+            description: `Role: ${staffMember.role || 'Not set'}`,
+            url: `/staff/${staffMember.id}`,
+            icon: 'UsersIcon',
+            badge: staffMember.status,
+            relevanceScore: fullName.includes(searchTerm) ? 100 : 80,
+            category: 'Staff'
+          });
+        }
+      });
+
+      // Search NDIS plans
+      const plans = await this.getPlans();
+      plans.forEach((plan, index) => {
+        if (index >= limit) return;
+        if (plan.planNumber?.toLowerCase().includes(searchTerm) || 
+            plan.participantId?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: plan.id,
+            type: 'plan',
+            title: `Plan ${plan.planNumber}`,
+            subtitle: `${plan.startDate} - ${plan.endDate}`,
+            description: `Status: ${plan.status}, Budget: $${plan.totalBudget || 0}`,
+            url: `/plans/${plan.id}`,
+            icon: 'FileTextIcon',
+            badge: plan.status,
+            relevanceScore: 90,
+            category: 'Plans'
+          });
+        }
+      });
+
+      // Search services
+      const services = await this.getServices();
+      services.forEach((service, index) => {
+        if (index >= limit) return;
+        if (service.serviceName?.toLowerCase().includes(searchTerm) ||
+            service.participantId?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: service.id,
+            type: 'service',
+            title: service.serviceName,
+            subtitle: `${service.scheduledDate} ${service.scheduledTime}`,
+            description: `Duration: ${service.duration}hrs, Status: ${service.status}`,
+            url: `/services/${service.id}`,
+            icon: 'CalendarIcon',
+            badge: service.status,
+            relevanceScore: 85,
+            category: 'Services'
+          });
+        }
+      });
+
+      // Search invoices
+      const invoices = await this.getInvoices();
+      invoices.forEach((invoice, index) => {
+        if (index >= limit) return;
+        if (invoice.invoiceNumber?.toLowerCase().includes(searchTerm) ||
+            invoice.participantId?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: invoice.id,
+            type: 'invoice',
+            title: `Invoice ${invoice.invoiceNumber}`,
+            subtitle: `Due: ${invoice.dueDate}`,
+            description: `Amount: $${invoice.totalAmount}, Status: ${invoice.status}`,
+            url: `/financials/invoices/${invoice.id}`,
+            icon: 'CreditCardIcon',
+            badge: invoice.status,
+            relevanceScore: 85,
+            category: 'Finance'
+          });
+        }
+      });
+
+      // Search progress notes
+      const progressNotes = await this.getProgressNotes();
+      progressNotes.forEach((note, index) => {
+        if (index >= limit) return;
+        if (note.noteContent?.toLowerCase().includes(searchTerm) ||
+            note.participantId?.toLowerCase().includes(searchTerm)) {
+          results.push({
+            id: note.id,
+            type: 'progress-note',
+            title: `Progress Note`,
+            subtitle: note.noteDate,
+            description: note.noteContent?.substring(0, 100) + '...',
+            url: `/progress-notes/${note.id}`,
+            icon: 'ClipboardListIcon',
+            badge: note.noteType,
+            relevanceScore: 75,
+            category: 'Documentation'
+          });
+        }
+      });
+
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+
+    // Sort by relevance score and return top results
+    return results
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, limit);
+  }
+
+  async getQuickActions(role?: string): Promise<any[]> {
+    // This would return role-based quick actions
+    // For now, return sample data
+    return [
+      {
+        id: 'new-participant',
+        title: 'Add New Participant',
+        description: 'Register a new NDIS participant',
+        icon: 'UserIcon',
+        url: '/participants/new',
+        category: 'Participants',
+        roles: ['all']
+      }
+    ];
+  }
+
+  async getSearchHistory(userId: string): Promise<string[]> {
+    // In production, this would fetch from a user_search_history table
+    return [
+      'John Smith',
+      'Invoice 2024-001',
+      'Service Agreement',
+      'NDIS Plan',
+      'Staff Roster'
+    ];
+  }
+
+  async addToSearchHistory(userId: string, query: string): Promise<void> {
+    // In production, this would save to a user_search_history table
+    console.log(`Adding to search history for user ${userId}: ${query}`);
+  }
+
+  async getEmergencyContacts(): Promise<any[]> {
+    return [
+      {
+        id: 'emergency-1',
+        name: 'On-Call Manager',
+        phone: '+61 400 000 001',
+        role: 'Duty Manager',
+        available: '24/7'
+      },
+      {
+        id: 'emergency-2',
+        name: 'Clinical Supervisor',
+        phone: '+61 400 000 002',
+        role: 'Clinical Lead',
+        available: 'Business hours'
+      },
+      {
+        id: 'emergency-3',
+        name: 'Emergency Services',
+        phone: '000',
+        role: 'Police/Fire/Ambulance',
+        available: '24/7'
+      },
+      {
+        id: 'emergency-4',
+        name: 'Crisis Support',
+        phone: '13 11 14',
+        role: 'Lifeline',
+        available: '24/7'
+      }
+    ];
+  }
+
+  async clockInShift(userId: string): Promise<any> {
+    // In production, this would create a shift record
+    const currentTime = new Date();
+    console.log(`User ${userId} clocked in at ${currentTime}`);
+    
+    return {
+      success: true,
+      shiftId: `shift_${Date.now()}`,
+      clockInTime: currentTime.toISOString(),
+      message: 'Successfully clocked in'
+    };
+  }
+
+  async clockOutShift(userId: string, notes?: string): Promise<any> {
+    // In production, this would update the shift record
+    const currentTime = new Date();
+    console.log(`User ${userId} clocked out at ${currentTime}${notes ? ` with notes: ${notes}` : ''}`);
+    
+    return {
+      success: true,
+      clockOutTime: currentTime.toISOString(),
+      totalHours: 8.5, // This would be calculated from clock in/out times
+      notes,
+      message: 'Successfully clocked out'
+    };
   }
 }
 

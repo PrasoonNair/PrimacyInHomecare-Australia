@@ -35,6 +35,7 @@ import HRRecruitment from "@/pages/hr-recruitment";
 import FinanceAwards from "@/pages/finance-awards";
 import MasterAgreements from "@/pages/master-agreements";
 import AutomationDashboard from "@/pages/automation-dashboard";
+import EmergencyContacts from "@/pages/emergency-contacts";
 import ServiceDelivery from "@/pages/service-delivery";
 import ShiftManagement from "@/pages/shift-management";
 import CalendarShifts from "@/pages/calendar-shifts";
@@ -119,6 +120,7 @@ function Router() {
             <Route path="/finance-awards" component={FinanceAwards} />
             <Route path="/master-agreements" component={MasterAgreements} />
             <Route path="/automation-dashboard" component={AutomationDashboard} />
+            <Route path="/emergency-contacts" component={EmergencyContacts} />
             <Route path="/service-delivery" component={ServiceDelivery} />
             <Route path="/shift-management" component={ShiftManagement} />
           <Route path="/calendar-shifts" component={CalendarShifts} />
