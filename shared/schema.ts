@@ -1290,21 +1290,7 @@ export const digitalServiceAgreements = pgTable("digital_service_agreements", {
 });
 
 // Communication logs for service agreements
-export const agreementCommunications = pgTable("agreement_communications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  agreementId: varchar("agreement_id").references(() => digitalServiceAgreements.id).notNull(),
-  participantId: varchar("participant_id").references(() => participants.id).notNull(),
-  communicationType: varchar("communication_type").notNull(), // email, sms, whatsapp
-  recipient: varchar("recipient").notNull(), // Email or phone number
-  subject: varchar("subject"),
-  message: text("message"),
-  status: varchar("status").default("pending"), // pending, sent, delivered, failed, bounced
-  sentAt: timestamp("sent_at"),
-  deliveredAt: timestamp("delivered_at"),
-  errorMessage: text("error_message"),
-  metadata: jsonb("metadata"), // Provider-specific metadata (SendGrid, Twilio, etc)
-  createdAt: timestamp("created_at").defaultNow(),
-});
+
 
 // Incident reporting and management system
 export const incidents = pgTable("incidents", {
@@ -1474,34 +1460,7 @@ export const ndisPlansRelations = relations(ndisPlans, ({ one, many }) => ({
 // Add new tables for enhanced workflow management
 
 // Service Agreement Templates table
-export const serviceAgreementTemplates = pgTable("service_agreement_templates", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  templateType: varchar("template_type").notNull(), // standard, complex_needs, short_term, respite
-  
-  // Template content
-  templateContent: text("template_content").notNull(),
-  placeholderFields: jsonb("placeholder_fields"), // Fields that need to be filled
-  
-  // NDIS compliance
-  ndisCompliant: boolean("ndis_compliant").default(true),
-  complianceNotes: text("compliance_notes"),
-  
-  // Multi-language templates
-  availableLanguages: text("available_languages").array(),
-  translations: jsonb("translations"),
-  
-  // Versioning
-  version: varchar("version").notNull(),
-  effectiveFrom: date("effective_from").notNull(),
-  effectiveTo: date("effective_to"),
-  
-  isActive: boolean("is_active").default(true),
-  createdBy: varchar("created_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+
 
 // Funding Budget Tracking table
 export const fundingBudgets = pgTable("funding_budgets", {
@@ -2011,16 +1970,7 @@ export const digitalServiceAgreementsRelations = relations(digitalServiceAgreeme
   communications: many(agreementCommunications),
 }));
 
-export const agreementCommunicationsRelations = relations(agreementCommunications, ({ one }) => ({
-  agreement: one(digitalServiceAgreements, {
-    fields: [agreementCommunications.agreementId],
-    references: [digitalServiceAgreements.id],
-  }),
-  participant: one(participants, {
-    fields: [agreementCommunications.participantId],
-    references: [participants.id],
-  }),
-}));
+
 
 // States relations
 export const statesRelations = relations(states, ({ many }) => ({
@@ -2259,10 +2209,7 @@ export const insertDigitalServiceAgreementSchema = createInsertSchema(digitalSer
   accessToken: true,
 });
 
-export const insertAgreementCommunicationSchema = createInsertSchema(agreementCommunications).omit({
-  id: true,
-  createdAt: true,
-});
+
 
 // Offboarding and Exit Survey schemas
 export const insertOffboardingCaseSchema = createInsertSchema(offboardingCases).omit({
@@ -2717,9 +2664,192 @@ export type InsertLeaveApprovalHierarchy = z.infer<typeof insertLeaveApprovalHie
 export type LeaveApprovalHierarchy = typeof leaveApprovalHierarchy.$inferSelect;
 export type InsertPublicHoliday = z.infer<typeof insertPublicHolidaySchema>;
 export type PublicHoliday = typeof publicHolidays.$inferSelect;
-export type DigitalServiceAgreement = typeof digitalServiceAgreements.$inferSelect;
+
+// Service Agreement Auto-Generation Tables
+export const serviceAgreementTemplates = pgTable("service_agreement_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateName: varchar("template_name").notNull(),
+  supportCategory: varchar("support_category").notNull(), // core_supports, capacity_building, capital_supports
+  serviceType: varchar("service_type").notNull(), // personal_care, community_access, skill_development, etc.
+  templateContent: text("template_content").notNull(), // HTML template with placeholders
+  requiredFields: text("required_fields").array(), // Fields needed from plan data
+  autoGenerationRules: jsonb("auto_generation_rules"), // Rules for auto-populating agreement
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const planAnalysisResults = pgTable("plan_analysis_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  planId: varchar("plan_id").references(() => ndisPlans.id).notNull(),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  analysisDate: timestamp("analysis_date").defaultNow(),
+  
+  // Extracted key information
+  priorityGoals: text("priority_goals").array(),
+  supportRequirements: jsonb("support_requirements"), // Detailed support needs analysis
+  budgetAllocations: jsonb("budget_allocations"), // Budget breakdown by service type
+  serviceRecommendations: jsonb("service_recommendations"), // Recommended services
+  riskFactors: text("risk_factors").array(), // Identified risks or considerations
+  complexityScore: integer("complexity_score"), // 1-10 complexity rating
+  
+  // Auto-generation flags
+  canAutoGenerate: boolean("can_auto_generate").default(false),
+  manualReviewRequired: boolean("manual_review_required").default(false),
+  reviewReasons: text("review_reasons").array(),
+  
+  // Service agreement mapping
+  recommendedTemplateIds: text("recommended_template_ids").array(),
+  customClausesRequired: boolean("custom_clauses_required").default(false),
+  
+  analyzedBy: varchar("analyzed_by").references(() => users.id),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const autoGeneratedAgreements = pgTable("auto_generated_agreements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  planAnalysisId: varchar("plan_analysis_id").references(() => planAnalysisResults.id).notNull(),
+  serviceAgreementId: varchar("service_agreement_id").references(() => serviceAgreements.id).notNull(),
+  templateId: varchar("template_id").references(() => serviceAgreementTemplates.id).notNull(),
+  
+  // Generation details
+  generatedContent: text("generated_content").notNull(), // Final agreement content
+  placeholdersReplaced: jsonb("placeholders_replaced"), // What data was used
+  generationRules: jsonb("generation_rules"), // Rules applied during generation
+  
+  // Quality checks
+  autoQualityScore: integer("auto_quality_score"), // 1-100 automated quality score
+  humanReviewRequired: boolean("human_review_required").default(false),
+  humanReviewCompleted: boolean("human_review_completed").default(false),
+  humanReviewNotes: text("human_review_notes"),
+  
+  // E-signature workflow
+  readyForSigning: boolean("ready_for_signing").default(false),
+  signingMethod: varchar("signing_method"), // email, sms, whatsapp, in_person
+  recipientContactMethod: varchar("recipient_contact_method"), // participant, plan_nominee, guardian
+  
+  generatedAt: timestamp("generated_at").defaultNow(),
+  reviewedAt: timestamp("reviewed_at"),
+  approvedAt: timestamp("approved_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const agreementCommunications = pgTable("agreement_communications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  autoGeneratedAgreementId: varchar("auto_generated_agreement_id").references(() => autoGeneratedAgreements.id).notNull(),
+  serviceAgreementId: varchar("service_agreement_id").references(() => serviceAgreements.id).notNull(),
+  
+  // Communication details
+  communicationType: varchar("communication_type").notNull(), // email, sms, whatsapp, postal
+  recipientType: varchar("recipient_type").notNull(), // participant, plan_nominee, guardian, representative
+  recipientName: varchar("recipient_name").notNull(),
+  recipientContact: varchar("recipient_contact").notNull(), // email, phone, whatsapp number
+  
+  // Message content
+  subject: varchar("subject"),
+  messageContent: text("message_content").notNull(),
+  attachmentUrls: text("attachment_urls").array(),
+  signingUrl: varchar("signing_url"),
+  
+  // Delivery tracking
+  status: varchar("status").default("pending"), // pending, sent, delivered, failed, bounced
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  openedAt: timestamp("opened_at"),
+  clickedAt: timestamp("clicked_at"),
+  signedAt: timestamp("signed_at"),
+  
+  // Response tracking
+  responseReceived: boolean("response_received").default(false),
+  responseType: varchar("response_type"), // signed, declined, requested_changes, questions
+  responseNotes: text("response_notes"),
+  
+  // Retry and escalation
+  retryCount: integer("retry_count").default(0),
+  lastRetryAt: timestamp("last_retry_at"),
+  escalationRequired: boolean("escalation_required").default(false),
+  escalatedAt: timestamp("escalated_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const eSignatureIntegrations = pgTable("e_signature_integrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  providerName: varchar("provider_name").notNull(), // docusign, adobe_sign, hellosign, etc.
+  isActive: boolean("is_active").default(true),
+  
+  // Integration settings
+  apiEndpoint: varchar("api_endpoint"),
+  webhookUrl: varchar("webhook_url"),
+  templateSettings: jsonb("template_settings"),
+  
+  // Authentication (stored securely)
+  credentialsConfigured: boolean("credentials_configured").default(false),
+  lastConnectionTest: timestamp("last_connection_test"),
+  connectionStatus: varchar("connection_status").default("not_tested"),
+  
+  // Usage statistics
+  agreementsSent: integer("agreements_sent").default(0),
+  agreementsSigned: integer("agreements_signed").default(0),
+  averageSigningTimeMinutes: integer("average_signing_time_minutes"), // Average time in minutes
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Service Agreement Auto-Generation schemas
+export const insertServiceAgreementTemplateSchema = createInsertSchema(serviceAgreementTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPlanAnalysisResultSchema = createInsertSchema(planAnalysisResults).omit({
+  id: true,
+  analysisDate: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAutoGeneratedAgreementSchema = createInsertSchema(autoGeneratedAgreements).omit({
+  id: true,
+  generatedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+
+
+export const insertAgreementCommunicationSchema = createInsertSchema(agreementCommunications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertESignatureIntegrationSchema = createInsertSchema(eSignatureIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Service Agreement Auto-Generation types
+export type InsertServiceAgreementTemplate = z.infer<typeof insertServiceAgreementTemplateSchema>;
+export type ServiceAgreementTemplate = typeof serviceAgreementTemplates.$inferSelect;
+export type InsertPlanAnalysisResult = z.infer<typeof insertPlanAnalysisResultSchema>;
+export type PlanAnalysisResult = typeof planAnalysisResults.$inferSelect;
+export type InsertAutoGeneratedAgreement = z.infer<typeof insertAutoGeneratedAgreementSchema>;
+export type AutoGeneratedAgreement = typeof autoGeneratedAgreements.$inferSelect;
 export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommunicationSchema>;
 export type AgreementCommunication = typeof agreementCommunications.$inferSelect;
+export type InsertESignatureIntegration = z.infer<typeof insertESignatureIntegrationSchema>;
+export type ESignatureIntegration = typeof eSignatureIntegrations.$inferSelect;
 
 // Roles and permissions tables
 export const roles = pgTable("roles", {

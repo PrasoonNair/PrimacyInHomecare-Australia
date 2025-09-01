@@ -14,12 +14,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertReferralSchema, insertServiceAgreementSchema, type Referral, type ServiceAgreement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon, Upload, BarChart3, Workflow, Eye } from "lucide-react";
+import { CalendarIcon, UserPlusIcon, FileTextIcon, ClockIcon, AlertCircleIcon, Upload, BarChart3, Workflow, Eye, Brain } from "lucide-react";
 import { NdisPlanUpload } from "@/components/ndis-plan-upload";
 import { KPIDashboard } from "@/components/kpi-dashboard";
 import ParticipantForm from "@/components/forms/participant-form";
 import { WorkflowTracker } from "@/components/workflow-tracker";
 import { ApplicationAutoImport } from '@/components/intake/application-auto-import';
+import { PlanAnalysisEngine } from '@/components/intake/plan-analysis-engine';
 import { format } from "date-fns";
 
 export default function Intake() {
@@ -29,7 +30,9 @@ export default function Intake() {
   const [planUploadDialogOpen, setPlanUploadDialogOpen] = useState(false);
   const [participantFormOpen, setParticipantFormOpen] = useState(false);
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
+  const [planAnalysisDialogOpen, setPlanAnalysisDialogOpen] = useState(false);
   const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<any>(null);
   const [extractedPlanData, setExtractedPlanData] = useState<any>(null);
   const { toast } = useToast();
 
@@ -136,13 +139,17 @@ export default function Intake() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="kpis" data-testid="tab-kpis">
               <BarChart3 className="mr-2 h-4 w-4" />
               KPI Dashboard
             </TabsTrigger>
             <TabsTrigger value="auto-import" data-testid="tab-auto-import">Website Import</TabsTrigger>
             <TabsTrigger value="plan-upload" data-testid="tab-plan-upload">NDIS Plan Upload</TabsTrigger>
+            <TabsTrigger value="plan-analysis" data-testid="tab-plan-analysis">
+              <Brain className="mr-2 h-4 w-4" />
+              Auto-Agreements
+            </TabsTrigger>
             <TabsTrigger value="referrals" data-testid="tab-referrals">Referrals</TabsTrigger>
             <TabsTrigger value="agreements" data-testid="tab-agreements">Service Agreements</TabsTrigger>
           </TabsList>
@@ -232,6 +239,80 @@ export default function Intake() {
                           Create Participant Record
                         </Button>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="plan-analysis" className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-semibold">Intelligent Plan Analysis & Auto-Agreement Generation</h2>
+                  <p className="text-muted-foreground mt-1">
+                    Automatically analyze NDIS plan details and generate service agreements for e-signature
+                  </p>
+                </div>
+              </div>
+              
+              {participants.length > 0 ? (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Select Participant for Plan Analysis</CardTitle>
+                      <CardDescription>
+                        Choose a participant with an uploaded NDIS plan to analyze and generate agreements
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-4">
+                        {participants.slice(0, 3).map((participant: any) => (
+                          <Card key={participant.id} className="cursor-pointer hover:bg-gray-50 transition-colors">
+                            <CardContent className="pt-4">
+                              <div className="flex justify-between items-center">
+                                <div className="space-y-1">
+                                  <h4 className="font-medium">{participant.firstName} {participant.lastName}</h4>
+                                  <p className="text-sm text-gray-600">NDIS: {participant.ndisNumber}</p>
+                                  <p className="text-xs text-gray-500">Plan Status: Active</p>
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  onClick={() => setSelectedParticipant(participant)}
+                                  data-testid={`analyze-plan-${participant.id}`}
+                                >
+                                  <Brain className="h-4 w-4 mr-2" />
+                                  Analyze Plan
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  {selectedParticipant && (
+                    <PlanAnalysisEngine 
+                      planId={`plan-${selectedParticipant.id}`}
+                      participantId={selectedParticipant.id}
+                      onAnalysisComplete={(result) => {
+                        toast({
+                          title: "Plan Analysis Complete",
+                          description: "Service agreements are ready for generation and e-signature.",
+                        });
+                      }}
+                    />
+                  )}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center text-gray-500">
+                      <Brain className="h-12 w-12 mx-auto mb-3" />
+                      <p>No participants available for plan analysis</p>
+                      <p className="text-sm">Upload NDIS plans first or create participant records</p>
                     </div>
                   </CardContent>
                 </Card>

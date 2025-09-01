@@ -4773,6 +4773,457 @@ Primacy Care Australia`,
       }
     ];
   }
+
+  // Plan Analysis & Auto-Agreement Generation Methods
+  async getPlanAnalysis(planId: string) {
+    // Mock implementation - in production this would query planAnalysisResults table
+    return {
+      id: `analysis-${planId}`,
+      planId,
+      participantId: 'participant-001',
+      analysisDate: new Date().toISOString(),
+      priorityGoals: [
+        'Develop independent living skills',
+        'Improve social participation in community activities',
+        'Enhance communication and self-advocacy skills'
+      ],
+      supportRequirements: {
+        coreSupports: ['personal_care', 'community_access'],
+        capacityBuilding: ['skill_development', 'social_participation'],
+        capitalSupports: ['assistive_technology']
+      },
+      budgetAllocations: {
+        coreSupports: 25000,
+        capacityBuilding: 15000,
+        capitalSupports: 5000
+      },
+      serviceRecommendations: [
+        {
+          serviceType: 'personal_care',
+          hoursPerWeek: 10,
+          priority: 'high'
+        },
+        {
+          serviceType: 'community_access',
+          hoursPerWeek: 6,
+          priority: 'medium'
+        }
+      ],
+      riskFactors: [
+        'Complex medical conditions requiring specialized care',
+        'Limited family support network'
+      ],
+      complexityScore: 7,
+      canAutoGenerate: true,
+      manualReviewRequired: false,
+      reviewReasons: [],
+      recommendedTemplateIds: ['template-001', 'template-002'],
+      customClausesRequired: false
+    };
+  }
+
+  async analyzePlan(params: { planId: string; participantId: string; analyzedBy: string }) {
+    // Mock implementation - in production this would:
+    // 1. Fetch NDIS plan data
+    // 2. Extract goals using AI/NLP
+    // 3. Analyze budget allocations
+    // 4. Determine service requirements
+    // 5. Calculate complexity score
+    // 6. Generate service recommendations
+    // 7. Identify risks and considerations
+
+    console.log(`Analyzing NDIS plan ${params.planId} for participant ${params.participantId}`);
+    console.log('Step 1: Extracting plan goals and requirements...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('Step 2: Analyzing budget allocations and service needs...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('Step 3: Generating service recommendations...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('Step 4: Finalizing analysis and quality checks...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const analysisResult = {
+      id: `ANALYSIS-${Date.now()}`,
+      planId: params.planId,
+      participantId: params.participantId,
+      analysisDate: new Date().toISOString(),
+      priorityGoals: [
+        'Develop independent living skills including meal preparation and household management',
+        'Improve social participation through community activities and group programs',
+        'Enhance communication skills and self-advocacy abilities',
+        'Build confidence in using public transport independently'
+      ],
+      supportRequirements: {
+        coreSupports: {
+          personalCare: { hoursPerWeek: 8, priority: 'high' },
+          communityAccess: { hoursPerWeek: 6, priority: 'high' },
+          domesticAssistance: { hoursPerWeek: 4, priority: 'medium' }
+        },
+        capacityBuilding: {
+          skillDevelopment: { hoursPerWeek: 3, priority: 'high' },
+          socialParticipation: { hoursPerWeek: 2, priority: 'medium' }
+        }
+      },
+      budgetAllocations: {
+        coreSupports: 28500,
+        capacityBuilding: 12000,
+        capitalSupports: 3500,
+        totalAllocated: 44000
+      },
+      serviceRecommendations: [
+        {
+          serviceType: 'personal_care_and_community_access',
+          templateId: 'template-pca-001',
+          hoursPerWeek: 14,
+          priority: 'high',
+          estimatedCost: 28500
+        },
+        {
+          serviceType: 'skill_development',
+          templateId: 'template-skill-001',
+          hoursPerWeek: 3,
+          priority: 'high',
+          estimatedCost: 12000
+        }
+      ],
+      riskFactors: [
+        'Participant has complex communication needs requiring specialized support',
+        'Limited family support network - requires additional coordination',
+        'Previous service disruptions due to staff turnover'
+      ],
+      complexityScore: 6,
+      canAutoGenerate: true,
+      manualReviewRequired: false,
+      reviewReasons: [],
+      recommendedTemplateIds: ['template-pca-001', 'template-skill-001'],
+      customClausesRequired: true,
+      analyzedBy: params.analyzedBy
+    };
+
+    console.log('Plan analysis completed successfully');
+    return analysisResult;
+  }
+
+  async getAutoGeneratedAgreements(planId?: string) {
+    // Mock implementation - in production this would query autoGeneratedAgreements table
+    if (!planId) return [];
+
+    return [
+      {
+        id: 'auto-agreement-001',
+        planAnalysisId: `analysis-${planId}`,
+        serviceAgreementId: 'sa-001',
+        templateId: 'template-pca-001',
+        generatedContent: '<html>...</html>', // Full HTML agreement content
+        autoQualityScore: 92,
+        humanReviewRequired: false,
+        humanReviewCompleted: false,
+        readyForSigning: true,
+        signingMethod: 'email',
+        recipientContactMethod: 'participant',
+        generatedAt: new Date().toISOString()
+      },
+      {
+        id: 'auto-agreement-002',
+        planAnalysisId: `analysis-${planId}`,
+        serviceAgreementId: 'sa-002',
+        templateId: 'template-skill-001',
+        generatedContent: '<html>...</html>',
+        autoQualityScore: 88,
+        humanReviewRequired: true,
+        humanReviewCompleted: false,
+        readyForSigning: false,
+        signingMethod: 'email',
+        recipientContactMethod: 'participant',
+        generatedAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  async generateServiceAgreements(analysisId: string) {
+    // Mock implementation - in production this would:
+    // 1. Fetch plan analysis results
+    // 2. Load appropriate agreement templates
+    // 3. Replace placeholders with participant/plan data
+    // 4. Apply auto-generation rules
+    // 5. Perform quality checks
+    // 6. Save generated agreements
+    // 7. Prepare for e-signature workflow
+
+    console.log(`Generating service agreements for analysis ${analysisId}`);
+    console.log('Loading agreement templates...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('Applying auto-generation rules...');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    console.log('Performing quality checks...');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('Preparing agreements for e-signature...');
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const generatedAgreements = [
+      {
+        id: `AUTO-AGR-${Date.now()}-1`,
+        planAnalysisId: analysisId,
+        serviceAgreementId: `SA-${Date.now()}-1`,
+        templateId: 'template-pca-001',
+        generatedContent: this.generateAgreementContent('Personal Care & Community Access'),
+        autoQualityScore: 94,
+        humanReviewRequired: false,
+        readyForSigning: true,
+        signingMethod: 'multi_channel',
+        recipientContactMethod: 'participant'
+      },
+      {
+        id: `AUTO-AGR-${Date.now()}-2`,
+        planAnalysisId: analysisId,
+        serviceAgreementId: `SA-${Date.now()}-2`,
+        templateId: 'template-skill-001',
+        generatedContent: this.generateAgreementContent('Skill Development'),
+        autoQualityScore: 89,
+        humanReviewRequired: false,
+        readyForSigning: true,
+        signingMethod: 'multi_channel',
+        recipientContactMethod: 'participant'
+      }
+    ];
+
+    console.log(`Generated ${generatedAgreements.length} service agreements successfully`);
+    return generatedAgreements;
+  }
+
+  private generateAgreementContent(serviceType: string): string {
+    return `
+      <html>
+        <head><title>NDIS Service Agreement - ${serviceType}</title></head>
+        <body>
+          <h1>NDIS Service Agreement</h1>
+          <h2>Service Type: ${serviceType}</h2>
+          
+          <h3>Participant Details</h3>
+          <p>Name: [PARTICIPANT_NAME]</p>
+          <p>NDIS Number: [NDIS_NUMBER]</p>
+          <p>Plan Number: [PLAN_NUMBER]</p>
+          
+          <h3>Service Provider</h3>
+          <p>Primacy Care Australia</p>
+          <p>ABN: [PROVIDER_ABN]</p>
+          
+          <h3>Service Details</h3>
+          <p>Service Category: ${serviceType}</p>
+          <p>Start Date: [SERVICE_START_DATE]</p>
+          <p>End Date: [SERVICE_END_DATE]</p>
+          <p>Hours per Week: [HOURS_PER_WEEK]</p>
+          
+          <h3>Goals and Outcomes</h3>
+          <ul>
+            <li>[GOAL_1]</li>
+            <li>[GOAL_2]</li>
+            <li>[GOAL_3]</li>
+          </ul>
+          
+          <h3>Service Delivery</h3>
+          <p>Services will be delivered in accordance with participant goals and NDIS guidelines.</p>
+          
+          <h3>Signatures</h3>
+          <p>Participant Signature: _________________ Date: _______</p>
+          <p>Provider Signature: _________________ Date: _______</p>
+        </body>
+      </html>
+    `;
+  }
+
+  async getAgreementCommunications(params: { planId?: string; agreementId?: string }) {
+    // Mock implementation - in production this would query agreementCommunications table
+    return [
+      {
+        id: 'comm-001',
+        autoGeneratedAgreementId: 'auto-agreement-001',
+        serviceAgreementId: 'sa-001',
+        communicationType: 'email',
+        recipientType: 'participant',
+        recipientName: 'John Smith',
+        recipientContact: 'john.smith@email.com',
+        subject: 'NDIS Service Agreement - Please Review and Sign',
+        messageContent: 'Please review and electronically sign your NDIS service agreement.',
+        signingUrl: 'https://esign.primacycare.com/sign/abc123',
+        status: 'delivered',
+        sentAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+        deliveredAt: new Date(Date.now() - 86000000).toISOString(),
+        responseReceived: false,
+        retryCount: 0
+      },
+      {
+        id: 'comm-002',
+        autoGeneratedAgreementId: 'auto-agreement-001',
+        serviceAgreementId: 'sa-001',
+        communicationType: 'sms',
+        recipientType: 'participant',
+        recipientName: 'John Smith',
+        recipientContact: '+61412345678',
+        messageContent: 'Hi John, your NDIS service agreement is ready for signing: https://esign.primacycare.com/sign/abc123',
+        signingUrl: 'https://esign.primacycare.com/sign/abc123',
+        status: 'sent',
+        sentAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        responseReceived: false,
+        retryCount: 0
+      }
+    ];
+  }
+
+  async sendAgreementForSigning(params: { 
+    agreementId: string; 
+    communicationMethod: string; 
+    recipientContact: string;
+    sentBy: string;
+  }) {
+    // Mock implementation - in production this would:
+    // 1. Fetch agreement content
+    // 2. Generate e-signature document
+    // 3. Create signing URL with e-signature provider
+    // 4. Send communication via selected method (email/SMS/WhatsApp)
+    // 5. Track delivery and engagement
+    // 6. Set up reminder and escalation workflows
+
+    console.log(`Sending agreement ${params.agreementId} for signing via ${params.communicationMethod}`);
+    console.log(`Recipient: ${params.recipientContact}`);
+
+    // Simulate e-signature provider integration
+    const signingUrl = `https://esign.primacycare.com/sign/${params.agreementId}`;
+    
+    // Simulate sending communication
+    let messageContent = '';
+    let subject = '';
+    
+    switch (params.communicationMethod) {
+      case 'email':
+        subject = 'NDIS Service Agreement - Electronic Signature Required';
+        messageContent = `
+          Dear Participant,
+          
+          Your NDIS Service Agreement is ready for review and signature.
+          
+          Please click the link below to review and electronically sign your agreement:
+          ${signingUrl}
+          
+          If you have any questions, please contact us at support@primacycare.com
+          
+          Best regards,
+          Primacy Care Australia
+        `;
+        break;
+        
+      case 'sms':
+        messageContent = `NDIS Service Agreement ready for signing. Click to review and sign: ${signingUrl} - Primacy Care Australia`;
+        break;
+        
+      case 'whatsapp':
+        messageContent = `🏥 Primacy Care Australia\n\nYour NDIS Service Agreement is ready!\n\n👆 Click to review and sign: ${signingUrl}\n\n❓ Questions? Reply to this message`;
+        break;
+    }
+
+    // Simulate delivery tracking
+    console.log(`${params.communicationMethod.toUpperCase()} sent to ${params.recipientContact}`);
+    console.log('Setting up delivery tracking and reminder workflow...');
+
+    return {
+      id: `COMM-${Date.now()}`,
+      autoGeneratedAgreementId: params.agreementId,
+      serviceAgreementId: `SA-${params.agreementId}`,
+      communicationType: params.communicationMethod,
+      recipientType: 'participant',
+      recipientName: 'John Smith',
+      recipientContact: params.recipientContact,
+      subject,
+      messageContent,
+      signingUrl,
+      status: 'sent',
+      sentAt: new Date().toISOString(),
+      responseReceived: false,
+      retryCount: 0
+    };
+  }
+
+  async getServiceAgreementTemplates(params: { supportCategory?: string; serviceType?: string }) {
+    // Mock implementation - in production this would query serviceAgreementTemplates table
+    return [
+      {
+        id: 'template-pca-001',
+        templateName: 'Personal Care & Community Access',
+        supportCategory: 'core_supports',
+        serviceType: 'personal_care_community_access',
+        templateContent: this.generateAgreementContent('Personal Care & Community Access'),
+        requiredFields: ['participant_name', 'ndis_number', 'plan_number', 'service_start_date', 'hours_per_week'],
+        autoGenerationRules: {
+          goalExtraction: true,
+          budgetCalculation: true,
+          riskAssessment: true
+        },
+        isActive: true
+      },
+      {
+        id: 'template-skill-001',
+        templateName: 'Skill Development',
+        supportCategory: 'capacity_building',
+        serviceType: 'skill_development',
+        templateContent: this.generateAgreementContent('Skill Development'),
+        requiredFields: ['participant_name', 'ndis_number', 'skill_areas', 'learning_objectives'],
+        autoGenerationRules: {
+          goalMapping: true,
+          outcomeTracking: true,
+          progressMeasurement: true
+        },
+        isActive: true
+      }
+    ];
+  }
+
+  async createServiceAgreementTemplate(templateData: any) {
+    // Mock implementation - in production this would insert into serviceAgreementTemplates table
+    const templateId = `TEMPLATE-${Date.now()}`;
+    console.log(`Created service agreement template: ${templateId}`);
+    console.log(`Template name: ${templateData.templateName}`);
+    console.log(`Support category: ${templateData.supportCategory}`);
+    
+    return {
+      id: templateId,
+      ...templateData,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  async getESignatureIntegrations() {
+    // Mock implementation - in production this would query eSignatureIntegrations table
+    return [
+      {
+        id: 'esign-001',
+        providerName: 'DocuSign',
+        isActive: true,
+        apiEndpoint: 'https://demo.docusign.net/restapi',
+        webhookUrl: 'https://primacycare.com/webhooks/docusign',
+        credentialsConfigured: true,
+        lastConnectionTest: new Date().toISOString(),
+        connectionStatus: 'connected',
+        agreementsSent: 1247,
+        agreementsSigned: 1186,
+        averageSigningTime: '2 days 4 hours'
+      },
+      {
+        id: 'esign-002',
+        providerName: 'Adobe Sign',
+        isActive: false,
+        credentialsConfigured: false,
+        connectionStatus: 'not_configured',
+        agreementsSent: 0,
+        agreementsSigned: 0
+      }
+    ];
+  }
 }
 
 export const storage = new DatabaseStorage();
