@@ -243,6 +243,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced business logic endpoints
+  app.post("/api/workflow/intelligent/advance", isAuthenticated, async (req, res) => {
+    try {
+      const { enhancedBusinessLogicService } = await import("./businessLogicService");
+      const { referralId } = req.body;
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      
+      const result = await enhancedBusinessLogicService.advanceWorkflowIntelligent(referralId, userId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in intelligent workflow advancement:", error);
+      res.status(500).json({ message: "Failed to advance workflow intelligently" });
+    }
+  });
+
+  app.post("/api/workflow/staff/intelligent-matching", isAuthenticated, async (req, res) => {
+    try {
+      const { enhancedBusinessLogicService } = await import("./businessLogicService");
+      const { participantId, serviceRequirements } = req.body;
+      
+      const result = await enhancedBusinessLogicService.performIntelligentStaffMatching(participantId, serviceRequirements);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in intelligent staff matching:", error);
+      res.status(500).json({ message: "Failed to perform intelligent staff matching" });
+    }
+  });
+
+  app.post("/api/workflow/funding/comprehensive-verification", isAuthenticated, async (req, res) => {
+    try {
+      const { enhancedBusinessLogicService } = await import("./businessLogicService");
+      const { referralId } = req.body;
+      
+      const result = await enhancedBusinessLogicService.performComprehensiveFundingVerification(referralId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in comprehensive funding verification:", error);
+      res.status(500).json({ message: "Failed to perform comprehensive funding verification" });
+    }
+  });
+
+  app.post("/api/workflow/agreements/intelligent-generation", isAuthenticated, async (req, res) => {
+    try {
+      const { enhancedBusinessLogicService } = await import("./businessLogicService");
+      const { referralId } = req.body;
+      
+      const result = await enhancedBusinessLogicService.generateIntelligentServiceAgreement(referralId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in intelligent service agreement generation:", error);
+      res.status(500).json({ message: "Failed to generate intelligent service agreement" });
+    }
+  });
+
+  app.post("/api/workflow/risk-assessment", isAuthenticated, async (req, res) => {
+    try {
+      const { enhancedBusinessLogicService } = await import("./businessLogicService");
+      const { participantId } = req.body;
+      
+      const result = await enhancedBusinessLogicService.performRiskAssessment(participantId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in risk assessment:", error);
+      res.status(500).json({ message: "Failed to perform risk assessment" });
+    }
+  });
+
+  // Compliance automation endpoints
+  app.post("/api/compliance/check", isAuthenticated, async (req, res) => {
+    try {
+      const { complianceAutomationService } = await import("./complianceAutomationService");
+      const { entityType, entityId } = req.body;
+      
+      const result = await complianceAutomationService.performComplianceCheck(entityType, entityId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in compliance check:", error);
+      res.status(500).json({ message: "Failed to perform compliance check" });
+    }
+  });
+
+  app.post("/api/compliance/documentation", isAuthenticated, async (req, res) => {
+    try {
+      const { complianceAutomationService } = await import("./complianceAutomationService");
+      const { referralId } = req.body;
+      
+      const result = await complianceAutomationService.generateComplianceDocumentation(referralId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in compliance documentation generation:", error);
+      res.status(500).json({ message: "Failed to generate compliance documentation" });
+    }
+  });
+
+  app.post("/api/quality/assurance", isAuthenticated, async (req, res) => {
+    try {
+      const { complianceAutomationService } = await import("./complianceAutomationService");
+      const { serviceId } = req.body;
+      
+      const result = await complianceAutomationService.performQualityAssurance(serviceId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error in quality assurance:", error);
+      res.status(500).json({ message: "Failed to perform quality assurance" });
+    }
+  });
+
   app.get("/api/workflow/matching-staff/:participantId", isAuthenticated, async (req, res) => {
     try {
       const { WorkflowService } = await import("./workflowService");
