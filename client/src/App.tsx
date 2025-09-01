@@ -36,6 +36,7 @@ import FinanceAwards from "@/pages/finance-awards";
 import MasterAgreements from "@/pages/master-agreements";
 import AutomationDashboard from "@/pages/automation-dashboard";
 import EmergencyContacts from "@/pages/emergency-contacts";
+import ReportsDashboard from "@/pages/reports-dashboard";
 import ServiceDelivery from "@/pages/service-delivery";
 import ShiftManagement from "@/pages/shift-management";
 import CalendarShifts from "@/pages/calendar-shifts";
@@ -108,6 +109,7 @@ function Router() {
             <Route path="/staff-directory" component={() => <StaffDirectoryPage />} />
             <Route path="/staff/:id" component={React.lazy(() => import('./pages/staff/[id]/index.lazy'))} />
             <Route path="/reports" component={Reports} />
+            <Route path="/reports-dashboard" component={ReportsDashboard} />
             <Route path="/role-management" component={RoleManagement} />
             <Route path="/price-guide" component={PriceGuide} />
             <Route path="/automation" component={Automation} />

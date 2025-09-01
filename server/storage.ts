@@ -469,6 +469,12 @@ export interface IStorage {
   getEmergencyContacts(): Promise<any[]>;
   clockInShift(userId: string): Promise<any>;
   clockOutShift(userId: string, notes?: string): Promise<any>;
+
+  // Reports methods
+  getAvailableReports(role: string): Promise<any[]>;
+  generateReport(reportId: string, options: any): Promise<Buffer>;
+  getReportHistory(userId: string, limit?: number): Promise<any[]>;
+  getReportData(reportId: string, options: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -5589,6 +5595,239 @@ Primacy Care Australia`,
       notes,
       message: 'Successfully clocked out'
     };
+  }
+
+  // Reports methods
+  async getAvailableReports(role: string): Promise<any[]> {
+    const roleReports = {
+      'super-admin': ['business-performance', 'financial-summary', 'compliance-audit', 'staff-performance', 'quality-metrics'],
+      'ceo': ['business-performance', 'financial-summary', 'compliance-audit', 'incident-analysis'],
+      'general-manager': ['business-performance', 'financial-summary', 'staff-performance', 'service-delivery-performance'],
+      'intake-coordinator': ['referral-processing', 'intake-conversion', 'document-verification'],
+      'intake-manager': ['referral-processing', 'intake-conversion', 'document-verification'],
+      'finance-manager': ['financial-summary', 'invoice-aging', 'travel-calculation', 'payroll-summary', 'budget-variance'],
+      'finance-officer-billing': ['invoice-aging', 'travel-calculation'],
+      'finance-officer-payroll': ['payroll-summary', 'travel-calculation'],
+      'hr-manager': ['recruitment-pipeline', 'staff-performance', 'staff-utilization', 'training-compliance'],
+      'hr-recruiter': ['recruitment-pipeline'],
+      'service-delivery-manager': ['service-delivery-performance', 'participant-goals', 'service-agreements', 'staff-utilization'],
+      'service-delivery-coordinator': ['service-delivery-performance', 'participant-goals', 'service-agreements'],
+      'quality-manager': ['incident-analysis', 'quality-metrics', 'compliance-audit', 'training-compliance'],
+      'support-worker': ['personal-shift-summary', 'participant-interaction-log', 'participant-goals']
+    };
+
+    const availableReportIds = roleReports[role as keyof typeof roleReports] || [];
+    
+    return availableReportIds.map(reportId => ({
+      id: reportId,
+      title: this.getReportTitle(reportId),
+      description: this.getReportDescription(reportId),
+      category: this.getReportCategory(reportId),
+      formats: this.getReportFormats(reportId),
+      frequency: this.getReportFrequency(reportId)
+    }));
+  }
+
+  async generateReport(reportId: string, options: any): Promise<Buffer> {
+    // In a real implementation, this would generate actual reports
+    // For now, return a mock PDF buffer
+    const reportContent = await this.getReportData(reportId, options);
+    
+    // Mock PDF generation - in production, use libraries like PDFKit, jsPDF, or server-side tools
+    const mockPdfContent = JSON.stringify({
+      reportId,
+      generatedAt: new Date().toISOString(),
+      data: reportContent,
+      options
+    });
+    
+    return Buffer.from(mockPdfContent, 'utf-8');
+  }
+
+  async getReportHistory(userId: string, limit: number = 20): Promise<any[]> {
+    // In production, this would fetch from a reports_history table
+    return [
+      {
+        id: 'report-1',
+        title: 'Business Performance Dashboard',
+        reportId: 'business-performance',
+        format: 'pdf',
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        status: 'completed',
+        fileSize: '2.4 MB'
+      },
+      {
+        id: 'report-2',
+        title: 'Financial Summary Report',
+        reportId: 'financial-summary',
+        format: 'excel',
+        createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+        status: 'completed',
+        fileSize: '1.8 MB'
+      },
+      {
+        id: 'report-3',
+        title: 'Staff Performance Report',
+        reportId: 'staff-performance',
+        format: 'pdf',
+        createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
+        status: 'completed',
+        fileSize: '3.1 MB'
+      }
+    ].slice(0, limit);
+  }
+
+  async getReportData(reportId: string, options: any): Promise<any> {
+    // Generate mock data based on report type
+    switch (reportId) {
+      case 'business-performance':
+        return {
+          totalRevenue: 450000,
+          totalExpenses: 320000,
+          profitMargin: 28.9,
+          activeParticipants: 247,
+          staffUtilization: 87.5,
+          complianceScore: 96.2,
+          kpis: [
+            { name: 'Revenue Growth', value: '+12.5%', trend: 'up' },
+            { name: 'Cost per Service', value: '$85.40', trend: 'down' },
+            { name: 'Client Satisfaction', value: '4.8/5', trend: 'up' },
+            { name: 'Staff Retention', value: '94.2%', trend: 'stable' }
+          ]
+        };
+      
+      case 'financial-summary':
+        return {
+          revenue: {
+            total: 450000,
+            ndisPayments: 380000,
+            privatePayments: 70000,
+            growthRate: 12.5
+          },
+          expenses: {
+            total: 320000,
+            staffCosts: 240000,
+            operationalCosts: 50000,
+            overheadCosts: 30000
+          },
+          profitability: {
+            grossProfit: 130000,
+            netProfit: 85000,
+            margin: 18.9
+          }
+        };
+
+      case 'referral-processing':
+        return {
+          totalReferrals: 156,
+          conversionRate: 73.2,
+          averageProcessingTime: 3.2,
+          referralSources: [
+            { source: 'NDIS Planner', count: 45, percentage: 28.8 },
+            { source: 'Medical Professional', count: 38, percentage: 24.4 },
+            { source: 'Family/Carer', count: 35, percentage: 22.4 },
+            { source: 'Community Services', count: 23, percentage: 14.7 },
+            { source: 'Other', count: 15, percentage: 9.6 }
+          ]
+        };
+
+      default:
+        return {
+          message: `Data for report ${reportId}`,
+          generatedAt: new Date().toISOString(),
+          parameters: options.parameters || {},
+          dateRange: options.dateRange
+        };
+    }
+  }
+
+  private getReportTitle(reportId: string): string {
+    const titles: Record<string, string> = {
+      'business-performance': 'Business Performance Dashboard',
+      'financial-summary': 'Financial Summary Report',
+      'compliance-audit': 'Compliance Audit Report',
+      'referral-processing': 'Referral Processing Report',
+      'intake-conversion': 'Intake Conversion Analysis',
+      'document-verification': 'Document Verification Report',
+      'invoice-aging': 'Invoice Aging Report',
+      'travel-calculation': 'Travel Calculation Report',
+      'payroll-summary': 'Payroll Summary Report',
+      'budget-variance': 'Budget Variance Report',
+      'recruitment-pipeline': 'Recruitment Pipeline Report',
+      'staff-performance': 'Staff Performance Report',
+      'staff-utilization': 'Staff Utilization Report',
+      'training-compliance': 'Training Compliance Report',
+      'service-delivery-performance': 'Service Delivery Performance',
+      'participant-goals': 'Participant Goals Progress',
+      'service-agreements': 'Service Agreements Report',
+      'incident-analysis': 'Incident Analysis Report',
+      'quality-metrics': 'Quality Metrics Dashboard',
+      'personal-shift-summary': 'Personal Shift Summary',
+      'participant-interaction-log': 'Participant Interaction Log'
+    };
+    return titles[reportId] || reportId;
+  }
+
+  private getReportDescription(reportId: string): string {
+    const descriptions: Record<string, string> = {
+      'business-performance': 'Comprehensive overview of business metrics, revenue, and KPIs',
+      'financial-summary': 'Revenue, expenses, profit margins, and budget variance analysis',
+      'compliance-audit': 'NDIS compliance status, audit findings, and corrective actions',
+      'referral-processing': 'Referral volumes, conversion rates, and processing times',
+      'intake-conversion': 'Analysis of referral to participant conversion rates and bottlenecks',
+      'document-verification': 'Document processing status, verification rates, and compliance'
+    };
+    return descriptions[reportId] || `Report for ${reportId}`;
+  }
+
+  private getReportCategory(reportId: string): string {
+    const categories: Record<string, string> = {
+      'business-performance': 'Executive',
+      'financial-summary': 'Executive',
+      'compliance-audit': 'Executive',
+      'referral-processing': 'Intake',
+      'intake-conversion': 'Intake',
+      'document-verification': 'Intake',
+      'invoice-aging': 'Finance',
+      'travel-calculation': 'Finance',
+      'payroll-summary': 'Finance',
+      'budget-variance': 'Finance',
+      'recruitment-pipeline': 'HR',
+      'staff-performance': 'HR',
+      'staff-utilization': 'HR',
+      'training-compliance': 'HR',
+      'service-delivery-performance': 'Service Delivery',
+      'participant-goals': 'Service Delivery',
+      'service-agreements': 'Service Delivery',
+      'incident-analysis': 'Quality',
+      'quality-metrics': 'Quality',
+      'personal-shift-summary': 'Personal',
+      'participant-interaction-log': 'Personal'
+    };
+    return categories[reportId] || 'General';
+  }
+
+  private getReportFormats(reportId: string): string[] {
+    // Most reports support PDF and Excel
+    const baseFormats = ['pdf', 'excel'];
+    
+    // Dashboard reports also support live dashboard view
+    if (reportId.includes('dashboard') || reportId.includes('performance')) {
+      return [...baseFormats, 'dashboard'];
+    }
+    
+    return baseFormats;
+  }
+
+  private getReportFrequency(reportId: string): string[] {
+    const frequencies: Record<string, string[]> = {
+      'business-performance': ['daily', 'weekly', 'monthly', 'quarterly'],
+      'financial-summary': ['weekly', 'monthly', 'quarterly'],
+      'compliance-audit': ['monthly', 'quarterly'],
+      'referral-processing': ['daily', 'weekly', 'monthly'],
+      'personal-shift-summary': ['daily', 'weekly', 'monthly']
+    };
+    return frequencies[reportId] || ['weekly', 'monthly'];
   }
 }
 

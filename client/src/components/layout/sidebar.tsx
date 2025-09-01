@@ -19,6 +19,7 @@ export default function Sidebar() {
     { name: "Automation", href: "/automation", icon: "fas fa-robot", badge: "AI", description: "Efficiency optimization" },
     { name: "Automation Dashboard", href: "/automation-dashboard", icon: "fas fa-tachometer-alt", badge: "Live", description: "KPI & workflow monitoring" },
     { name: "Reports", href: "/reports", icon: "fas fa-chart-bar", badge: "12", description: "Business reports" },
+    { name: "Reports Dashboard", href: "/reports-dashboard", icon: "fas fa-file-alt", badge: "New", description: "Generate role-specific reports" },
     { name: "Calendar View", href: "/calendar-shifts", icon: "fas fa-calendar-alt", badge: "Live", description: "Visual shift calendar" },
   ];
 

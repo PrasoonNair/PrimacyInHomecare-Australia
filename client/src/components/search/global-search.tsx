@@ -30,7 +30,11 @@ import {
   HistoryIcon,
   CommandIcon,
   CheckIcon,
-  AlertTriangleIcon
+  AlertTriangleIcon,
+  BarChart3,
+  DollarSign,
+  Activity,
+  Target
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -329,6 +333,182 @@ const roleBasedQuickActions: QuickAction[] = [
     url: "/reports",
     category: "Admin",
     roles: ["super-admin", "ceo", "general-manager", "finance-manager"]
+  },
+  {
+    id: "generate-reports",
+    title: "Generate Reports",
+    description: "Create role-specific reports",
+    icon: "FileTextIcon",
+    url: "/reports-dashboard",
+    category: "Reports",
+    roles: ["all"]
+  },
+
+  // Executive Report Actions
+  {
+    id: "business-performance-report",
+    title: "Business Performance Report",
+    description: "Generate comprehensive business metrics",
+    icon: "BarChart3Icon",
+    url: "/reports-dashboard?report=business-performance",
+    category: "Reports",
+    roles: ["super-admin", "ceo", "general-manager"]
+  },
+  {
+    id: "financial-summary-report",
+    title: "Financial Summary Report",
+    description: "Generate financial analysis report",
+    icon: "DollarSignIcon",
+    url: "/reports-dashboard?report=financial-summary",
+    category: "Reports",
+    roles: ["super-admin", "ceo", "general-manager", "finance-manager"]
+  },
+  {
+    id: "compliance-audit-report",
+    title: "Compliance Audit Report",
+    description: "Generate NDIS compliance report",
+    icon: "ShieldIcon",
+    url: "/reports-dashboard?report=compliance-audit",
+    category: "Reports",
+    roles: ["super-admin", "ceo", "general-manager", "quality-manager"]
+  },
+
+  // Intake Report Actions
+  {
+    id: "referral-processing-report",
+    title: "Referral Processing Report",
+    description: "Generate referral metrics report",
+    icon: "UsersIcon",
+    url: "/reports-dashboard?report=referral-processing",
+    category: "Reports",
+    roles: ["intake-coordinator", "intake-manager", "general-manager"]
+  },
+  {
+    id: "intake-conversion-report",
+    title: "Intake Conversion Report",
+    description: "Generate conversion analysis report",
+    icon: "TrendingUpIcon",
+    url: "/reports-dashboard?report=intake-conversion",
+    category: "Reports",
+    roles: ["intake-coordinator", "intake-manager"]
+  },
+
+  // Finance Report Actions
+  {
+    id: "invoice-aging-report",
+    title: "Invoice Aging Report",
+    description: "Generate outstanding invoices report",
+    icon: "CreditCardIcon",
+    url: "/reports-dashboard?report=invoice-aging",
+    category: "Reports",
+    roles: ["finance-manager", "finance-officer-billing"]
+  },
+  {
+    id: "travel-calculation-report",
+    title: "Travel Calculation Report",
+    description: "Generate provider travel report",
+    icon: "MapPinIcon",
+    url: "/reports-dashboard?report=travel-calculation",
+    category: "Reports",
+    roles: ["finance-manager", "finance-officer-billing", "finance-officer-payroll"]
+  },
+  {
+    id: "payroll-summary-report",
+    title: "Payroll Summary Report",
+    description: "Generate staff payroll report",
+    icon: "UsersIcon",
+    url: "/reports-dashboard?report=payroll-summary",
+    category: "Reports",
+    roles: ["finance-manager", "finance-officer-payroll", "hr-manager"]
+  },
+
+  // HR Report Actions
+  {
+    id: "recruitment-pipeline-report",
+    title: "Recruitment Pipeline Report",
+    description: "Generate hiring progress report",
+    icon: "BriefcaseIcon",
+    url: "/reports-dashboard?report=recruitment-pipeline",
+    category: "Reports",
+    roles: ["hr-manager", "hr-recruiter"]
+  },
+  {
+    id: "staff-performance-report",
+    title: "Staff Performance Report",
+    description: "Generate team performance report",
+    icon: "TrendingUpIcon",
+    url: "/reports-dashboard?report=staff-performance",
+    category: "Reports",
+    roles: ["hr-manager", "general-manager"]
+  },
+  {
+    id: "staff-utilization-report",
+    title: "Staff Utilization Report",
+    description: "Generate capacity analysis report",
+    icon: "ClockIcon",
+    url: "/reports-dashboard?report=staff-utilization",
+    category: "Reports",
+    roles: ["hr-manager", "service-delivery-manager"]
+  },
+
+  // Service Delivery Report Actions
+  {
+    id: "service-delivery-performance-report",
+    title: "Service Delivery Report",
+    description: "Generate service quality report",
+    icon: "ActivityIcon",
+    url: "/reports-dashboard?report=service-delivery-performance",
+    category: "Reports",
+    roles: ["service-delivery-manager", "service-delivery-coordinator"]
+  },
+  {
+    id: "participant-goals-report",
+    title: "Participant Goals Report",
+    description: "Generate goal progress report",
+    icon: "TargetIcon",
+    url: "/reports-dashboard?report=participant-goals",
+    category: "Reports",
+    roles: ["service-delivery-manager", "service-delivery-coordinator", "support-worker"]
+  },
+
+  // Quality Report Actions
+  {
+    id: "incident-analysis-report",
+    title: "Incident Analysis Report",
+    description: "Generate incident trends report",
+    icon: "AlertTriangleIcon",
+    url: "/reports-dashboard?report=incident-analysis",
+    category: "Reports",
+    roles: ["quality-manager", "general-manager"]
+  },
+  {
+    id: "quality-metrics-report",
+    title: "Quality Metrics Report",
+    description: "Generate quality indicators report",
+    icon: "ShieldIcon",
+    url: "/reports-dashboard?report=quality-metrics",
+    category: "Reports",
+    roles: ["quality-manager", "general-manager"]
+  },
+
+  // Support Worker Report Actions
+  {
+    id: "personal-shift-report",
+    title: "Personal Shift Report",
+    description: "Generate individual shift summary",
+    icon: "ClockIcon",
+    url: "/reports-dashboard?report=personal-shift-summary",
+    category: "Reports",
+    roles: ["support-worker"]
+  },
+  {
+    id: "participant-interaction-report",
+    title: "Participant Interaction Report",
+    description: "Generate interaction log report",
+    icon: "UsersIcon",
+    url: "/reports-dashboard?report=participant-interaction-log",
+    category: "Reports",
+    roles: ["support-worker"]
   }
 ];
 
@@ -452,7 +632,12 @@ export default function GlobalSearch({ isOpen, onClose }: SearchProps) {
       BriefcaseIcon,
       ClockIcon,
       MapPinIcon,
-      PhoneIcon
+      PhoneIcon,
+      BarChart3Icon: BarChart3,
+      DollarSignIcon: DollarSign,
+      ActivityIcon: Activity,
+      TargetIcon: Target,
+      AlertTriangleIcon
     };
     const IconComponent = iconMap[iconName] || SearchIcon;
     return <IconComponent className="h-4 w-4" />;

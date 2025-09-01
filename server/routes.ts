@@ -2306,6 +2306,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports API
+  app.get("/api/reports/available", isAuthenticated, async (req, res) => {
+    try {
+      const { role } = req.query;
+      const userRole = role || req.user?.role || req.user?.claims?.role;
+      const reports = await storage.getAvailableReports(userRole as string);
+      res.json(reports);
+    } catch (error) {
+      console.error("Error fetching available reports:", error);
+      res.status(500).json({ message: "Failed to fetch available reports" });
+    }
+  });
+
+  app.post("/api/reports/generate", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { reportId, format, dateRange, parameters } = req.body;
+      
+      const reportData = await storage.generateReport(reportId, {
+        userId,
+        format,
+        dateRange,
+        parameters
+      });
+
+      // Set appropriate headers for file download
+      const filename = `${reportId}-${format}.${format === 'excel' ? 'xlsx' : format}`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', getContentType(format));
+      
+      res.send(reportData);
+    } catch (error) {
+      console.error("Error generating report:", error);
+      res.status(500).json({ message: "Failed to generate report" });
+    }
+  });
+
+  app.get("/api/reports/history", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      const { limit = 20 } = req.query;
+      const history = await storage.getReportHistory(userId, parseInt(limit as string));
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching report history:", error);
+      res.status(500).json({ message: "Failed to fetch report history" });
+    }
+  });
+
+  app.get("/api/reports/data/:reportId", isAuthenticated, async (req, res) => {
+    try {
+      const { reportId } = req.params;
+      const { dateRange, parameters } = req.query;
+      
+      const data = await storage.getReportData(reportId, {
+        dateRange: dateRange ? JSON.parse(dateRange as string) : undefined,
+        parameters: parameters ? JSON.parse(parameters as string) : {}
+      });
+      
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching report data:", error);
+      res.status(500).json({ message: "Failed to fetch report data" });
+    }
+  });
+
+  function getContentType(format: string): string {
+    switch (format) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'excel':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'csv':
+        return 'text/csv';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
   // Price Guide Management Endpoints
   app.get("/api/price-guides", isAuthenticated, async (req, res) => {
     try {
