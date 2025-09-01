@@ -3533,6 +3533,298 @@ Primacy Care Australia`,
       auditLogId: `DELETE-AUDIT-${Date.now()}`
     };
   }
+
+  // Staff Offboarding Management Methods
+  async getOffboardingCases() {
+    // Mock implementation - in production this would query the offboardingCases table
+    return [
+      {
+        id: 'case-001',
+        staffId: 'staff-123',
+        staffName: 'Sarah Johnson',
+        department: 'Service Delivery',
+        position: 'Support Coordinator',
+        resignationDate: '2025-01-15',
+        lastWorkingDay: '2025-02-15',
+        resignationReason: 'Career advancement opportunity at another organization',
+        resignationType: 'voluntary',
+        noticePeriod: 4,
+        exitSurveyCompleted: false,
+        offboardingStatus: 'in_progress',
+        assignedHR: 'hr-manager-001',
+        completionPercentage: 65,
+        createdAt: '2025-01-15T00:00:00Z'
+      },
+      {
+        id: 'case-002',
+        staffId: 'staff-456',
+        staffName: 'Michael Chen',
+        department: 'Finance',
+        position: 'Finance Officer',
+        resignationDate: '2025-01-20',
+        lastWorkingDay: '2025-02-28',
+        resignationReason: 'Returning to university for further studies',
+        resignationType: 'voluntary',
+        noticePeriod: 6,
+        exitSurveyCompleted: true,
+        offboardingStatus: 'in_progress',
+        assignedHR: 'hr-manager-001',
+        completionPercentage: 85,
+        createdAt: '2025-01-20T00:00:00Z'
+      },
+      {
+        id: 'case-003',
+        staffId: 'staff-789',
+        staffName: 'Emma Wilson',
+        department: 'HR',
+        position: 'HR Coordinator',
+        resignationDate: '2024-12-01',
+        lastWorkingDay: '2024-12-20',
+        resignationReason: 'Work-life balance and family commitments',
+        resignationType: 'voluntary',
+        noticePeriod: 3,
+        exitSurveyCompleted: true,
+        offboardingStatus: 'completed',
+        assignedHR: 'hr-manager-001',
+        completionPercentage: 100,
+        createdAt: '2024-12-01T00:00:00Z'
+      }
+    ];
+  }
+
+  async createOffboardingCase(caseData: any) {
+    // Mock implementation - in production this would:
+    // 1. Insert into offboardingCases table
+    // 2. Generate standard offboarding tasks
+    // 3. Send notifications to relevant departments
+    // 4. Create knowledge transfer templates
+    
+    const caseId = `CASE-${Date.now()}`;
+    console.log(`Created offboarding case ${caseId} for staff ${caseData.staffId}`);
+    
+    // Auto-generate standard offboarding tasks
+    await this.generateOffboardingTasks(caseId);
+    
+    return {
+      id: caseId,
+      staffId: caseData.staffId,
+      resignationDate: caseData.resignationDate,
+      lastWorkingDay: caseData.lastWorkingDay,
+      resignationReason: caseData.resignationReason,
+      resignationType: caseData.resignationType,
+      noticePeriod: caseData.noticePeriod,
+      offboardingStatus: 'initiated',
+      assignedHR: caseData.assignedHR,
+      completionPercentage: 0,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  async generateOffboardingTasks(caseId: string) {
+    // Mock implementation - standard offboarding task templates
+    const standardTasks = [
+      // HR Tasks
+      { category: 'HR', task: 'Send exit survey invitation', priority: 'high', dueOffset: 1 },
+      { category: 'HR', task: 'Schedule exit interview', priority: 'high', dueOffset: 3 },
+      { category: 'HR', task: 'Update personnel records', priority: 'medium', dueOffset: 7 },
+      { category: 'HR', task: 'Process final pay and entitlements', priority: 'high', dueOffset: 14 },
+      { category: 'HR', task: 'Update organization chart', priority: 'low', dueOffset: 30 },
+      
+      // IT Tasks
+      { category: 'IT', task: 'Revoke system access and accounts', priority: 'high', dueOffset: 1 },
+      { category: 'IT', task: 'Collect company devices and equipment', priority: 'high', dueOffset: 2 },
+      { category: 'IT', task: 'Transfer email and file access', priority: 'medium', dueOffset: 5 },
+      { category: 'IT', task: 'Disable security cards and access codes', priority: 'high', dueOffset: 1 },
+      
+      // Manager Tasks
+      { category: 'Manager', task: 'Conduct handover sessions', priority: 'high', dueOffset: 7 },
+      { category: 'Manager', task: 'Document knowledge transfer', priority: 'high', dueOffset: 10 },
+      { category: 'Manager', task: 'Redistribute workload', priority: 'medium', dueOffset: 14 },
+      { category: 'Manager', task: 'Update client relationships', priority: 'medium', dueOffset: 7 },
+      
+      // Finance Tasks
+      { category: 'Finance', task: 'Calculate final pay and leave entitlements', priority: 'high', dueOffset: 7 },
+      { category: 'Finance', task: 'Update payroll systems', priority: 'medium', dueOffset: 14 },
+      { category: 'Finance', task: 'Process expense claims', priority: 'medium', dueOffset: 5 },
+      
+      // Compliance Tasks
+      { category: 'Compliance', task: 'Update NDIS worker screening', priority: 'medium', dueOffset: 30 },
+      { category: 'Compliance', task: 'Update professional registrations', priority: 'low', dueOffset: 30 },
+      { category: 'Compliance', task: 'Archive compliance documents', priority: 'low', dueOffset: 60 }
+    ];
+
+    console.log(`Generated ${standardTasks.length} offboarding tasks for case ${caseId}`);
+    return standardTasks;
+  }
+
+  async getOffboardingTasks(caseId: string) {
+    // Mock implementation - in production this would query offboardingTasks table
+    return [
+      {
+        id: 'task-001',
+        category: 'HR',
+        task: 'Send exit survey invitation',
+        assignedTo: 'hr-manager-001',
+        dueDate: '2025-01-16',
+        completed: true,
+        completedAt: '2025-01-15T10:00:00Z',
+        completedBy: 'hr-manager-001',
+        notes: 'Exit survey sent via email with secure link'
+      },
+      {
+        id: 'task-002',
+        category: 'HR',
+        task: 'Schedule exit interview',
+        assignedTo: 'hr-manager-001',
+        dueDate: '2025-01-18',
+        completed: true,
+        completedAt: '2025-01-17T14:30:00Z',
+        completedBy: 'hr-manager-001',
+        notes: 'Exit interview scheduled for January 25th at 2:00 PM'
+      },
+      {
+        id: 'task-003',
+        category: 'IT',
+        task: 'Revoke system access and accounts',
+        assignedTo: 'it-admin-001',
+        dueDate: '2025-02-15',
+        completed: false,
+        notes: 'To be completed on last working day'
+      },
+      {
+        id: 'task-004',
+        category: 'IT',
+        task: 'Collect company devices and equipment',
+        assignedTo: 'it-admin-001',
+        dueDate: '2025-02-14',
+        completed: false,
+        notes: 'Laptop, mobile phone, access card to be returned'
+      },
+      {
+        id: 'task-005',
+        category: 'Manager',
+        task: 'Conduct handover sessions',
+        assignedTo: 'manager-001',
+        dueDate: '2025-02-10',
+        completed: false,
+        notes: 'Schedule 3 handover sessions with replacement staff'
+      },
+      {
+        id: 'task-006',
+        category: 'Finance',
+        task: 'Calculate final pay and leave entitlements',
+        assignedTo: 'finance-officer-001',
+        dueDate: '2025-02-12',
+        completed: false,
+        notes: 'Include accrued annual leave and long service leave'
+      }
+    ];
+  }
+
+  async completeOffboardingTask(taskId: string, completedBy: string, notes?: string) {
+    // Mock implementation - in production this would:
+    // 1. Update task completion status
+    // 2. Update offboarding case completion percentage
+    // 3. Send notifications if needed
+    // 4. Trigger dependent tasks
+    
+    console.log(`Completed offboarding task ${taskId} by ${completedBy}`);
+    console.log(`Notes: ${notes || 'No notes provided'}`);
+    
+    return {
+      completed: true,
+      completedAt: new Date().toISOString(),
+      completedBy,
+      notes
+    };
+  }
+
+  async getExitSurveys() {
+    // Mock implementation - in production this would query exitSurveys table
+    return [
+      {
+        id: 'survey-001',
+        staffId: 'staff-456',
+        overallSatisfaction: 4,
+        reasonForLeaving: 'Better career opportunity',
+        workEnvironmentRating: 4,
+        managementRating: 3,
+        careerDevelopmentRating: 3,
+        compensationRating: 4,
+        workLifeBalanceRating: 2,
+        wouldRecommendCompany: true,
+        improvementSuggestions: 'More flexible working arrangements and better career development pathways',
+        additionalComments: 'Overall good experience, but work-life balance could be improved',
+        submittedAt: '2025-01-22T09:30:00Z'
+      },
+      {
+        id: 'survey-002',
+        staffId: 'staff-789',
+        overallSatisfaction: 5,
+        reasonForLeaving: 'Personal/family reasons',
+        workEnvironmentRating: 5,
+        managementRating: 5,
+        careerDevelopmentRating: 4,
+        compensationRating: 4,
+        workLifeBalanceRating: 3,
+        wouldRecommendCompany: true,
+        improvementSuggestions: 'Continue focus on professional development and team building',
+        additionalComments: 'Excellent team and management. Leaving due to family commitments only.',
+        submittedAt: '2024-12-15T16:45:00Z'
+      },
+      {
+        id: 'survey-003',
+        staffId: 'staff-321',
+        overallSatisfaction: 2,
+        reasonForLeaving: 'Management or leadership issues',
+        workEnvironmentRating: 2,
+        managementRating: 1,
+        careerDevelopmentRating: 2,
+        compensationRating: 3,
+        workLifeBalanceRating: 2,
+        wouldRecommendCompany: false,
+        improvementSuggestions: 'Better communication from management, clearer expectations, and more support for staff',
+        additionalComments: 'Management needs significant improvement in communication and staff support',
+        submittedAt: '2024-12-10T11:20:00Z'
+      }
+    ];
+  }
+
+  async submitExitSurvey(surveyData: any) {
+    // Mock implementation - in production this would:
+    // 1. Insert into exitSurveys table
+    // 2. Update offboarding case status
+    // 3. Generate analytics insights
+    // 4. Send confirmation to HR
+    
+    const surveyId = `SURVEY-${Date.now()}`;
+    console.log(`Submitted exit survey ${surveyId} for staff ${surveyData.staffId}`);
+    
+    return {
+      id: surveyId,
+      staffId: surveyData.staffId,
+      submittedAt: new Date().toISOString(),
+      processed: true
+    };
+  }
+
+  async sendExitSurveyInvitation(staffId: string) {
+    // Mock implementation - in production this would:
+    // 1. Generate secure survey link
+    // 2. Send email invitation
+    // 3. Log invitation sent
+    // 4. Set reminder follow-ups
+    
+    const invitationId = `INV-${Date.now()}`;
+    console.log(`Sent exit survey invitation ${invitationId} to staff ${staffId}`);
+    
+    return {
+      sent: true,
+      invitationId,
+      surveyLink: `https://primacycare.replit.app/exit-survey/${invitationId}`,
+      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

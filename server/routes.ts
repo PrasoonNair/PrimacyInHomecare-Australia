@@ -2043,6 +2043,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff Offboarding and Exit Survey Endpoints
+  app.get("/api/hr/offboarding-cases", isAuthenticated, async (req, res) => {
+    try {
+      const cases = await storage.getOffboardingCases();
+      res.json(cases);
+    } catch (error) {
+      console.error("Error fetching offboarding cases:", error);
+      res.status(500).json({ error: "Failed to fetch offboarding cases" });
+    }
+  });
+
+  app.post("/api/hr/offboarding-cases", isAuthenticated, async (req, res) => {
+    try {
+      const caseData = req.body;
+      const result = await storage.createOffboardingCase({
+        ...caseData,
+        assignedHR: req.user?.id || 'system'
+      });
+      res.json({ success: true, caseId: result.id });
+    } catch (error) {
+      console.error("Error creating offboarding case:", error);
+      res.status(500).json({ error: "Failed to create offboarding case" });
+    }
+  });
+
+  app.get("/api/hr/offboarding-tasks/:caseId", isAuthenticated, async (req, res) => {
+    try {
+      const { caseId } = req.params;
+      const tasks = await storage.getOffboardingTasks(caseId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching offboarding tasks:", error);
+      res.status(500).json({ error: "Failed to fetch offboarding tasks" });
+    }
+  });
+
+  app.post("/api/hr/offboarding-tasks/:taskId/complete", isAuthenticated, async (req, res) => {
+    try {
+      const { taskId } = req.params;
+      const { notes } = req.body;
+      const result = await storage.completeOffboardingTask(taskId, req.user?.id || 'system', notes);
+      res.json({ success: true, completed: result.completed });
+    } catch (error) {
+      console.error("Error completing offboarding task:", error);
+      res.status(500).json({ error: "Failed to complete offboarding task" });
+    }
+  });
+
+  app.get("/api/hr/exit-surveys", isAuthenticated, async (req, res) => {
+    try {
+      const surveys = await storage.getExitSurveys();
+      res.json(surveys);
+    } catch (error) {
+      console.error("Error fetching exit surveys:", error);
+      res.status(500).json({ error: "Failed to fetch exit surveys" });
+    }
+  });
+
+  app.post("/api/hr/exit-surveys", isAuthenticated, async (req, res) => {
+    try {
+      const surveyData = req.body;
+      const result = await storage.submitExitSurvey(surveyData);
+      res.json({ success: true, surveyId: result.id });
+    } catch (error) {
+      console.error("Error submitting exit survey:", error);
+      res.status(500).json({ error: "Failed to submit exit survey" });
+    }
+  });
+
+  app.post("/api/hr/exit-surveys/:staffId/send", isAuthenticated, async (req, res) => {
+    try {
+      const { staffId } = req.params;
+      const result = await storage.sendExitSurveyInvitation(staffId);
+      res.json({ success: true, sent: result.sent, invitationId: result.invitationId });
+    } catch (error) {
+      console.error("Error sending exit survey:", error);
+      res.status(500).json({ error: "Failed to send exit survey invitation" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

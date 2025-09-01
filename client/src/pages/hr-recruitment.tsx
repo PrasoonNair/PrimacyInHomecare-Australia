@@ -30,6 +30,7 @@ import { ContractSigningDemo } from '@/components/hr/contract-signing-demo';
 import { ApplicantInvitationManager } from '@/components/hr/applicant-invitation-manager';
 import { DocumentVerificationSystem } from '@/components/verification/document-verification-system';
 import { DiscrepancyAlertDashboard } from '@/components/alerts/discrepancy-alert-dashboard';
+import { StaffOffboarding } from '@/components/hr/staff-offboarding';
 import { format } from "date-fns";
 
 // Form schemas
@@ -957,11 +958,12 @@ export default function HRRecruitment() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-8 w-full">
           <TabsTrigger value="recruitment">Recruitment</TabsTrigger>
           <TabsTrigger value="applications">Applications</TabsTrigger>
           <TabsTrigger value="contracts">Contracts</TabsTrigger>
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+          <TabsTrigger value="offboarding">Offboarding</TabsTrigger>
           <TabsTrigger value="leave">Leave</TabsTrigger>
           <TabsTrigger value="training">Training</TabsTrigger>
           <TabsTrigger value="schads">SCHADS</TabsTrigger>
@@ -1410,6 +1412,10 @@ export default function HRRecruitment() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="offboarding" className="space-y-4">
+          <StaffOffboarding />
         </TabsContent>
 
         <TabsContent value="leave" className="space-y-4">

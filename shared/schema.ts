@@ -48,6 +48,10 @@ export const departmentEnum = pgEnum("department", ["intake", "hr_recruitment", 
 // Price guide document types
 export const priceGuideTypeEnum = pgEnum("price_guide_type", ["schads", "ndis"]);
 
+// Offboarding enums
+export const resignationTypeEnum = pgEnum("resignation_type", ["voluntary", "involuntary", "retirement", "redundancy"]);
+export const offboardingStatusEnum = pgEnum("offboarding_status", ["initiated", "in_progress", "completed"]);
+
 // Define specific role enum for all 15 roles
 export const userRoleEnum = pgEnum("user_role", [
   "super_admin",
@@ -778,6 +782,83 @@ export const priceGuideDocuments = pgTable("price_guide_documents", {
   ratesExtracted: boolean("rates_extracted").default(false),
   extractedRatesCount: integer("extracted_rates_count").default(0),
   extractionLog: jsonb("extraction_log"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Staff Offboarding and Exit Management Tables
+export const offboardingCases = pgTable("offboarding_cases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  resignationDate: date("resignation_date").notNull(),
+  lastWorkingDay: date("last_working_day").notNull(),
+  resignationReason: text("resignation_reason"),
+  resignationType: resignationTypeEnum("resignation_type").notNull(),
+  noticePeriod: integer("notice_period").notNull(), // in weeks
+  exitSurveyCompleted: boolean("exit_survey_completed").default(false),
+  offboardingStatus: offboardingStatusEnum("offboarding_status").default("initiated"),
+  assignedHR: varchar("assigned_hr").references(() => users.id),
+  completionPercentage: integer("completion_percentage").default(0),
+  knowledgeTransferCompleted: boolean("knowledge_transfer_completed").default(false),
+  equipmentReturned: boolean("equipment_returned").default(false),
+  accessRevoked: boolean("access_revoked").default(false),
+  finalPayProcessed: boolean("final_pay_processed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const exitSurveys = pgTable("exit_surveys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  offboardingCaseId: varchar("offboarding_case_id").references(() => offboardingCases.id),
+  overallSatisfaction: integer("overall_satisfaction").notNull(), // 1-5 scale
+  reasonForLeaving: text("reason_for_leaving").notNull(),
+  workEnvironmentRating: integer("work_environment_rating").notNull(),
+  managementRating: integer("management_rating").notNull(),
+  careerDevelopmentRating: integer("career_development_rating").notNull(),
+  compensationRating: integer("compensation_rating").notNull(),
+  workLifeBalanceRating: integer("work_life_balance_rating").notNull(),
+  wouldRecommendCompany: boolean("would_recommend_company").notNull(),
+  improvementSuggestions: text("improvement_suggestions"),
+  additionalComments: text("additional_comments"),
+  feedbackCategories: text("feedback_categories").array(),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  isAnonymous: boolean("is_anonymous").default(false),
+});
+
+export const offboardingTasks = pgTable("offboarding_tasks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  offboardingCaseId: varchar("offboarding_case_id").references(() => offboardingCases.id).notNull(),
+  category: varchar("category").notNull(), // HR, IT, Payroll, Manager, etc.
+  task: text("task").notNull(),
+  description: text("description"),
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  dueDate: date("due_date"),
+  priority: varchar("priority").default("medium"), // high, medium, low
+  completed: boolean("completed").default(false),
+  completedAt: timestamp("completed_at"),
+  completedBy: varchar("completed_by").references(() => users.id),
+  notes: text("notes"),
+  documentRequired: boolean("document_required").default(false),
+  documentUrl: text("document_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const knowledgeTransfer = pgTable("knowledge_transfer", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  offboardingCaseId: varchar("offboarding_case_id").references(() => offboardingCases.id).notNull(),
+  departingStaffId: varchar("departing_staff_id").references(() => staff.id).notNull(),
+  receivingStaffId: varchar("receiving_staff_id").references(() => staff.id),
+  transferType: varchar("transfer_type").notNull(), // handover_document, training_session, shadowing
+  title: varchar("title").notNull(),
+  description: text("description"),
+  priority: varchar("priority").default("medium"),
+  status: varchar("status").default("pending"), // pending, in_progress, completed
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
+  documentUrl: text("document_url"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2183,6 +2264,30 @@ export const insertAgreementCommunicationSchema = createInsertSchema(agreementCo
   createdAt: true,
 });
 
+// Offboarding and Exit Survey schemas
+export const insertOffboardingCaseSchema = createInsertSchema(offboardingCases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertExitSurveySchema = createInsertSchema(exitSurveys).omit({
+  id: true,
+  submittedAt: true,
+});
+
+export const insertOffboardingTaskSchema = createInsertSchema(offboardingTasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertKnowledgeTransferSchema = createInsertSchema(knowledgeTransfer).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -2242,6 +2347,19 @@ export type Audit = typeof audits.$inferSelect;
 export type InsertPlanDocument = z.infer<typeof insertPlanDocumentSchema>;
 export type PlanDocument = typeof planDocuments.$inferSelect;
 export type InsertDigitalServiceAgreement = z.infer<typeof insertDigitalServiceAgreementSchema>;
+export type DigitalServiceAgreement = typeof digitalServiceAgreements.$inferSelect;
+export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommunicationSchema>;
+export type AgreementCommunication = typeof agreementCommunications.$inferSelect;
+
+// Offboarding and Exit Survey types
+export type InsertOffboardingCase = z.infer<typeof insertOffboardingCaseSchema>;
+export type OffboardingCase = typeof offboardingCases.$inferSelect;
+export type InsertExitSurvey = z.infer<typeof insertExitSurveySchema>;
+export type ExitSurvey = typeof exitSurveys.$inferSelect;
+export type InsertOffboardingTask = z.infer<typeof insertOffboardingTaskSchema>;
+export type OffboardingTask = typeof offboardingTasks.$inferSelect;
+export type InsertKnowledgeTransfer = z.infer<typeof insertKnowledgeTransferSchema>;
+export type KnowledgeTransfer = typeof knowledgeTransfer.$inferSelect;
 export type DigitalServiceAgreement = typeof digitalServiceAgreements.$inferSelect;
 export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommunicationSchema>;
 export type AgreementCommunication = typeof agreementCommunications.$inferSelect;
