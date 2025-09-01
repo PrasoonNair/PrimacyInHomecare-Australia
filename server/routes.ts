@@ -2206,6 +2206,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Staff Availability Management Endpoints
+  app.get("/api/staff-availability", isAuthenticated, async (req, res) => {
+    try {
+      const { staffId, date, period } = req.query;
+      const availability = await storage.getStaffAvailability({ 
+        staffId: staffId as string, 
+        date: date as string,
+        period: period as string
+      });
+      res.json(availability);
+    } catch (error) {
+      console.error("Error fetching staff availability:", error);
+      res.status(500).json({ error: "Failed to fetch staff availability" });
+    }
+  });
+
+  app.post("/api/staff-availability", isAuthenticated, async (req, res) => {
+    try {
+      const availabilityData = req.body;
+      const result = await storage.updateStaffAvailability({
+        ...availabilityData,
+        updatedBy: req.user?.id || 'system'
+      });
+      res.json({ success: true, availabilityId: result.id });
+    } catch (error) {
+      console.error("Error updating staff availability:", error);
+      res.status(500).json({ error: "Failed to update staff availability" });
+    }
+  });
+
+  app.get("/api/staff-availability/submissions", isAuthenticated, async (req, res) => {
+    try {
+      const { period, staffId } = req.query;
+      const submissions = await storage.getAvailabilitySubmissions({ 
+        period: period as string,
+        staffId: staffId as string
+      });
+      res.json(submissions);
+    } catch (error) {
+      console.error("Error fetching availability submissions:", error);
+      res.status(500).json({ error: "Failed to fetch availability submissions" });
+    }
+  });
+
+  app.post("/api/staff-availability/submit-fortnight", isAuthenticated, async (req, res) => {
+    try {
+      const submissionData = req.body;
+      const result = await storage.submitFortnightlyAvailability({
+        ...submissionData,
+        submittedBy: req.user?.id || 'system'
+      });
+      res.json({ success: true, submissionId: result.id });
+    } catch (error) {
+      console.error("Error submitting fortnightly availability:", error);
+      res.status(500).json({ error: "Failed to submit fortnightly availability" });
+    }
+  });
+
+  app.get("/api/shift-requirements", isAuthenticated, async (req, res) => {
+    try {
+      const { date, staffId, status } = req.query;
+      const requirements = await storage.getShiftRequirements({ 
+        date: date as string,
+        staffId: staffId as string,
+        status: status as string
+      });
+      res.json(requirements);
+    } catch (error) {
+      console.error("Error fetching shift requirements:", error);
+      res.status(500).json({ error: "Failed to fetch shift requirements" });
+    }
+  });
+
+  app.post("/api/staff-availability/bulk-assign", isAuthenticated, async (req, res) => {
+    try {
+      const assignmentData = req.body;
+      const result = await storage.bulkAssignStaffToShifts({
+        ...assignmentData,
+        assignedBy: req.user?.id || 'system'
+      });
+      res.json({ 
+        success: true, 
+        assignmentsCreated: result.assignmentsCreated,
+        assignmentsFailed: result.assignmentsFailed 
+      });
+    } catch (error) {
+      console.error("Error bulk assigning staff:", error);
+      res.status(500).json({ error: "Failed to bulk assign staff to shifts" });
+    }
+  });
+
+  app.post("/api/staff-availability/send-reminders", isAuthenticated, async (req, res) => {
+    try {
+      const { period, reminderType } = req.body;
+      const result = await storage.sendAvailabilityReminders({ period, reminderType });
+      res.json({ 
+        success: true, 
+        remindersSent: result.remindersSent,
+        remindersSkipped: result.remindersSkipped 
+      });
+    } catch (error) {
+      console.error("Error sending availability reminders:", error);
+      res.status(500).json({ error: "Failed to send availability reminders" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

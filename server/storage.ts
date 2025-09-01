@@ -4086,6 +4086,319 @@ Primacy Care Australia`,
       expiresAt: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString() // 21 days
     };
   }
+
+  // Staff Availability Management Methods
+  async getStaffAvailability(params: { staffId?: string; date?: string; period?: string }) {
+    // Mock implementation - in production this would query staffAvailabilitySchedules table
+    const mockAvailability = [
+      {
+        id: 'avail-001',
+        staffId: '48f8aa1c-2163-4eda-b7b4-dbadd61883be',
+        staffName: 'Sarah Johnson',
+        employmentType: 'casual',
+        date: '2025-02-03',
+        dayOfWeek: 1, // Monday
+        startTime: '09:00',
+        endTime: '15:00',
+        isAvailable: true,
+        isRecurring: true,
+        recurringPattern: 'weekly',
+        submissionPeriod: '2025-02-03_2025-02-16',
+        lastSubmitted: '2025-01-30T10:00:00Z',
+        isEditable: true,
+        createdAt: '2025-01-30T10:00:00Z'
+      },
+      {
+        id: 'avail-002',
+        staffId: '48f8aa1c-2163-4eda-b7b4-dbadd61883be',
+        staffName: 'Sarah Johnson',
+        employmentType: 'casual',
+        date: '2025-02-03',
+        dayOfWeek: 1,
+        startTime: '18:00',
+        endTime: '21:00',
+        isAvailable: false,
+        unavailabilityReason: 'University classes',
+        isRecurring: true,
+        recurringPattern: 'weekly',
+        submissionPeriod: '2025-02-03_2025-02-16',
+        lastSubmitted: '2025-01-30T10:00:00Z',
+        isEditable: true,
+        createdAt: '2025-01-30T10:00:00Z'
+      },
+      {
+        id: 'avail-003',
+        staffId: 'staff-casual-002',
+        staffName: 'Mike Chen',
+        employmentType: 'casual',
+        date: '2025-02-03',
+        dayOfWeek: 1,
+        startTime: '08:00',
+        endTime: '16:00',
+        isAvailable: true,
+        isRecurring: false,
+        submissionPeriod: '2025-02-03_2025-02-16',
+        lastSubmitted: '2025-01-31T14:00:00Z',
+        isEditable: true,
+        createdAt: '2025-01-31T14:00:00Z'
+      },
+      {
+        id: 'avail-004',
+        staffId: 'staff-permanent-001',
+        staffName: 'Emma Davis',
+        employmentType: 'permanent',
+        date: '2025-02-03',
+        dayOfWeek: 1,
+        startTime: '07:00',
+        endTime: '15:00',
+        isAvailable: true,
+        isRecurring: true,
+        recurringPattern: 'weekly',
+        submissionPeriod: '2025-02-03_2025-02-16',
+        lastSubmitted: '2025-01-28T09:00:00Z',
+        isEditable: false, // Permanent staff managed by roster
+        createdAt: '2025-01-28T09:00:00Z'
+      }
+    ];
+
+    // Filter based on parameters
+    let filtered = mockAvailability;
+    if (params.staffId && params.staffId !== 'all') {
+      if (params.staffId === 'casual') {
+        filtered = filtered.filter(a => a.employmentType === 'casual');
+      } else if (params.staffId === 'permanent') {
+        filtered = filtered.filter(a => a.employmentType === 'permanent');
+      } else {
+        filtered = filtered.filter(a => a.staffId === params.staffId);
+      }
+    }
+
+    if (params.date) {
+      filtered = filtered.filter(a => a.date === params.date);
+    }
+
+    if (params.period) {
+      filtered = filtered.filter(a => a.submissionPeriod === params.period);
+    }
+
+    return filtered;
+  }
+
+  async updateStaffAvailability(availabilityData: any) {
+    // Mock implementation - in production this would:
+    // 1. Insert/update staffAvailabilitySchedules table
+    // 2. Handle recurring patterns
+    // 3. Validate against submission deadlines
+    // 4. Send notifications if needed
+    // 5. Update related shift assignments
+
+    const availabilityId = `AVAIL-${Date.now()}`;
+    console.log(`Updated staff availability ${availabilityId} for staff ${availabilityData.staffId}`);
+    
+    // Handle recurring patterns
+    if (availabilityData.isRecurring) {
+      console.log(`Setting up recurring availability pattern: ${availabilityData.recurringPattern}`);
+    }
+
+    return {
+      id: availabilityId,
+      staffId: availabilityData.staffId,
+      date: availabilityData.date,
+      isAvailable: availabilityData.isAvailable,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async getAvailabilitySubmissions(params: { period?: string; staffId?: string }) {
+    // Mock implementation - in production this would query staffAvailabilitySubmissions table
+    return [
+      {
+        id: 'sub-001',
+        staffId: '48f8aa1c-2163-4eda-b7b4-dbadd61883be',
+        staffName: 'Sarah Johnson',
+        submissionPeriod: '2025-02-03_2025-02-16',
+        startDate: '2025-02-03',
+        endDate: '2025-02-16',
+        submittedAt: '2025-01-30T10:00:00Z',
+        status: 'submitted',
+        totalAvailableHours: 84,
+        totalUnavailableHours: 28,
+        mandatorySubmission: true
+      },
+      {
+        id: 'sub-002',
+        staffId: 'staff-casual-002',
+        staffName: 'Mike Chen',
+        submissionPeriod: '2025-02-03_2025-02-16',
+        startDate: '2025-02-03',
+        endDate: '2025-02-16',
+        submittedAt: '2025-01-31T14:00:00Z',
+        status: 'submitted',
+        totalAvailableHours: 112,
+        totalUnavailableHours: 0,
+        mandatorySubmission: true
+      },
+      {
+        id: 'sub-003',
+        staffId: 'staff-casual-003',
+        staffName: 'Lisa Wong',
+        submissionPeriod: '2025-02-03_2025-02-16',
+        startDate: '2025-02-03',
+        endDate: '2025-02-16',
+        submittedAt: '2025-02-01T16:30:00Z',
+        status: 'pending',
+        totalAvailableHours: 56,
+        totalUnavailableHours: 56,
+        mandatorySubmission: true
+      }
+    ];
+  }
+
+  async submitFortnightlyAvailability(submissionData: any) {
+    // Mock implementation - in production this would:
+    // 1. Validate submission is within deadline
+    // 2. Calculate total available/unavailable hours
+    // 3. Insert into staffAvailabilitySubmissions table
+    // 4. Update submission status
+    // 5. Send confirmation notification
+    // 6. Trigger auto-assignment if enabled
+
+    const submissionId = `SUB-${Date.now()}`;
+    console.log(`Submitted fortnightly availability ${submissionId} for staff ${submissionData.staffId}`);
+    console.log(`Period: ${submissionData.period}`);
+    
+    // Calculate hours
+    const mockAvailableHours = Math.floor(Math.random() * 80) + 40;
+    const mockUnavailableHours = 112 - mockAvailableHours; // Total hours in fortnight
+    
+    console.log(`Total available hours: ${mockAvailableHours}, Unavailable: ${mockUnavailableHours}`);
+    
+    return {
+      id: submissionId,
+      staffId: submissionData.staffId,
+      submissionPeriod: submissionData.period,
+      totalAvailableHours: mockAvailableHours,
+      totalUnavailableHours: mockUnavailableHours,
+      submittedAt: new Date().toISOString(),
+      status: 'submitted'
+    };
+  }
+
+  async getShiftRequirements(params: { date?: string; staffId?: string; status?: string }) {
+    // Mock implementation - in production this would query shiftRequirements table
+    return [
+      {
+        id: 'shift-req-001',
+        participantId: 'participant-123',
+        participantName: 'John Smith',
+        date: '2025-02-03',
+        startTime: '09:00',
+        endTime: '12:00',
+        serviceType: 'Personal Care',
+        requiredSkills: ['Personal Care', 'Medication Administration'],
+        status: 'open',
+        priority: 'normal',
+        location: '123 Main St, Sydney NSW',
+        estimatedDuration: 3.0,
+        hourlyRate: 65.50
+      },
+      {
+        id: 'shift-req-002',
+        participantId: 'participant-456',
+        participantName: 'Mary Johnson',
+        date: '2025-02-03',
+        startTime: '14:00',
+        endTime: '16:00',
+        serviceType: 'Community Access',
+        requiredSkills: ['Community Access', 'Transport'],
+        staffAssigned: '48f8aa1c-2163-4eda-b7b4-dbadd61883be',
+        assignmentMethod: 'auto',
+        status: 'assigned',
+        priority: 'normal',
+        location: 'Shopping Centre, Parramatta NSW',
+        estimatedDuration: 2.0,
+        hourlyRate: 58.25
+      },
+      {
+        id: 'shift-req-003',
+        participantId: 'participant-789',
+        participantName: 'David Chen',
+        date: '2025-02-03',
+        startTime: '18:00',
+        endTime: '21:00',
+        serviceType: 'Social Participation',
+        requiredSkills: ['Social Support'],
+        status: 'open',
+        priority: 'high',
+        location: 'Community Centre, Melbourne VIC',
+        specialInstructions: 'Participant has autism, requires calm approach',
+        estimatedDuration: 3.0,
+        hourlyRate: 62.75
+      }
+    ];
+  }
+
+  async bulkAssignStaffToShifts(assignmentData: any) {
+    // Mock implementation - in production this would:
+    // 1. Match available staff to shift requirements
+    // 2. Consider skills, proximity, preferences
+    // 3. Respect availability windows
+    // 4. Update shift assignments
+    // 5. Send notifications to staff
+    // 6. Update availability schedules
+
+    console.log(`Running bulk assignment for period ${assignmentData.period}`);
+    
+    if (assignmentData.autoAssign) {
+      console.log('Running auto-assignment algorithm...');
+      
+      // Mock auto-assignment logic
+      const assignmentsCreated = Math.floor(Math.random() * 5) + 3;
+      const assignmentsFailed = Math.floor(Math.random() * 2);
+      
+      console.log(`Auto-assigned ${assignmentsCreated} shifts, ${assignmentsFailed} failed`);
+      
+      return {
+        assignmentsCreated,
+        assignmentsFailed,
+        method: 'auto'
+      };
+    } else {
+      // Manual assignment
+      console.log(`Manually assigning staff ${assignmentData.staffId} to shift ${assignmentData.shiftId}`);
+      
+      return {
+        assignmentsCreated: 1,
+        assignmentsFailed: 0,
+        method: 'manual'
+      };
+    }
+  }
+
+  async sendAvailabilityReminders(params: { period: string; reminderType: string }) {
+    // Mock implementation - in production this would:
+    // 1. Find staff who haven't submitted for period
+    // 2. Check reminder history to avoid spam
+    // 3. Send email/SMS notifications
+    // 4. Log reminder in availabilityReminders table
+    // 5. Schedule follow-up reminders
+
+    console.log(`Sending ${params.reminderType} reminders for period ${params.period}`);
+    
+    const casualStaffCount = 15; // Mock casual staff count
+    const submittedCount = 12; // Mock submitted count
+    const remindersSent = casualStaffCount - submittedCount;
+    
+    console.log(`Sent ${remindersSent} reminders to casual staff who haven't submitted`);
+    
+    return {
+      remindersSent,
+      remindersSkipped: 0,
+      period: params.period,
+      reminderType: params.reminderType,
+      sentAt: new Date().toISOString()
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

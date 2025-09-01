@@ -2367,6 +2367,110 @@ export const insertParticipantFinalInvoicingSchema = createInsertSchema(particip
   updatedAt: true,
 });
 
+// Staff Availability Management Tables
+export const staffAvailabilitySchedules = pgTable("staff_availability_schedules", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  date: date("date").notNull(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0-6, Monday = 1
+  startTime: varchar("start_time").notNull(),
+  endTime: varchar("end_time").notNull(),
+  isAvailable: boolean("is_available").default(true),
+  unavailabilityReason: text("unavailability_reason"),
+  isRecurring: boolean("is_recurring").default(false),
+  recurringPattern: varchar("recurring_pattern"), // weekly, fortnightly, monthly
+  recurringEndDate: date("recurring_end_date"),
+  submissionPeriod: varchar("submission_period").notNull(), // "2025-01-01_2025-01-14"
+  lastSubmitted: timestamp("last_submitted"),
+  isEditable: boolean("is_editable").default(true),
+  shiftAssigned: boolean("shift_assigned").default(false),
+  assignedShiftId: varchar("assigned_shift_id").references(() => shifts.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const staffAvailabilitySubmissions = pgTable("staff_availability_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  submissionPeriod: varchar("submission_period").notNull(), // "2025-01-01_2025-01-14"
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  status: varchar("status").default("pending"), // pending, submitted, approved, rejected
+  totalAvailableHours: decimal("total_available_hours", { precision: 8, scale: 2 }).default("0.00"),
+  totalUnavailableHours: decimal("total_unavailable_hours", { precision: 8, scale: 2 }).default("0.00"),
+  mandatorySubmission: boolean("mandatory_submission").default(true),
+  employmentType: varchar("employment_type").notNull(), // casual, permanent, contract
+  submissionDeadline: timestamp("submission_deadline"),
+  reminderSent: boolean("reminder_sent").default(false),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  notes: text("notes"),
+});
+
+export const shiftRequirements = pgTable("shift_requirements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  serviceId: varchar("service_id").references(() => services.id),
+  date: date("date").notNull(),
+  startTime: varchar("start_time").notNull(),
+  endTime: varchar("end_time").notNull(),
+  serviceType: varchar("service_type").notNull(),
+  requiredSkills: text("required_skills").array(),
+  requiredCertifications: text("required_certifications").array(),
+  preferredStaffId: varchar("preferred_staff_id").references(() => staff.id),
+  staffAssigned: varchar("staff_assigned").references(() => staff.id),
+  assignmentMethod: varchar("assignment_method"), // manual, auto, preference
+  assignedAt: timestamp("assigned_at"),
+  status: varchar("status").default("open"), // open, assigned, confirmed, in_progress, completed, cancelled
+  priority: varchar("priority").default("normal"), // low, normal, high, urgent
+  location: text("location"),
+  specialInstructions: text("special_instructions"),
+  budgetCode: varchar("budget_code"),
+  hourlyRate: decimal("hourly_rate", { precision: 8, scale: 2 }),
+  estimatedDuration: decimal("estimated_duration", { precision: 4, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const availabilityReminders = pgTable("availability_reminders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  staffId: varchar("staff_id").references(() => staff.id).notNull(),
+  submissionPeriod: varchar("submission_period").notNull(),
+  reminderType: varchar("reminder_type").notNull(), // initial, follow_up, final, overdue
+  sentAt: timestamp("sent_at").defaultNow(),
+  method: varchar("method").notNull(), // email, sms, in_app
+  status: varchar("status").default("sent"), // sent, delivered, failed, clicked
+  nextReminderAt: timestamp("next_reminder_at"),
+  content: text("content"),
+});
+
+// Staff Availability schemas
+export const insertStaffAvailabilityScheduleSchema = createInsertSchema(staffAvailabilitySchedules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStaffAvailabilitySubmissionSchema = createInsertSchema(staffAvailabilitySubmissions).omit({
+  id: true,
+  submittedAt: true,
+  approvedAt: true,
+});
+
+export const insertShiftRequirementSchema = createInsertSchema(shiftRequirements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  assignedAt: true,
+});
+
+export const insertAvailabilityReminderSchema = createInsertSchema(availabilityReminders).omit({
+  id: true,
+  sentAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -2447,6 +2551,16 @@ export type InsertClientExitSurvey = z.infer<typeof insertClientExitSurveySchema
 export type ClientExitSurvey = typeof clientExitSurveys.$inferSelect;
 export type InsertParticipantFinalInvoicing = z.infer<typeof insertParticipantFinalInvoicingSchema>;
 export type ParticipantFinalInvoicing = typeof participantFinalInvoicing.$inferSelect;
+
+// Staff Availability types
+export type InsertStaffAvailabilitySchedule = z.infer<typeof insertStaffAvailabilityScheduleSchema>;
+export type StaffAvailabilitySchedule = typeof staffAvailabilitySchedules.$inferSelect;
+export type InsertStaffAvailabilitySubmission = z.infer<typeof insertStaffAvailabilitySubmissionSchema>;
+export type StaffAvailabilitySubmission = typeof staffAvailabilitySubmissions.$inferSelect;
+export type InsertShiftRequirement = z.infer<typeof insertShiftRequirementSchema>;
+export type ShiftRequirement = typeof shiftRequirements.$inferSelect;
+export type InsertAvailabilityReminder = z.infer<typeof insertAvailabilityReminderSchema>;
+export type AvailabilityReminder = typeof availabilityReminders.$inferSelect;
 export type DigitalServiceAgreement = typeof digitalServiceAgreements.$inferSelect;
 export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommunicationSchema>;
 export type AgreementCommunication = typeof agreementCommunications.$inferSelect;
