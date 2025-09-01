@@ -63,9 +63,9 @@ export class WorkflowPerformanceMonitor {
   private async identifyBottlenecks(): Promise<PerformanceBottleneck[]> {
     const bottlenecks: PerformanceBottleneck[] = [];
     
-    for (const [key, metric] of this.metrics.entries()) {
+    for (const [key, metric] of Array.from(this.metrics.entries())) {
       const [workflowId, stage] = key.split(':');
-      const threshold = this.thresholds[stage];
+      const threshold = this.thresholds[stage] || 5000; // default threshold
       
       if (metric.average > threshold) {
         bottlenecks.push({
@@ -82,7 +82,7 @@ export class WorkflowPerformanceMonitor {
   }
 
   private generateRecommendation(bottleneck: PerformanceBottleneck): OptimizationRecommendation {
-    const recommendations = {
+    const recommendations: Record<string, string> = {
       'data_verified': 'Consider implementing parallel validation checks and caching participant data',
       'service_agreement_prepared': 'Implement template caching and asynchronous document generation',
       'staff_allocation': 'Use pre-computed staff availability matrix and optimized scoring queries',
@@ -170,7 +170,7 @@ export class BatchWorkflowProcessor {
     );
 
     // Filter successful validations
-    const validReferrals = referrals.filter((_, index) => 
+    const validReferrals = referralsData.filter((_, index) => 
       validationResults[index].status === 'fulfilled'
     );
 
@@ -206,12 +206,7 @@ export class BatchWorkflowProcessor {
 
   private async validateDataCompletion(referralId: string): Promise<boolean> {
     const [referral] = await db
-      .select({
-        firstName: referrals.firstName,
-        lastName: referrals.lastName,
-        ndisNumber: referrals.ndisNumber,
-        primaryDisability: referrals.primaryDisability
-      })
+      .select()
       .from(referrals)
       .where(eq(referrals.id, referralId))
       .limit(1);
@@ -283,16 +278,16 @@ export class BatchWorkflowProcessor {
       updatedAt: new Date()
     }));
 
-    // Use SQL for efficient bulk updates
-    await db.execute(sql`
-      UPDATE referrals 
-      SET workflow_status = data.workflow_status,
-          updated_at = data.updated_at
-      FROM (VALUES ${updates.map(u => 
-        sql`(${u.id}, ${u.workflowStatus}, ${u.updatedAt})`
-      ).join(sql`, `)}) AS data(id, workflow_status, updated_at)
-      WHERE referrals.id = data.id
-    `);
+    // Use individual updates for now (SQL bulk update would need more complex implementation)
+    for (const update of updates) {
+      await db
+        .update(referrals)
+        .set({
+          workflowStatus: update.workflowStatus,
+          updatedAt: update.updatedAt
+        })
+        .where(eq(referrals.id, update.id));
+    }
   }
 
   private async bulkLogWorkflowActions(items: WorkflowBatchItem[], stage: string) {

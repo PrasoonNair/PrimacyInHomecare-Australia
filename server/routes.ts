@@ -214,6 +214,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Optimized workflow endpoints
+  app.post("/api/workflow/batch/advance", isAuthenticated, async (req, res) => {
+    try {
+      const { optimizedWorkflowService } = await import("./workflowOptimizedService");
+      const { referralIds, targetStages } = req.body;
+      const userId = (req as any).user?.id || (req as any).user?.claims?.sub;
+      
+      const result = await optimizedWorkflowService.advanceWorkflowBatch(referralIds, targetStages, userId);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error processing workflow batch:", error);
+      res.status(500).json({ message: "Failed to process workflow batch" });
+    }
+  });
+
+  app.get("/api/workflow/analytics", isAuthenticated, async (req, res) => {
+    try {
+      const { optimizedWorkflowService } = await import("./workflowOptimizedService");
+      const { timeframe } = req.query as { timeframe?: 'hour' | 'day' | 'week' };
+      
+      const analytics = await optimizedWorkflowService.getWorkflowAnalytics(timeframe);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching workflow analytics:", error);
+      res.status(500).json({ message: "Failed to fetch workflow analytics" });
+    }
+  });
+
   app.get("/api/workflow/matching-staff/:participantId", isAuthenticated, async (req, res) => {
     try {
       const { WorkflowService } = await import("./workflowService");
