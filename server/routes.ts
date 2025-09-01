@@ -2123,6 +2123,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Participant Offboarding and Exit Survey Endpoints
+  app.get("/api/participants/offboarding-cases", isAuthenticated, async (req, res) => {
+    try {
+      const cases = await storage.getParticipantOffboardingCases();
+      res.json(cases);
+    } catch (error) {
+      console.error("Error fetching participant offboarding cases:", error);
+      res.status(500).json({ error: "Failed to fetch participant offboarding cases" });
+    }
+  });
+
+  app.post("/api/participants/offboarding-cases", isAuthenticated, async (req, res) => {
+    try {
+      const caseData = req.body;
+      const result = await storage.createParticipantOffboardingCase({
+        ...caseData,
+        assignedCoordinator: req.user?.id || 'system'
+      });
+      res.json({ success: true, caseId: result.id });
+    } catch (error) {
+      console.error("Error creating participant offboarding case:", error);
+      res.status(500).json({ error: "Failed to create participant offboarding case" });
+    }
+  });
+
+  app.get("/api/participants/exit-surveys", isAuthenticated, async (req, res) => {
+    try {
+      const surveys = await storage.getClientExitSurveys();
+      res.json(surveys);
+    } catch (error) {
+      console.error("Error fetching client exit surveys:", error);
+      res.status(500).json({ error: "Failed to fetch client exit surveys" });
+    }
+  });
+
+  app.post("/api/participants/exit-surveys", isAuthenticated, async (req, res) => {
+    try {
+      const surveyData = req.body;
+      const result = await storage.submitClientExitSurvey(surveyData);
+      res.json({ success: true, surveyId: result.id });
+    } catch (error) {
+      console.error("Error submitting client exit survey:", error);
+      res.status(500).json({ error: "Failed to submit client exit survey" });
+    }
+  });
+
+  app.get("/api/participants/final-invoicing", isAuthenticated, async (req, res) => {
+    try {
+      const invoicing = await storage.getParticipantFinalInvoicing();
+      res.json(invoicing);
+    } catch (error) {
+      console.error("Error fetching final invoicing data:", error);
+      res.status(500).json({ error: "Failed to fetch final invoicing data" });
+    }
+  });
+
+  app.post("/api/participants/:participantId/generate-final-invoice", isAuthenticated, async (req, res) => {
+    try {
+      const { participantId } = req.params;
+      const result = await storage.generateParticipantFinalInvoice(participantId);
+      res.json({ 
+        success: true, 
+        invoiceId: result.invoiceId, 
+        invoiceNumber: result.invoiceNumber,
+        amount: result.amount 
+      });
+    } catch (error) {
+      console.error("Error generating final invoice:", error);
+      res.status(500).json({ error: "Failed to generate final invoice" });
+    }
+  });
+
+  app.post("/api/participants/:participantId/send-exit-survey", isAuthenticated, async (req, res) => {
+    try {
+      const { participantId } = req.params;
+      const result = await storage.sendClientExitSurvey(participantId);
+      res.json({ success: true, sent: result.sent, invitationId: result.invitationId });
+    } catch (error) {
+      console.error("Error sending client exit survey:", error);
+      res.status(500).json({ error: "Failed to send client exit survey invitation" });
+    }
+  });
+
   app.get("/api/recruitment/candidates", isAuthenticated, async (req, res) => {
     try {
       const { RecruitmentService } = await import("./recruitmentService");

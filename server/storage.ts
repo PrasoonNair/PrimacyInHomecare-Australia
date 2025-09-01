@@ -3825,6 +3825,267 @@ Primacy Care Australia`,
       expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days
     };
   }
+
+  // Participant Offboarding Management Methods
+  async getParticipantOffboardingCases() {
+    // Mock implementation - in production this would query participantOffboardingCases table
+    return [
+      {
+        id: 'participant-case-001',
+        participantId: 'participant-123',
+        participantName: 'Emma Thompson',
+        ndisNumber: '4321098765',
+        exitDate: '2025-02-01',
+        exitReason: 'NDIS plan ended and participant moving to new provider',
+        exitType: 'plan_ended',
+        finalShiftDate: '2025-01-31',
+        finalInvoiceCompleted: false,
+        clientSurveyCompleted: false,
+        offboardingStatus: 'invoicing',
+        assignedCoordinator: 'coordinator-001',
+        completionPercentage: 45,
+        outstandingAmount: 2450.00,
+        createdAt: '2025-01-20T00:00:00Z'
+      },
+      {
+        id: 'participant-case-002',
+        participantId: 'participant-456',
+        participantName: 'David Chen',
+        ndisNumber: '5678901234',
+        exitDate: '2025-01-25',
+        exitReason: 'Family moving interstate for work relocation',
+        exitType: 'moved',
+        finalShiftDate: '2025-01-24',
+        finalInvoiceCompleted: true,
+        clientSurveyCompleted: false,
+        offboardingStatus: 'survey_pending',
+        assignedCoordinator: 'coordinator-002',
+        completionPercentage: 75,
+        outstandingAmount: 0.00,
+        createdAt: '2025-01-15T00:00:00Z'
+      },
+      {
+        id: 'participant-case-003',
+        participantId: 'participant-789',
+        participantName: 'Sarah Williams',
+        ndisNumber: '9012345678',
+        exitDate: '2025-01-10',
+        exitReason: 'Participant chose to change to different service provider',
+        exitType: 'participant_choice',
+        finalShiftDate: '2025-01-09',
+        finalInvoiceCompleted: true,
+        clientSurveyCompleted: true,
+        offboardingStatus: 'completed',
+        assignedCoordinator: 'coordinator-001',
+        completionPercentage: 100,
+        outstandingAmount: 0.00,
+        createdAt: '2024-12-20T00:00:00Z'
+      }
+    ];
+  }
+
+  async createParticipantOffboardingCase(caseData: any) {
+    // Mock implementation - in production this would:
+    // 1. Insert into participantOffboardingCases table
+    // 2. Generate final invoicing requirements
+    // 3. Send notifications to service coordinators
+    // 4. Update participant status
+    // 5. Schedule exit survey
+    
+    const caseId = `PARTICIPANT-CASE-${Date.now()}`;
+    console.log(`Created participant offboarding case ${caseId} for participant ${caseData.participantId}`);
+    
+    // Auto-calculate outstanding amounts and generate final invoice requirements
+    await this.generateParticipantFinalInvoiceRequirements(caseId);
+    
+    return {
+      id: caseId,
+      participantId: caseData.participantId,
+      exitDate: caseData.exitDate,
+      exitReason: caseData.exitReason,
+      exitType: caseData.exitType,
+      finalShiftDate: caseData.finalShiftDate,
+      offboardingStatus: 'initiated',
+      assignedCoordinator: caseData.assignedCoordinator,
+      completionPercentage: 0,
+      outstandingAmount: 0,
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  async generateParticipantFinalInvoiceRequirements(caseId: string) {
+    // Mock implementation - calculate outstanding hours and amounts
+    const mockOutstandingHours = Math.floor(Math.random() * 50) + 10;
+    const mockHourlyRate = 65.50;
+    const mockOutstandingAmount = mockOutstandingHours * mockHourlyRate;
+    
+    console.log(`Generated final invoice requirements for case ${caseId}`);
+    console.log(`Outstanding hours: ${mockOutstandingHours}, Amount: $${mockOutstandingAmount}`);
+    
+    return {
+      outstandingHours: mockOutstandingHours,
+      outstandingAmount: mockOutstandingAmount,
+      requiresNDISClaim: true
+    };
+  }
+
+  async getClientExitSurveys() {
+    // Mock implementation - in production this would query clientExitSurveys table
+    return [
+      {
+        id: 'client-survey-001',
+        participantId: 'participant-789',
+        overallSatisfaction: 5,
+        serviceQualityRating: 5,
+        staffProfessionalismRating: 5,
+        communicationRating: 4,
+        valueForMoneyRating: 4,
+        goalAchievementRating: 5,
+        wouldRecommendService: true,
+        reasonForLeaving: 'Participant chose to change to different service provider',
+        improvementSuggestions: 'More flexible scheduling options would be helpful',
+        additionalComments: 'Overall excellent service. Staff were very professional and caring. Only leaving due to personal preference for local provider.',
+        completedBy: 'participant',
+        submittedAt: '2025-01-12T14:30:00Z'
+      },
+      {
+        id: 'client-survey-002',
+        participantId: 'participant-321',
+        overallSatisfaction: 3,
+        serviceQualityRating: 3,
+        staffProfessionalismRating: 4,
+        communicationRating: 2,
+        valueForMoneyRating: 3,
+        goalAchievementRating: 2,
+        wouldRecommendService: false,
+        reasonForLeaving: 'Dissatisfied with service quality',
+        improvementSuggestions: 'Better communication between office staff and participants. More consistent support workers.',
+        additionalComments: 'Support workers were good but too much staff turnover. Office communication needs improvement.',
+        completedBy: 'guardian',
+        submittedAt: '2024-12-08T16:45:00Z'
+      },
+      {
+        id: 'client-survey-003',
+        participantId: 'participant-654',
+        overallSatisfaction: 4,
+        serviceQualityRating: 4,
+        staffProfessionalismRating: 5,
+        communicationRating: 4,
+        valueForMoneyRating: 4,
+        goalAchievementRating: 4,
+        wouldRecommendService: true,
+        reasonForLeaving: 'NDIS plan ended',
+        improvementSuggestions: 'Continue the excellent work. Maybe more group activities.',
+        additionalComments: 'Great experience overall. Thank you for all the support provided.',
+        completedBy: 'participant',
+        submittedAt: '2024-11-25T11:20:00Z'
+      }
+    ];
+  }
+
+  async submitClientExitSurvey(surveyData: any) {
+    // Mock implementation - in production this would:
+    // 1. Insert into clientExitSurveys table
+    // 2. Update offboarding case status
+    // 3. Generate analytics insights
+    // 4. Send confirmation to service coordinator
+    
+    const surveyId = `CLIENT-SURVEY-${Date.now()}`;
+    console.log(`Submitted client exit survey ${surveyId} for participant ${surveyData.participantId}`);
+    
+    return {
+      id: surveyId,
+      participantId: surveyData.participantId,
+      submittedAt: new Date().toISOString(),
+      processed: true
+    };
+  }
+
+  async getParticipantFinalInvoicing() {
+    // Mock implementation - in production this would query participantFinalInvoicing table
+    return [
+      {
+        id: 'final-invoice-001',
+        participantId: 'participant-123',
+        finalShiftDate: '2025-01-31',
+        totalOutstandingHours: 35.5,
+        totalOutstandingAmount: 2324.75,
+        invoiceGenerated: false,
+        invoiceNumber: null,
+        ndisClaimSubmitted: false,
+        paidInFull: false,
+        reconciliationComplete: false
+      },
+      {
+        id: 'final-invoice-002',
+        participantId: 'participant-456',
+        finalShiftDate: '2025-01-24',
+        totalOutstandingHours: 28.0,
+        totalOutstandingAmount: 1834.00,
+        invoiceGenerated: true,
+        invoiceNumber: 'INV-2025-001234',
+        ndisClaimSubmitted: true,
+        paidInFull: true,
+        reconciliationComplete: true
+      },
+      {
+        id: 'final-invoice-003',
+        participantId: 'participant-789',
+        finalShiftDate: '2025-01-09',
+        totalOutstandingHours: 42.0,
+        totalOutstandingAmount: 2751.00,
+        invoiceGenerated: true,
+        invoiceNumber: 'INV-2025-001189',
+        ndisClaimSubmitted: true,
+        paidInFull: true,
+        reconciliationComplete: true
+      }
+    ];
+  }
+
+  async generateParticipantFinalInvoice(participantId: string) {
+    // Mock implementation - in production this would:
+    // 1. Calculate final hours and amounts from shifts
+    // 2. Generate invoice with NDIS line items
+    // 3. Submit NDIS claim automatically
+    // 4. Update participant offboarding status
+    // 5. Send invoice to participant/guardian
+    
+    const invoiceId = `FINAL-INV-${Date.now()}`;
+    const invoiceNumber = `INV-2025-${String(Date.now()).slice(-6)}`;
+    const amount = Math.floor(Math.random() * 3000) + 1000;
+    
+    console.log(`Generated final invoice ${invoiceNumber} for participant ${participantId}`);
+    console.log(`Invoice amount: $${amount}`);
+    console.log('Submitting NDIS claim automatically...');
+    
+    return {
+      invoiceId,
+      invoiceNumber,
+      amount,
+      ndisClaimSubmitted: true,
+      claimReference: `NDIS-CLAIM-${Date.now()}`
+    };
+  }
+
+  async sendClientExitSurvey(participantId: string) {
+    // Mock implementation - in production this would:
+    // 1. Generate secure survey link
+    // 2. Send email/SMS to participant/guardian
+    // 3. Log invitation sent
+    // 4. Set reminder follow-ups
+    // 5. Update offboarding case status
+    
+    const invitationId = `CLIENT-INV-${Date.now()}`;
+    console.log(`Sent client exit survey invitation ${invitationId} to participant ${participantId}`);
+    
+    return {
+      sent: true,
+      invitationId,
+      surveyLink: `https://primacycare.replit.app/client-exit-survey/${invitationId}`,
+      expiresAt: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString() // 21 days
+    };
+  }
 }
 
 export const storage = new DatabaseStorage();

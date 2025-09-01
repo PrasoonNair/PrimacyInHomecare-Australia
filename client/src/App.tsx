@@ -122,6 +122,8 @@ function Router() {
             <Route path="/incidents" component={Incidents} />
             <Route path="/participant-portal" component={ParticipantPortal} />
             <Route path="/widget-embed" component={WidgetEmbedPage} />
+            <Route path="/client-exit-survey/:invitationId" component={React.lazy(() => import('@/pages/client-exit-survey'))} />
+            <Route path="/client-exit-survey/complete" component={React.lazy(() => import('@/pages/client-exit-survey'))} />
             {/* Role-specific Dashboard Routes */}
             <Route path="/role-dashboards/super-admin" component={SuperAdminDashboard} />
             <Route path="/role-dashboards/ceo" component={CEODashboard} />

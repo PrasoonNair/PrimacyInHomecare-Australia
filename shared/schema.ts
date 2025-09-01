@@ -2288,6 +2288,85 @@ export const insertKnowledgeTransferSchema = createInsertSchema(knowledgeTransfe
   updatedAt: true,
 });
 
+// Participant Exit/Offboarding Tables
+export const participantOffboardingCases = pgTable("participant_offboarding_cases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  exitDate: date("exit_date").notNull(),
+  exitReason: text("exit_reason"),
+  exitType: varchar("exit_type").notNull(), // plan_ended, participant_choice, provider_initiated, deceased, moved
+  finalShiftDate: date("final_shift_date"),
+  finalInvoiceCompleted: boolean("final_invoice_completed").default(false),
+  clientSurveyCompleted: boolean("client_survey_completed").default(false),
+  offboardingStatus: varchar("offboarding_status").default("initiated"), // initiated, invoicing, survey_pending, completed
+  assignedCoordinator: varchar("assigned_coordinator").references(() => users.id),
+  completionPercentage: integer("completion_percentage").default(0),
+  outstandingAmount: decimal("outstanding_amount", { precision: 10, scale: 2 }).default("0.00"),
+  ndisClaimReconciled: boolean("ndis_claim_reconciled").default(false),
+  servicesTransferred: boolean("services_transferred").default(false),
+  documentsArchived: boolean("documents_archived").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const clientExitSurveys = pgTable("client_exit_surveys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  offboardingCaseId: varchar("offboarding_case_id").references(() => participantOffboardingCases.id),
+  overallSatisfaction: integer("overall_satisfaction").notNull(), // 1-5 scale
+  serviceQualityRating: integer("service_quality_rating").notNull(),
+  staffProfessionalismRating: integer("staff_professionalism_rating").notNull(),
+  communicationRating: integer("communication_rating").notNull(),
+  valueForMoneyRating: integer("value_for_money_rating").notNull(),
+  goalAchievementRating: integer("goal_achievement_rating").notNull(),
+  wouldRecommendService: boolean("would_recommend_service").notNull(),
+  reasonForLeaving: text("reason_for_leaving").notNull(),
+  improvementSuggestions: text("improvement_suggestions"),
+  additionalComments: text("additional_comments"),
+  experienceCategories: text("experience_categories").array(),
+  completedBy: varchar("completed_by").notNull(), // participant, guardian, advocate
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  isAnonymous: boolean("is_anonymous").default(false),
+});
+
+export const participantFinalInvoicing = pgTable("participant_final_invoicing", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  participantId: varchar("participant_id").references(() => participants.id).notNull(),
+  offboardingCaseId: varchar("offboarding_case_id").references(() => participantOffboardingCases.id).notNull(),
+  finalShiftDate: date("final_shift_date").notNull(),
+  totalOutstandingHours: decimal("total_outstanding_hours", { precision: 8, scale: 2 }).notNull(),
+  totalOutstandingAmount: decimal("total_outstanding_amount", { precision: 10, scale: 2 }).notNull(),
+  invoiceGenerated: boolean("invoice_generated").default(false),
+  invoiceNumber: varchar("invoice_number"),
+  invoiceDate: date("invoice_date"),
+  ndisClaimSubmitted: boolean("ndis_claim_submitted").default(false),
+  ndisClaimReference: varchar("ndis_claim_reference"),
+  paidInFull: boolean("paid_in_full").default(false),
+  paymentDate: date("payment_date"),
+  reconciliationComplete: boolean("reconciliation_complete").default(false),
+  reconciliationNotes: text("reconciliation_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Participant Offboarding schemas
+export const insertParticipantOffboardingCaseSchema = createInsertSchema(participantOffboardingCases).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertClientExitSurveySchema = createInsertSchema(clientExitSurveys).omit({
+  id: true,
+  submittedAt: true,
+});
+
+export const insertParticipantFinalInvoicingSchema = createInsertSchema(participantFinalInvoicing).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -2360,6 +2439,14 @@ export type InsertOffboardingTask = z.infer<typeof insertOffboardingTaskSchema>;
 export type OffboardingTask = typeof offboardingTasks.$inferSelect;
 export type InsertKnowledgeTransfer = z.infer<typeof insertKnowledgeTransferSchema>;
 export type KnowledgeTransfer = typeof knowledgeTransfer.$inferSelect;
+
+// Participant Offboarding types
+export type InsertParticipantOffboardingCase = z.infer<typeof insertParticipantOffboardingCaseSchema>;
+export type ParticipantOffboardingCase = typeof participantOffboardingCases.$inferSelect;
+export type InsertClientExitSurvey = z.infer<typeof insertClientExitSurveySchema>;
+export type ClientExitSurvey = typeof clientExitSurveys.$inferSelect;
+export type InsertParticipantFinalInvoicing = z.infer<typeof insertParticipantFinalInvoicingSchema>;
+export type ParticipantFinalInvoicing = typeof participantFinalInvoicing.$inferSelect;
 export type DigitalServiceAgreement = typeof digitalServiceAgreements.$inferSelect;
 export type InsertAgreementCommunication = z.infer<typeof insertAgreementCommunicationSchema>;
 export type AgreementCommunication = typeof agreementCommunications.$inferSelect;

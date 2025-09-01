@@ -21,8 +21,9 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   CalendarIcon, ClockIcon, UserCheckIcon, AlertCircleIcon, MapPinIcon, UsersIcon,
   TrendingUp, Filter, Download, MoreVertical, Search, Plus, Eye, Edit, Trash2,
-  Users, Activity, Target, CheckCircle2, AlertTriangle, Clock, DollarSign
+  Users, Activity, Target, CheckCircle2, AlertTriangle, Clock, DollarSign, UserX
 } from "lucide-react";
+import { ParticipantOffboarding } from "@/components/participants/participant-offboarding";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format } from "date-fns";
 
@@ -266,7 +267,7 @@ export default function ServiceDelivery() {
       <KPICards />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-4 w-full max-w-4xl">
+            <TabsList className="grid grid-cols-5 w-full max-w-5xl">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <Activity className="w-4 h-4" />
                 Overview
@@ -282,6 +283,10 @@ export default function ServiceDelivery() {
               <TabsTrigger value="admin" className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 Admin Controls
+              </TabsTrigger>
+              <TabsTrigger value="offboarding" className="flex items-center gap-2">
+                <UserX className="w-4 h-4" />
+                Exit & Offboarding
               </TabsTrigger>
             </TabsList>
 
@@ -736,6 +741,11 @@ export default function ServiceDelivery() {
                   </CardContent>
                 </Card>
               </div>
+            </TabsContent>
+
+            {/* Participant Exit & Offboarding Tab */}
+            <TabsContent value="offboarding" className="space-y-6">
+              <ParticipantOffboarding />
             </TabsContent>
           </Tabs>
     </div>
